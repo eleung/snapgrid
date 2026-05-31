@@ -1,6 +1,6 @@
 # @snapgridjs/docs
 
-Documentation site for SnapGrid, built with [Nextra 4](https://nextra.site) on
+Documentation site for snapgrid, built with [Nextra 4](https://nextra.site) on
 Next.js 15 / React 19. Search is powered by [Pagefind](https://pagefind.app)
 over the static export.
 

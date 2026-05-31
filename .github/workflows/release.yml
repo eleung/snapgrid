@@ -32,8 +32,11 @@ jobs:
       # When that PR merges (versions already bumped), it runs `pnpm release`,
       # which builds and publishes the changed packages to npm.
       #
-      # Requires an NPM_TOKEN repo secret (an npm automation token with publish
-      # rights to the @snapgridjs scope).
+      # Auth is npm trusted publishing (OIDC): pnpm exchanges the job's id-token
+      # (permissions.id-token: write) for a short-lived credential, so there is
+      # NO NPM_TOKEN. Each @snapgridjs/* package has a trusted publisher set for
+      # this repo + workflow (with "disallow tokens" publishing access). See
+      # RELEASING.md.
       - name: Create Release PR or publish
         uses: changesets/action@v1
         with:
@@ -41,5 +44,5 @@ jobs:
           version: pnpm version-packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # No NPM_TOKEN — npm auth is via OIDC trusted publishing (see above).
           NPM_CONFIG_PROVENANCE: "true"
