@@ -74,10 +74,10 @@ importers:
     dependencies:
       '@dicebear/collection':
         specifier: ^9
-        version: 9.4.2(@dicebear/core@9.4.2)
+        version: 9.4.2(@dicebear/core@10.0.1)
       '@dicebear/core':
-        specifier: ^9.4.2
-        version: 9.4.2
+        specifier: ^10.0.1
+        version: 10.0.1
       '@dnd-kit/dom':
         specifier: ^0.4.0
         version: 0.4.0
@@ -97,17 +97,17 @@ importers:
         specifier: ^1.17.0
         version: 1.17.0(react@19.2.6)
       next:
-        specifier: ^15.0.0
-        version: 15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: ^16.2.6
+        version: 16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       next-themes:
         specifier: ^0.4.0
         version: 0.4.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       nextra:
         specifier: ^4.0.0
-        version: 4.6.1(next@15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3)
+        version: 4.6.1(next@16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3)
       nextra-theme-docs:
         specifier: ^4.0.0
-        version: 4.6.1(@types/react@19.2.15)(next@15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(nextra@4.6.1(next@15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(use-sync-external-store@1.6.0(react@19.2.6))
+        version: 4.6.1(@types/react@19.2.15)(next@16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(nextra@4.6.1(next@16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(use-sync-external-store@1.6.0(react@19.2.6))
       react:
         specifier: ^19
         version: 19.2.6
@@ -439,9 +439,9 @@ packages:
     peerDependencies:
       '@dicebear/core': ^9.0.0
 
-  '@dicebear/core@9.4.2':
-    resolution: {integrity: sha512-MF0042+Z3s8PGZKZLySfhft28bUa3B1iq0e5NSjCvY8gfMi5aIH/iRJGRJa1N9Jz1BNkxYb4yvJ/N9KO8Z6Y+w==}
-    engines: {node: '>=18.0.0'}
+  '@dicebear/core@10.0.1':
+    resolution: {integrity: sha512-EUldm3THEc58Jz2/N8FsqKpgcJmYvjgwnf03EsIvuOVQ+wMad3r0AWwFB242879LMGU1tXqYpeGzcDblhWpTLQ==}
+    engines: {node: '>=22.0.0'}
 
   '@dicebear/croodles-neutral@9.4.2':
     resolution: {integrity: sha512-oG5IeUdtiYshQ89gkAVcl5w3xAEi5UZX2fTzIyelpBPCG176l7VuuFzlxi2umnB3E6LVHYy06DXvUo/p+rXB2Q==}
@@ -1241,57 +1241,57 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@next/env@15.5.18':
-    resolution: {integrity: sha512-hAV85Ckd9QR6RvH04MEKwsfLTksvFpO47j9xwtoIuvuPnlwecpSi+uZTtm8HirVbtlI2Fnz//xpcSTjFdyJk+g==}
+  '@next/env@16.2.6':
+    resolution: {integrity: sha512-gd8HoHN4ufj73WmR3JmVolrpJR47ILK6LouP5xElPglaVxir6e1a7VzvTvDWkOoPXT9rkkTzyCxBu4yeZfZwcw==}
 
-  '@next/swc-darwin-arm64@15.5.18':
-    resolution: {integrity: sha512-w0WvQf1n+txiwns/9pwIQteCJpZTbxzO2SE0FLcwuD4v0WEh1JPOjdyxWL21XwJsdpx8cFRjyzxzCS/siP7HcQ==}
+  '@next/swc-darwin-arm64@16.2.6':
+    resolution: {integrity: sha512-ZJGkkcNfYgrrMkqOdZ7zoLa1TOy0qpcMfk/z4Mh/FKUz40gVO+HNQWqmLxf67Z5WB64DRp0dhEbyHfel+6sJUg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@next/swc-darwin-x64@15.5.18':
-    resolution: {integrity: sha512-znn71QmDuxm+BOaglihMZfvyySMnNljkVIY5Z2TCssBmm+WqL6c19VhtH5ktFkHa8EZ2bnTUpcNcmNSQsg67og==}
+  '@next/swc-darwin-x64@16.2.6':
+    resolution: {integrity: sha512-v/YLBHIY132Ced3puBJ7YJKw1lqsCrgcNo2aRJlCEyQrrCeRJlvGlnmxhPxNQI3KE3N1DN5r9TPNPvka3nq5RQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@next/swc-linux-arm64-gnu@15.5.18':
-    resolution: {integrity: sha512-yPPe5MNL+igZUa+OsqQJisqSfh6oarIuA1Q0BDxljGJhRQyZeP+WRHh7rs/jZUGMh5aY0YdIjXZG0VohkKkUdw==}
+  '@next/swc-linux-arm64-gnu@16.2.6':
+    resolution: {integrity: sha512-RPOvqlYBbcQjkz9VQQDZ2T2bARIjXZV1KFlt+V2Mr6SW/e4I9fcKsaA0hdyf2FHoTlsV2xnBd5Y912rP/1Ce6w==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@next/swc-linux-arm64-musl@15.5.18':
-    resolution: {integrity: sha512-glaCczEWIrHsokFZ3pP08U4BpKxwIdnT+txdOM32OBgpL9Yw4aqx8NejmgtZQZOdstQ5f0L3CasIZudzCuD+nw==}
+  '@next/swc-linux-arm64-musl@16.2.6':
+    resolution: {integrity: sha512-URUTu1+dMkxJsPFgm+OeEvq9wf5sujw0EvgYy80TDGHTSLTnIHeqb0Eu8A3sC95IRgjejQL+kC4mw+4yPxiAXA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@next/swc-linux-x64-gnu@15.5.18':
-    resolution: {integrity: sha512-oUfg2EgJmU3R0OCOWiokGFUTvZiPfXtriXiuF3YNxRoROCdgvTedHIzYoeKH34gsZxS/V7mHbfq2hpAHwhH1/A==}
+  '@next/swc-linux-x64-gnu@16.2.6':
+    resolution: {integrity: sha512-DOj182mPV8G3UkrayLoREM5YEYI+Dk5wv7Ox9xl1fFibAELEsFD0lDPfHIeILlutMMfdyhlzYPELG3peuKaurw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@next/swc-linux-x64-musl@15.5.18':
-    resolution: {integrity: sha512-JLxSP3KTd9iu/bvUMQxH7RJo9xKSHf55/6RPE4a6FTSZygGn7uvZbCej0AHXydwkggQGSD9UddSjwv6Xz5ESfA==}
+  '@next/swc-linux-x64-musl@16.2.6':
+    resolution: {integrity: sha512-HKQ5SP/V/ub73UvF7n/zeJlxk2kLmtL7Wzrg4WfmkjmNos5onJ2tKu7yZOPdL18A6Svfn3max29ym+ry7NkK4g==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@next/swc-win32-arm64-msvc@15.5.18':
-    resolution: {integrity: sha512-ir1v7enP52K2HNz3tQQvwF+x7VNxBk1ciiZ18WBPvxf4C59IqdfmHPJYK3vH7rSxpuCVw/8C712wTXNAtEp+NA==}
+  '@next/swc-win32-arm64-msvc@16.2.6':
+    resolution: {integrity: sha512-LZXpTlPyS5v7HhSmnvsLGP3iIYgYOBnc8r8ArlT55sGHV89bR2HlDdBjWQ+PY6SJMmk8TuVGFuxalnP3k/0Dwg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@next/swc-win32-x64-msvc@15.5.18':
-    resolution: {integrity: sha512-LIu5me6QTANCd25E7I5uIEfvgQ06RK7tvHAbYo3zCb3VpxQEPvMcSpd87NwUABDT6MbGPdEGR5VRiK4PPTJhQg==}
+  '@next/swc-win32-x64-msvc@16.2.6':
+    resolution: {integrity: sha512-F0+4i0h9J6C4eE3EAPWsoCk7UW/dbzOjyzxY0qnDUOYFu6FFmdZ6l97/XdV3/Nz3VYyO7UWjyEJUXkGqcoXfMA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -1825,9 +1825,6 @@ packages:
   '@types/jsesc@2.5.1':
     resolution: {integrity: sha512-9VN+6yxLOPLOav+7PwjZbxiID2bVaeq0ED4qSQmdQTdjnXJSaCVKTR58t15oqH1H5t8Ng2ZX1SabJVoN9Q34bw==}
 
-  '@types/json-schema@7.0.15':
-    resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
-
   '@types/katex@0.16.8':
     resolution: {integrity: sha512-trgaNyfU+Xh2Tc+ABIb44a5AYUpicB3uwirOioeOkNPPbmgRNtcWyDeeFRzjPZENO9Vq8gvVqfhaaXWLlevVwg==}
 
@@ -1984,6 +1981,11 @@ packages:
   balanced-match@4.0.4:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
+
+  baseline-browser-mapping@2.10.33:
+    resolution: {integrity: sha512-bA6+tcSLpz2tIEdDXZPpPTIuxBcC4+w6SieaYyfigIa4h8GlFxbA17v22Vx3JUtuZQj9SgOsnbK+aTBzyDyEuw==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
 
   better-path-resolve@1.0.0:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
@@ -3116,9 +3118,9 @@ packages:
       react: ^19
       react-dom: ^19
 
-  next@15.5.18:
-    resolution: {integrity: sha512-eKL8zUJkX9Y5lE+RX/2YJoItVdGlIscyVyboeD9wSpp0PaGqjoA4tTpT2qPqz9ax+5IzGESyLSeZ/RCwbSZ2uQ==}
-    engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
+  next@16.2.6:
+    resolution: {integrity: sha512-qOVgKJg1+At15NpeUP+eJgCHvTCgXsogweq87Ri/Ix7PkqQHg4sdaXmSFqKlgaIXE4kW0g25LE68W87UANlHtw==}
+    engines: {node: '>=20.9.0'}
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
@@ -4274,168 +4276,166 @@ snapshots:
 
   '@csstools/css-tokenizer@3.0.4': {}
 
-  '@dicebear/adventurer-neutral@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/adventurer-neutral@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/adventurer@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/adventurer@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/avataaars-neutral@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/avataaars-neutral@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/avataaars@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/avataaars@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/big-ears-neutral@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/big-ears-neutral@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/big-ears@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/big-ears@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/big-smile@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/big-smile@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/bottts-neutral@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/bottts-neutral@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/bottts@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/bottts@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/collection@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/collection@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/adventurer': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/adventurer-neutral': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/avataaars': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/avataaars-neutral': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/big-ears': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/big-ears-neutral': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/big-smile': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/bottts': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/bottts-neutral': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/core': 9.4.2
-      '@dicebear/croodles': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/croodles-neutral': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/dylan': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/fun-emoji': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/glass': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/icons': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/identicon': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/initials': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/lorelei': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/lorelei-neutral': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/micah': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/miniavs': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/notionists': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/notionists-neutral': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/open-peeps': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/personas': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/pixel-art': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/pixel-art-neutral': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/rings': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/shapes': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/thumbs': 9.4.2(@dicebear/core@9.4.2)
-      '@dicebear/toon-head': 9.4.2(@dicebear/core@9.4.2)
+      '@dicebear/adventurer': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/adventurer-neutral': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/avataaars': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/avataaars-neutral': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/big-ears': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/big-ears-neutral': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/big-smile': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/bottts': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/bottts-neutral': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/core': 10.0.1
+      '@dicebear/croodles': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/croodles-neutral': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/dylan': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/fun-emoji': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/glass': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/icons': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/identicon': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/initials': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/lorelei': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/lorelei-neutral': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/micah': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/miniavs': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/notionists': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/notionists-neutral': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/open-peeps': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/personas': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/pixel-art': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/pixel-art-neutral': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/rings': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/shapes': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/thumbs': 9.4.2(@dicebear/core@10.0.1)
+      '@dicebear/toon-head': 9.4.2(@dicebear/core@10.0.1)
 
-  '@dicebear/core@9.4.2':
-    dependencies:
-      '@types/json-schema': 7.0.15
+  '@dicebear/core@10.0.1': {}
 
-  '@dicebear/croodles-neutral@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/croodles-neutral@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/croodles@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/croodles@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/dylan@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/dylan@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/fun-emoji@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/fun-emoji@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/glass@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/glass@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/icons@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/icons@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/identicon@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/identicon@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/initials@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/initials@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/lorelei-neutral@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/lorelei-neutral@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/lorelei@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/lorelei@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/micah@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/micah@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/miniavs@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/miniavs@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/notionists-neutral@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/notionists-neutral@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/notionists@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/notionists@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/open-peeps@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/open-peeps@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/personas@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/personas@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/pixel-art-neutral@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/pixel-art-neutral@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/pixel-art@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/pixel-art@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/rings@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/rings@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/shapes@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/shapes@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/thumbs@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/thumbs@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
-  '@dicebear/toon-head@9.4.2(@dicebear/core@9.4.2)':
+  '@dicebear/toon-head@9.4.2(@dicebear/core@10.0.1)':
     dependencies:
-      '@dicebear/core': 9.4.2
+      '@dicebear/core': 10.0.1
 
   '@dnd-kit/abstract@0.4.0':
     dependencies:
@@ -4941,30 +4941,30 @@ snapshots:
       '@tybys/wasm-util': 0.10.2
     optional: true
 
-  '@next/env@15.5.18': {}
+  '@next/env@16.2.6': {}
 
-  '@next/swc-darwin-arm64@15.5.18':
+  '@next/swc-darwin-arm64@16.2.6':
     optional: true
 
-  '@next/swc-darwin-x64@15.5.18':
+  '@next/swc-darwin-x64@16.2.6':
     optional: true
 
-  '@next/swc-linux-arm64-gnu@15.5.18':
+  '@next/swc-linux-arm64-gnu@16.2.6':
     optional: true
 
-  '@next/swc-linux-arm64-musl@15.5.18':
+  '@next/swc-linux-arm64-musl@16.2.6':
     optional: true
 
-  '@next/swc-linux-x64-gnu@15.5.18':
+  '@next/swc-linux-x64-gnu@16.2.6':
     optional: true
 
-  '@next/swc-linux-x64-musl@15.5.18':
+  '@next/swc-linux-x64-musl@16.2.6':
     optional: true
 
-  '@next/swc-win32-arm64-msvc@15.5.18':
+  '@next/swc-win32-arm64-msvc@16.2.6':
     optional: true
 
-  '@next/swc-win32-x64-msvc@15.5.18':
+  '@next/swc-win32-x64-msvc@16.2.6':
     optional: true
 
   '@nodelib/fs.scandir@2.1.5':
@@ -5434,8 +5434,6 @@ snapshots:
 
   '@types/jsesc@2.5.1': {}
 
-  '@types/json-schema@7.0.15': {}
-
   '@types/katex@0.16.8': {}
 
   '@types/mdast@4.0.4':
@@ -5578,6 +5576,8 @@ snapshots:
   bail@2.0.2: {}
 
   balanced-match@4.0.4: {}
+
+  baseline-browser-mapping@2.10.33: {}
 
   better-path-resolve@1.0.0:
     dependencies:
@@ -7121,37 +7121,38 @@ snapshots:
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
 
-  next@15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+  next@16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
     dependencies:
-      '@next/env': 15.5.18
+      '@next/env': 16.2.6
       '@swc/helpers': 0.5.15
+      baseline-browser-mapping: 2.10.33
       caniuse-lite: 1.0.30001793
       postcss: 8.4.31
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
       styled-jsx: 5.1.6(react@19.2.6)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 15.5.18
-      '@next/swc-darwin-x64': 15.5.18
-      '@next/swc-linux-arm64-gnu': 15.5.18
-      '@next/swc-linux-arm64-musl': 15.5.18
-      '@next/swc-linux-x64-gnu': 15.5.18
-      '@next/swc-linux-x64-musl': 15.5.18
-      '@next/swc-win32-arm64-msvc': 15.5.18
-      '@next/swc-win32-x64-msvc': 15.5.18
+      '@next/swc-darwin-arm64': 16.2.6
+      '@next/swc-darwin-x64': 16.2.6
+      '@next/swc-linux-arm64-gnu': 16.2.6
+      '@next/swc-linux-arm64-musl': 16.2.6
+      '@next/swc-linux-x64-gnu': 16.2.6
+      '@next/swc-linux-x64-musl': 16.2.6
+      '@next/swc-win32-arm64-msvc': 16.2.6
+      '@next/swc-win32-x64-msvc': 16.2.6
       '@playwright/test': 1.60.0
       sharp: 0.34.5
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
 
-  nextra-theme-docs@4.6.1(@types/react@19.2.15)(next@15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(nextra@4.6.1(next@15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(use-sync-external-store@1.6.0(react@19.2.6)):
+  nextra-theme-docs@4.6.1(@types/react@19.2.15)(next@16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(nextra@4.6.1(next@16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(use-sync-external-store@1.6.0(react@19.2.6)):
     dependencies:
       '@headlessui/react': 2.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       clsx: 2.1.1
-      next: 15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      next: 16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       next-themes: 0.4.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      nextra: 4.6.1(next@15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3)
+      nextra: 4.6.1(next@16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3)
       react: 19.2.6
       react-compiler-runtime: 19.1.0-rc.3(react@19.2.6)
       react-dom: 19.2.6(react@19.2.6)
@@ -7163,7 +7164,7 @@ snapshots:
       - immer
       - use-sync-external-store
 
-  nextra@4.6.1(next@15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3):
+  nextra@4.6.1(next@16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.6.2
       '@headlessui/react': 2.2.10(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -7184,7 +7185,7 @@ snapshots:
       mdast-util-gfm: 3.1.0
       mdast-util-to-hast: 13.2.1
       negotiator: 1.0.0
-      next: 15.5.18(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      next: 16.2.6(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react: 19.2.6
       react-compiler-runtime: 19.1.0-rc.3(react@19.2.6)
       react-dom: 19.2.6(react@19.2.6)
