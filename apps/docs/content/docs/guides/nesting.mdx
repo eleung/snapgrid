@@ -1,0 +1,69 @@
+---
+title: Nested grids
+description: Put a grid inside a tile of another grid. Standalone providers keep the two isolated.
+---
+
+import { Callout } from "nextra/components";
+import { NestedDemo } from "@/components/demos";
+
+# Nested grids
+
+A grid can live **inside a tile of another grid**. Because every standalone `<GridLayout>` provides
+its own dnd-kit context, the inner and outer grids run independent drag sessions. Dragging an inner
+tile rearranges only the inner grid, and dragging the outer tile carries the whole nested grid along.
+
+<NestedDemo />
+
+The one rule that keeps them from fighting: **the outer grid must drag from a handle that sits
+outside the inner grid.** Give the outer tile a header (the drag handle) and put the inner grid in
+the body. A pointer-down inside the inner grid then never arms the outer drag.
+
+```tsx
+<GridLayout
+  layout={outer}
+  width={w}
+  onLayoutChange={setOuter}
+  dragConfig={{ handle: ".panel-head" }}
+>
+  {outer.map((it) =>
+    it.i === "panel" ? (
+      <div key={it.i} className="panel">
+        <div className="panel-head">Nested board</div> {/* outer drag handle */}
+        <div className="panel-body">
+          <InnerBoard /> {/* its own <GridLayout> */}
+        </div>
+      </div>
+    ) : (
+      <div key={it.i} className="tile">
+        {it.i}
+      </div>
+    ),
+  )}
+</GridLayout>
+```
+
+## Why it works
+
+Each `<GridLayout>` (or `<SnapGridProvider>`) that isn't inside a `<SnapGridGroup>` creates its own
+dnd-kit provider and its own grid registry. So the inner grid's draggables, droppable surface, and
+drag session are entirely separate from the outer's. The handle gating (`dragConfig.handle`) is what
+keeps the shared pointer event from arming both. The inner tiles sit outside the outer's handle, so
+only the inner grid responds.
+
+<Callout type="warning">
+  Without a handle the outer tile drags from anywhere, including the inner grid, so a single
+  pointer-down would arm **both** grids. Always give the outer grid a handle that lives outside the
+  inner area.
+</Callout>
+
+## Limits
+
+- **Don't nest inside one `<SnapGridGroup>`.** A group resolves which grid the pointer is over by
+  geometry, with no "innermost wins" rule, so an inner grid nested in the same group would be
+  ambiguous. Keep nested grids as independent standalone grids.
+- **No cross-level dragging.** You can't drag a tile out of the inner grid into the outer (or vice
+  versa). Each grid commits its own layout independently. Nesting is for *composition*, not for
+  moving tiles between levels. To exchange tiles between grids, use
+  [cross-grid dragging](/docs/guides/cross-grid) with sibling (not nested) grids.
+- **Size the inner grid to its cell.** The inner grid measures its own container with
+  `useContainerWidth`, so it reflows naturally as the outer tile is resized.

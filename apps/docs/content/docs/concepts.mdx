@@ -1,0 +1,98 @@
+---
+title: Core Concepts
+description: Controlled state, the layout model, the two API layers, and how compaction works.
+---
+
+import { Callout } from "nextra/components";
+
+# Core Concepts
+
+A few ideas explain almost everything about how snapgrid behaves.
+
+## The layout is controlled
+
+snapgrid never holds your layout. You keep the array in state; snapgrid reads it, previews changes
+while you drag, and hands you the next array through `onLayoutChange` when an interaction commits.
+
+```tsx
+const [layout, setLayout] = useState<Layout>(initial);
+
+<GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
+  {/* … */}
+</GridLayout>;
+```
+
+This means there's no hidden internal state to fall out of sync with, undo/redo is trivial (keep
+your own history), and you can persist or transform the layout however you like. The trade-off is
+that **you must apply the change**. If you don't call `setLayout`, nothing moves.
+
+<Callout type="warning">
+  Treat the layout as immutable. snapgrid clones internally and never mutates the array or items you
+  pass in; you should do the same (always produce a new array in `onLayoutChange`).
+</Callout>
+
+## The layout model
+
+A `Layout` is `LayoutItem[]`. Every item is positioned and sized in **grid units**, not pixels:
+
+```ts
+interface LayoutItem {
+  i: string; // unique id — matches the child's React key
+  x: number; // column (0-based)
+  y: number; // row (0-based)
+  w: number; // width in columns
+  h: number; // height in rows
+  minW?: number; maxW?: number; // resize limits
+  minH?: number; maxH?: number;
+  static?: boolean;     // never moves, never resizes; others flow around it
+  isDraggable?: boolean; // per-item override of the grid default
+  isResizable?: boolean;
+  resizeHandles?: ResizeHandleAxis[]; // per-item handle set
+}
+```
+
+Pixels come from the **`GridConfig`** (`cols`, `rowHeight`, `margin`, `containerPadding`,
+`maxRows`) plus the measured container `width`. The geometry helpers turn `(x, y, w, h)` into
+`left/top/width/height` and back.
+
+## Two layers: drop-in and headless
+
+snapgrid is headless-first with a thin component shell on top. Use whichever fits:
+
+- **Components**: `<GridLayout>`, `<GridItem>`, `<GridPlaceholder>`, `<GridDragOverlay>`,
+  `<ResponsiveGridLayout>`. Keyed children, default markup and class names. Great for the common
+  case and the fastest way to ship.
+- **Headless**: `SnapGridProvider` + `useGridContainer` / `useGridItem` / `useGridResizeHandle` /
+  `useGridPlaceholder` / `useGridDragOverlay`. You render every element; snapgrid supplies refs,
+  positioning styles, and state. No imposed DOM or CSS.
+
+`<GridLayout>` is literally `SnapGridProvider` + the hooks wired to default markup, so you can start
+with the component and drop to hooks for any piece without changing engines. See
+[Headless usage](/docs/guides/headless).
+
+## Compaction (packing)
+
+After every move or resize, the layout is **re-packed** by a `Compactor`. The compactor decides
+where items settle:
+
+- `vertical` (default): items fall upward, like react-grid-layout.
+- `horizontal`: items pack to the left.
+- `none`: free positioning; items stay where you put them and may overlap.
+- `masonry` / `gravity` / `shelf`: from `@snapgrid/extras`, for variable-height packing.
+
+You can swap the compactor at runtime (it's just a prop) and even write your own. See
+[Compaction & packing](/docs/guides/compaction).
+
+## The interaction model
+
+snapgrid drives positioning itself rather than letting dnd-kit move the element (it drags with
+`feedback: "none"`). While you drag:
+
+- the **active tile** is hidden in place and a floating **overlay** (a body portal) follows the
+  pointer, so it can cross between grids without being clipped;
+- a **placeholder** marks the cell where the tile will land after compaction;
+- other tiles animate to their reflowed positions in real time.
+
+On drop, the previewed layout becomes the committed layout and flows back through `onLayoutChange`.
+Lifecycle callbacks (`onDragStart`, `onDrag`, `onDragStop`, and the resize equivalents) fire
+throughout. See [Events & lifecycle](/docs/guides/events).

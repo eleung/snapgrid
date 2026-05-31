@@ -1,0 +1,48 @@
+{
+  "name": "@snapgrid/docs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "highlight": "node scripts/highlight-snippets.mjs",
+    "measure": "node scripts/measure-bundle.mjs",
+    "predev": "node scripts/highlight-snippets.mjs",
+    "prebuild": "rm -rf public/_pagefind && node scripts/highlight-snippets.mjs && node scripts/measure-bundle.mjs && node scripts/seo.mjs",
+    "dev": "next dev",
+    "build": "next build",
+    "postbuild": "pagefind --site out --output-subdir _pagefind",
+    "search:sync": "pnpm build && cp -r out/_pagefind public/_pagefind",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
+    "wordmark": "node scripts/wordmark.mjs",
+    "favicon": "node scripts/favicon.mjs",
+    "og": "node scripts/og-image.mjs",
+    "assets": "node scripts/wordmark.mjs && node scripts/favicon.mjs && node scripts/og-image.mjs",
+    "check:og": "node scripts/check-og.mjs"
+  },
+  "dependencies": {
+    "@dicebear/collection": "^9",
+    "@dicebear/core": "^9.4.2",
+    "@dnd-kit/dom": "^0.4.0",
+    "@dnd-kit/react": "^0.4.0",
+    "@snapgrid/core": "workspace:*",
+    "@snapgrid/extras": "workspace:*",
+    "@snapgrid/react": "workspace:*",
+    "lucide-react": "^1.17.0",
+    "next": "^15.0.0",
+    "next-themes": "^0.4.0",
+    "nextra": "^4.0.0",
+    "nextra-theme-docs": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.28.0",
+    "pagefind": "^1.3.0",
+    "shiki": "^1.29.2",
+    "typescript": "^5.7.2"
+  }
+}

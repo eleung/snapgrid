@@ -1,0 +1,79 @@
+---
+title: Installation
+description: Packages, peer dependencies, and framework notes for installing snapgrid.
+---
+
+import { Callout, Tabs } from "nextra/components";
+
+# Installation
+
+## Packages
+
+snapgrid is a small monorepo. Pick what you need:
+
+| Package | What it is | When you need it |
+| --- | --- | --- |
+| `@snapgrid/react` | React components + hooks. Pulls in `@snapgrid/core`. | Always. This is the main entry point. |
+| `@snapgrid/core` | Framework-agnostic layout engine (move/resize/compaction, geometry). | Installed automatically with `@snapgrid/react`. Depend on it directly only for custom non-React integrations. |
+| `@snapgrid/extras` | Optional packers: `masonry`, `gravity`, `shelf`, `wrap`. | Only if you use those packing styles. |
+
+## Install
+
+<Tabs items={["pnpm", "npm", "yarn", "bun"]}>
+<Tabs.Tab>
+
+```sh
+pnpm add @snapgrid/react @dnd-kit/react @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+npm install @snapgrid/react @dnd-kit/react @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+yarn add @snapgrid/react @dnd-kit/react @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+bun add @snapgrid/react @dnd-kit/react @dnd-kit/dom
+```
+
+</Tabs.Tab>
+</Tabs>
+
+## Peer dependencies
+
+snapgrid drives the interaction through dnd-kit, which you install alongside it:
+
+- `@dnd-kit/react`: the React bindings (`useDraggable`, `DragDropProvider`).
+- `@dnd-kit/dom`: the DOM sensors and feedback plugins.
+- `react` and `react-dom` **18 or 19**.
+
+<Callout type="info">
+  snapgrid is built on **dnd-kit's latest framework-agnostic architecture** (`@dnd-kit/react` /
+  `@dnd-kit/dom`), the line [dnd-kit now recommends](https://dndkit.com/) over the legacy
+  `@dnd-kit/core`. snapgrid wraps it behind a single seam in `@snapgrid/core`, so your app only ever
+  imports from `@snapgrid/*`.
+</Callout>
+
+## No stylesheet to import
+
+snapgrid ships **zero CSS**. Components return positioning styles inline and a handful of stable
+class names / data attributes for you to target. There is no `import "@snapgrid/react/styles.css"`
+step. See [Styling](/docs/guides/styling) for the hooks you can style against.
+
+## Framework notes
+
+- **Vite / CRA / plain React**: nothing special; it just works.
+- **Next.js / Remix (SSR)**: fully supported. `useContainerWidth` is SSR-safe and renders at an
+  initial width on the server, then measures on the client. See [Server-side rendering](/docs/guides/ssr).
+- **TypeScript**: snapgrid is written in TypeScript and ships its own types. No `@types/*` needed.

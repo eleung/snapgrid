@@ -1,0 +1,86 @@
+---
+title: External drop
+description: Accept arbitrary dnd-kit draggables — a palette, a sidebar — dropped into a grid.
+---
+
+import { Callout } from "nextra/components";
+import { ExternalDropDemo } from "@/components/demos";
+
+# External drop
+
+A grid can accept **non-grid** dnd-kit draggables — a widget palette, a sidebar of blocks — and
+turn a drop into a new layout item. Enable it with `dropConfig` and handle the result with
+`onDrop`.
+
+<ExternalDropDemo />
+
+## Set it up
+
+The grid and the external draggable must share one dnd-kit provider, so wrap both in a
+`<SnapGridGroup>`. The draggable is a plain `useDraggable` from `@dnd-kit/react` that carries a
+`snapGridDrop` payload describing the item to create.
+
+```tsx
+import { SnapGridGroup, GridLayout } from "@snapgrid/react";
+import { useDraggable } from "@dnd-kit/react";
+import { Feedback } from "@dnd-kit/dom";
+
+const CLONE = [Feedback.configure({ feedback: "clone" })];
+
+function PaletteItem({ id, w, h }: { id: string; w: number; h: number }) {
+  const { ref } = useDraggable({ id, data: { snapGridDrop: { w, h } }, plugins: CLONE });
+  return <button ref={ref}>{`${w}×${h}`}</button>;
+}
+
+function Board() {
+  const [layout, setLayout] = useState<Layout>([]);
+  return (
+    <SnapGridGroup>
+      <PaletteItem id="pal-wide" w={4} h={1} />
+      <GridLayout
+        layout={layout}
+        width={width}
+        onLayoutChange={setLayout}
+        onDrop={(next) => setLayout(next)}
+        dropConfig={{ enabled: true, defaultItem: { w: 2, h: 2 } }}
+      >
+        {layout.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
+      </GridLayout>
+    </SnapGridGroup>
+  );
+}
+```
+
+## The `snapGridDrop` payload
+
+The external draggable carries `data.snapGridDrop` to control the inserted item:
+
+```ts
+interface GridDropData {
+  i?: string; // id for the new item; a unique one is generated if omitted
+  w?: number; // width in columns
+  h?: number; // height in rows
+}
+```
+
+If `w`/`h` are omitted, `dropConfig.defaultItem` is used (and finally `1×1`, matching
+react-grid-layout's default).
+
+## `dropConfig` options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `false` | Accept external draggables. |
+| `defaultItem` | `{ w, h }` | `{ w: 1, h: 1 }` | Size for a dropped item when the source omits `snapGridDrop`. |
+| `accept` | `(source) => boolean` | accept any non-grid draggable | Restrict which sources are accepted. |
+
+## `onDrop`, not `onLayoutChange`
+
+An external drop fires **`onDrop(layout, item, event)`** — the next layout, the synthesized item,
+and the source event — rather than `onLayoutChange`. That lets you add the item to both your layout
+state and any side data keyed by id (titles, content, etc.) in one place.
+
+<Callout type="info">
+  Synthesized ids are prefixed with the grid's id, so two drop-enabled grids in a group never mint
+  the same id.
+</Callout>

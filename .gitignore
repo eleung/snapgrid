@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+.idea/
+# Ignore personal VS Code state, but track the shared editor configs so
+# contributors get the same formatter/extensions (see .editorconfig too).
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.log
+.turbo/
+
+# Local Claude session data — keep local only (per global guidelines)
+.claude/

@@ -1,0 +1,1825 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   snapgrid docs — warm minimal theme
+   Fraunces (display) · Inter (body) · JetBrains Mono (code)
+   Paper #faf8f4 / ink #1c1a17 · terracotta #c2410c accent
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --dg-paper: #faf8f4;
+  --dg-ink: #2a2724;
+  --dg-muted: #6b6660;
+  --dg-line: #ece6dd;
+  --dg-line-strong: #ddd4c7;
+  --dg-accent: #c2410c;
+  --dg-accent-soft: rgba(194, 65, 12, 0.1);
+  --dg-card: #fffdf9;
+  --dg-up: #4a7c59;
+  --dg-down: #c2410c;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+.dark {
+  --dg-paper: #1c1a17;
+  --dg-ink: #e8e4de;
+  --dg-muted: #9e978e;
+  --dg-line: #2f2b26;
+  --dg-line-strong: #3a352e;
+  --dg-accent: #ea7a47;
+  --dg-accent-soft: rgba(234, 122, 71, 0.14);
+  --dg-card: #211e1a;
+  --dg-up: #6fae84;
+  --dg-down: #ea7a47;
+}
+
+html,
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display type for prose headings (sidebar/nav stay sans). */
+article h1,
+article h2,
+article h3,
+article h4,
+.dg-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.012em;
+  font-weight: 600;
+}
+article h1 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+code,
+pre,
+kbd,
+.nextra-code {
+  font-family: var(--font-mono);
+  font-feature-settings: normal;
+}
+article :not(pre) > code {
+  background: var(--dg-accent-soft);
+  color: inherit;
+  border: none;
+  font-size: 0.85em;
+  padding: 0.1em 0.38em;
+}
+
+/* Soften default link/accent to the warm terracotta. */
+article a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+/* ── Logo ─────────────────────────────────────────────────────────────── */
+.dg-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+}
+.dg-logo__word {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+.dg-logo__ver {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.15rem 0.36rem;
+  border-radius: 999px;
+  background: var(--dg-accent-soft);
+  color: var(--dg-accent);
+  letter-spacing: 0;
+  align-self: center;
+}
+.dg-logo__mark {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 2px;
+  width: 18px;
+  height: 18px;
+}
+.dg-logo__mark span {
+  background: var(--dg-accent);
+  border-radius: 2px;
+  opacity: 0.9;
+}
+.dg-logo__mark span:nth-child(2) {
+  opacity: 0.4;
+}
+.dg-logo__mark span:nth-child(3) {
+  opacity: 0.55;
+}
+/* Live easter-egg mark: a tiny snapgrid driving its own logo. Same 18x18 box as
+   the static mark (no layout shift when it hydrates); drag the squares around. */
+.dg-logo__mark--live {
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+.dg-logo__mark--live .snapgrid {
+  width: 18px;
+  height: 18px;
+}
+.dg-logo__tile {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--dg-accent);
+  border-radius: 2px;
+  cursor: grab;
+}
+.dg-logo__tile:active {
+  cursor: grabbing;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.dg-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--dg-muted);
+}
+.dg-footer a {
+  color: var(--dg-accent);
+}
+.dg-footer__meta {
+  opacity: 0.8;
+}
+
+/* ── Demo frame (live examples) ───────────────────────────────────────── */
+.dg-demo {
+  margin: 1.5rem 0;
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--dg-card);
+}
+.dg-demo__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--dg-line);
+  background: linear-gradient(var(--dg-accent-soft), transparent);
+}
+.dg-demo__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--dg-ink);
+}
+.dg-demo__hint {
+  font-size: 0.75rem;
+  color: var(--dg-muted);
+}
+.dg-demo__stage {
+  padding: 1rem;
+  background-image: radial-gradient(var(--dg-line-strong) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: -1px -1px;
+}
+.dg-demo__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.7rem 0.9rem 0;
+}
+
+/* Two visibly-distinct containers for the cross-grid and external-drop demos. */
+.dg-gridrow {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+}
+.dg-subgrid {
+  flex: 1;
+  min-width: 0; /* don't let grid content blow out the flex track */
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 10px;
+  background: var(--dg-card);
+  padding: 0.45rem 0.55rem 0.55rem;
+}
+/* Palette-style card: sized to its content rather than filling the row. */
+.dg-subgrid--auto {
+  flex: 0 0 auto;
+}
+
+/* Resize-to-reflow preview (responsive demo). Inset shadow frames it without
+   adding box size, so the grid (width = previewW) fills it without overflow. */
+.dg-resize {
+  position: relative;
+  max-width: 100%;
+  background: var(--dg-card);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--dg-line-strong);
+}
+.dg-resize__handle {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 100%;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+}
+.dg-resize__handle::before {
+  content: "";
+  width: 4px;
+  height: 34px;
+  border-radius: 3px;
+  background: var(--dg-accent);
+  opacity: 0.45;
+  transition: opacity 0.12s ease;
+}
+.dg-resize__handle:hover::before {
+  opacity: 0.9;
+}
+.dg-subgrid__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dg-muted);
+}
+
+/* Demo tiles — neutral, let the interaction be the star. */
+.dg-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.7rem;
+  border-radius: 9px;
+  border: 1px solid var(--dg-line-strong);
+  background: var(--dg-paper);
+  color: var(--dg-ink);
+  line-height: 1;
+  user-select: none;
+  overflow: hidden;
+}
+.dg-tile--accent {
+  border-color: transparent;
+  background: var(--dg-accent);
+  color: #fff;
+}
+.dg-tile__label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.dg-tile__meta {
+  font-size: 0.68rem;
+  opacity: 0.7;
+}
+.dg-tile--static {
+  border-style: dashed;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--dg-card),
+    var(--dg-card) 6px,
+    var(--dg-line) 6px,
+    var(--dg-line) 7px
+  );
+}
+
+/* Drag-handle demo: the grip becomes a full-bleed header bar with a divider,
+   separating the drag zone (the bar) from the interactive content below. */
+.dg-tile--barred {
+  justify-content: flex-start;
+  gap: 0.6rem;
+}
+.dg-grip--bar {
+  margin: -0.6rem -0.7rem 0;
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--dg-line-strong);
+  font-size: 0.85rem;
+  cursor: grab;
+}
+
+/* Nested-grids demo: an outer tile (header bar + body) holding an inner grid. */
+.dg-nest {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 9px;
+  background: var(--dg-card);
+  overflow: hidden;
+}
+.dg-nest__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--dg-line);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--dg-ink);
+  cursor: grab;
+}
+.dg-nest__head .dg-grip {
+  color: var(--dg-muted);
+}
+.dg-nest__body {
+  flex: 1;
+  min-height: 0;
+  padding: 0.6rem;
+}
+.dg-nest__tile {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--dg-accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+}
+
+/* Small pill buttons used by demo controls. */
+.dg-btn {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--dg-line-strong);
+  background: var(--dg-paper);
+  color: var(--dg-ink);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.dg-btn:hover {
+  border-color: var(--dg-accent);
+}
+.dg-btn[data-active="true"] {
+  background: var(--dg-accent);
+  border-color: var(--dg-accent);
+  color: #fff;
+}
+
+/* Like/counter button used inside the drag-handle demo tiles. */
+.dg-likebtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  align-self: flex-start;
+  font: inherit;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  padding: 0.3rem 0.62rem;
+  border-radius: 999px;
+  border: 1px solid var(--dg-line-strong);
+  background: var(--dg-paper);
+  color: var(--dg-ink);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.dg-likebtn:hover {
+  border-color: var(--dg-accent);
+  color: var(--dg-accent);
+}
+.dg-likebtn[data-liked] {
+  border-color: var(--dg-accent);
+  background: var(--dg-accent-soft);
+  color: var(--dg-accent);
+}
+
+/* Palette chips for the external-drop demo. */
+.dg-chip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 9px;
+  border: 1px dashed var(--dg-line-strong);
+  background: var(--dg-card);
+  color: var(--dg-ink);
+  cursor: grab;
+  touch-action: none;
+  font-size: 0.8rem;
+}
+.dg-chip small {
+  color: var(--dg-muted);
+  font-size: 0.68rem;
+}
+.dg-chip:active {
+  cursor: grabbing;
+}
+
+/* ── Home (raw layout) ────────────────────────────────────────────────── */
+.dg-home {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 1.5rem 2.5rem;
+}
+.dg-home h2 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: -0.015em;
+  margin: 2.5rem 0 0.4rem;
+}
+.dg-home__lead {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+/* Let the fr tracks shrink rather than be blown out by content min-width. */
+.dg-home__lead > * {
+  min-width: 0;
+}
+@media (min-width: 900px) {
+  .dg-home__lead {
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 3rem;
+  }
+}
+.dg-hero-grid {
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: var(--dg-card);
+  background-image: radial-gradient(var(--dg-line-strong) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* ── Home hero ────────────────────────────────────────────────────────── */
+.dg-hero {
+  /* Top padding matches the gap below the hero (bottom padding + the next
+     heading's margin) so the hero's surrounding whitespace is symmetric. */
+  padding: 3.5rem 0 1rem;
+}
+.dg-hero__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dg-accent);
+}
+.dg-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  margin: 0.6rem 0 0.8rem;
+}
+.dg-hero__sub {
+  font-size: 1.1rem;
+  color: var(--dg-muted);
+  max-width: 42ch;
+  line-height: 1.55;
+}
+.dg-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 1.6rem 0 0.5rem;
+}
+.dg-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.dg-cta--primary {
+  background: var(--dg-accent);
+  color: #fff;
+}
+.dg-cta--primary:hover {
+  transform: translateY(-1px);
+}
+.dg-cta--ghost {
+  border: 1px solid var(--dg-line-strong);
+  color: var(--dg-ink);
+}
+.dg-cta--ghost:hover {
+  border-color: var(--dg-accent);
+}
+.dg-install-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.1rem;
+  margin-top: 1.6rem;
+}
+.dg-install {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem 0.55rem 0.95rem;
+  border-radius: 9px;
+  border: 1px solid var(--dg-line);
+  background: var(--dg-card);
+  color: var(--dg-ink);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  max-width: 100%;
+  transition: border-color 0.12s ease;
+}
+.dg-install:hover {
+  border-color: var(--dg-accent);
+}
+.dg-install::before {
+  content: "$";
+  color: var(--dg-accent);
+  flex: none;
+}
+/* Command scrolls on tiny screens; the copy icon stays pinned at the right. */
+.dg-install__cmd {
+  background: none;
+  padding: 0;
+  font: inherit;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+.dg-install__copy {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  margin-left: auto;
+  padding-left: 0.5rem;
+  color: var(--dg-muted);
+  transition: color 0.12s ease;
+}
+.dg-install:hover .dg-install__copy {
+  color: var(--dg-accent);
+}
+.dg-install__size {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.dg-install__size-total {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--dg-ink);
+}
+.dg-install__size-parts {
+  font-size: 0.74rem;
+  color: var(--dg-muted);
+}
+
+/* Code card on the home page. */
+.dg-codecard {
+  margin: 1.2rem 0;
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--dg-card);
+}
+.dg-codecard__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--dg-line);
+}
+.dg-codecard__bar span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--dg-line-strong);
+}
+/* Drop-in / Headless toggle in the code-card title bar. */
+.dg-codetabs {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.15rem;
+  padding: 2px;
+  border: 1px solid var(--dg-line);
+  border-radius: 8px;
+  background: var(--dg-paper);
+}
+.dg-codetab {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 0.26rem 0.6rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dg-muted);
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.dg-codetab:hover {
+  color: var(--dg-ink);
+}
+.dg-codetab[data-active] {
+  background: var(--dg-card);
+  color: var(--dg-accent);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+/* "Open in StackBlitz" icon button next to the Preview/Code toggle. */
+.dg-demo__sb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.32rem;
+  border: 1px solid var(--dg-line);
+  border-radius: 8px;
+  background: var(--dg-paper);
+  color: var(--dg-muted);
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.dg-demo__sb:hover {
+  color: var(--dg-accent);
+  border-color: var(--dg-line-strong);
+}
+.dg-codecard__code {
+  overflow-x: auto;
+}
+/* Shiki output (build-time, dual light/dark theme via CSS vars). */
+.dg-codecard .shiki {
+  margin: 0;
+  padding: 1.1rem 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  background: transparent !important;
+}
+.dg-codecard .shiki,
+.dg-codecard .shiki span {
+  color: var(--shiki-light);
+}
+html.dark .dg-codecard .shiki,
+html.dark .dg-codecard .shiki span {
+  color: var(--shiki-dark);
+}
+
+/* ── Live-example "Code" toggle (Preview | Code in a DemoFrame) ──────────── */
+.dg-demo__baraside {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.dg-democode {
+  position: relative;
+  /* Code is always left-aligned, even when an ancestor centers text (the 404). */
+  text-align: left;
+}
+.dg-democode__scroll {
+  overflow-x: auto;
+}
+.dg-democode .shiki {
+  margin: 0;
+  padding: 1.1rem 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  background: transparent !important;
+}
+.dg-democode .shiki,
+.dg-democode .shiki span {
+  color: var(--shiki-light);
+}
+html.dark .dg-democode .shiki,
+html.dark .dg-democode .shiki span {
+  color: var(--shiki-dark);
+}
+.dg-copy {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.7rem;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--dg-line);
+  border-radius: 6px;
+  background: var(--dg-card);
+  color: var(--dg-muted);
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.dg-copy:hover {
+  color: var(--dg-ink);
+  border-color: var(--dg-line-strong);
+}
+
+/* Feature cards on the home page. */
+.dg-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 2.5rem 0;
+}
+.dg-feature {
+  display: block;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--dg-line);
+  border-radius: 12px;
+  background: var(--dg-card);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+}
+.dg-feature:hover {
+  border-color: var(--dg-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -12px rgba(194, 65, 12, 0.4);
+}
+.dg-feature__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 0.7rem;
+  border-radius: 9px;
+  background: var(--dg-accent-soft);
+  color: var(--dg-accent);
+}
+.dg-feature h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  margin: 0 0 0.3rem;
+}
+.dg-feature p {
+  font-size: 0.88rem;
+  color: var(--dg-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+.dg-feature__more {
+  display: inline-block;
+  margin-top: 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--dg-accent);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.dg-feature:hover .dg-feature__more {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* "Coming from react-grid-layout?" summary on the landing page. */
+/* Roadmap teaser — a slim, clickable hook just under the hero. */
+.dg-roadmap-teaser {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  margin: 1.25rem 0 0;
+  padding: 0.6rem 0.5rem 0.6rem 0.85rem;
+  border: 1px solid var(--dg-line);
+  border-radius: 12px;
+  background: var(--dg-card);
+  font-size: 0.9rem;
+  color: var(--dg-muted);
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.dg-roadmap-teaser:hover {
+  border-color: var(--dg-line-strong);
+  background: var(--dg-paper);
+}
+.dg-roadmap-teaser__tag {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--dg-accent);
+  background: var(--dg-accent-soft);
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+}
+.dg-roadmap-teaser__text {
+  flex: 1 1 16rem;
+}
+.dg-roadmap-teaser__text strong {
+  color: var(--dg-ink);
+  font-weight: 600;
+}
+.dg-roadmap-teaser__more {
+  flex: none;
+  margin-left: auto;
+  padding-right: 0.35rem;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--dg-accent);
+}
+
+.dg-compare {
+  margin-top: 3rem;
+}
+.dg-compare > p {
+  max-width: 70ch;
+  color: var(--dg-muted);
+}
+.dg-compare > p strong {
+  color: var(--dg-ink);
+}
+.dg-compare__list {
+  list-style: none;
+  padding: 0;
+  margin: 1.1rem 0 1.5rem;
+  display: grid;
+  gap: 0.7rem;
+  max-width: 70ch;
+}
+.dg-compare__list li {
+  position: relative;
+  padding-left: 1.5rem;
+  color: var(--dg-muted);
+}
+.dg-compare__list li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--dg-accent);
+  font-weight: 700;
+}
+.dg-compare__list strong {
+  color: var(--dg-ink);
+}
+
+/* Example gallery cards. */
+.dg-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.dg-gallery a {
+  display: block;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--dg-line);
+  border-radius: 12px;
+  background: var(--dg-card);
+  text-decoration: none;
+  color: var(--dg-ink);
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+.dg-gallery a:hover {
+  border-color: var(--dg-accent);
+  transform: translateY(-2px);
+}
+.dg-gallery h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin: 0 0 0.25rem;
+}
+.dg-gallery p {
+  font-size: 0.83rem;
+  color: var(--dg-muted);
+  margin: 0;
+}
+
+/* ── Showcase shell ───────────────────────────────────────────────────────
+   The page is theme.layout "raw" (full-bleed, no content padding). This shell
+   frames the tabs AND whichever view is active in one centered column, so the
+   Dashboard and Performance tabs share identical margins and white space. */
+.sg-showcase {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 2.5rem;
+}
+.sg-dash__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+.sg-dash__titlerow {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+/* Live breakpoint indicator — updates as the dashboard reflows. */
+.sg-bp {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--dg-line-strong);
+  background: var(--dg-card);
+  color: var(--dg-muted);
+}
+.sg-dash__title {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.sg-dash__sub {
+  font-size: 0.85rem;
+  color: var(--dg-muted);
+  margin: 0.35rem 0 0;
+  max-width: 52ch;
+  line-height: 1.5;
+}
+.sg-dash__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Segmented packing control (a <fieldset>; reset its default chrome). */
+.sg-seg {
+  display: inline-flex;
+  min-width: 0;
+  margin: 0;
+  padding: 2px;
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 999px;
+  background: var(--dg-card);
+}
+.sg-seg__btn {
+  font: inherit;
+  font-size: 0.78rem;
+  text-transform: capitalize;
+  padding: 0.3rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dg-muted);
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.sg-seg__btn:hover {
+  color: var(--dg-ink);
+}
+.sg-seg__btn[data-active] {
+  background: var(--dg-accent);
+  color: #fff;
+}
+
+/* ── Showcase view tabs (Dashboard / Performance) ───────────────────────── */
+.sg-showcase__tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-bottom: 1.1rem;
+  padding: 3px;
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 10px;
+  background: var(--dg-card);
+}
+.sg-stab {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 1.05rem;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dg-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.sg-stab[data-active]:hover {
+  color: #fff;
+}
+.sg-stab[data-active] {
+  background: var(--dg-accent);
+  color: #fff;
+}
+
+/* Grid skeleton — a faint ghost of the lab's real layout, shown while its
+   client-only GridLayout mounts (the real header renders above it immediately).
+   Columns / rows / gap are set inline per lab so it matches that grid exactly. */
+.sg-skel {
+  display: grid;
+}
+.sg-skel__tile {
+  background: var(--dg-line);
+  animation: sg-skel-pulse 1.5s ease-in-out infinite;
+}
+@keyframes sg-skel-pulse {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sg-skel__tile {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* ── Performance lab ──────────────────────────────────────────────────────
+   The header reuses the dashboard's .sg-dash__bar / __title / __sub / __tools
+   layout, so the Compaction lab and Analytics tabs share one header treatment. */
+.sg-perf__ctl {
+  font-size: 0.75rem;
+  color: var(--dg-muted);
+}
+.sg-perf__stage {
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 12px;
+  background: var(--dg-card);
+  background-image: radial-gradient(var(--dg-line-strong) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: -1px -1px;
+  padding: 12px;
+  max-height: 70vh;
+  overflow: auto;
+}
+/* No frame — the avatars are already self-contained circles (radius:50), so they
+   sit directly on the dotted stage rather than inside a redundant square. */
+.sg-perf__tile {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+}
+.sg-perf__tile:active {
+  cursor: grabbing;
+}
+.sg-perf__tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.sg-perf__credit,
+.sg-dash__credit {
+  margin-top: 0.9rem;
+  font-size: 0.75rem;
+  color: var(--dg-muted);
+  line-height: 1.5;
+}
+.sg-perf__credit a,
+.sg-dash__credit a {
+  color: var(--dg-accent);
+}
+
+/* ── Gallery (Pinterest-style masonry) ──────────────────────────────────── */
+.sg-pins__stage {
+  margin-top: 0.25rem;
+}
+.sg-pin {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  background: var(--dg-card);
+  border: 1px solid var(--dg-line);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+}
+.sg-pin:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+}
+.sg-pin:active {
+  cursor: grabbing;
+}
+/* The gradient "image": flexes to fill, so varied item heights drive the
+   masonry while the caption below stays a constant height. */
+.sg-pin__media {
+  flex: 1;
+  min-height: 96px;
+}
+.sg-pin__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 11px 11px;
+}
+.sg-pin__title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--dg-ink);
+}
+.sg-pin__desc {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--dg-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* The dragged card (overlay is portaled to <body>, so .sg-pin is global). */
+.snapgrid-overlay .sg-pin {
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+.sg-pins .snapgrid-placeholder {
+  background: var(--dg-accent-soft) !important;
+  border: 1px dashed var(--dg-accent) !important;
+  border-radius: 14px !important;
+}
+
+/* Solid / ghost buttons. */
+.sg-btn-solid,
+.sg-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.42rem 0.8rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.sg-btn-solid {
+  border: 1px solid var(--dg-accent);
+  background: var(--dg-accent);
+  color: #fff;
+}
+.sg-btn-solid:hover {
+  filter: brightness(1.06);
+}
+.sg-btn-ghost {
+  border: 1px solid var(--dg-line-strong);
+  background: var(--dg-card);
+  color: var(--dg-ink);
+}
+.sg-btn-ghost:hover {
+  border-color: var(--dg-accent);
+  color: var(--dg-accent);
+}
+
+/* Add-widget dropdown. */
+.sg-menu {
+  position: relative;
+}
+.sg-menu__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+.sg-menu__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 21;
+  min-width: 184px;
+  padding: 4px;
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 12px;
+  background: var(--dg-card);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+}
+.sg-menu__item {
+  font: inherit;
+  font-size: 0.83rem;
+  text-align: left;
+  padding: 0.5rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dg-ink);
+  cursor: pointer;
+}
+.sg-menu__item:hover {
+  background: var(--dg-accent-soft);
+  color: var(--dg-accent);
+}
+
+.sg-widget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--dg-line);
+  border-radius: 14px;
+  background: var(--dg-card);
+  overflow: hidden;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.sg-widget:hover {
+  border-color: var(--dg-line-strong);
+}
+.snapgrid-item[data-dragging] .sg-widget {
+  border-color: var(--dg-accent);
+}
+.snapgrid-overlay .sg-widget {
+  border-color: var(--dg-accent);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.22);
+}
+.sg-widget__head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--dg-line);
+  cursor: grab;
+  touch-action: none;
+}
+.sg-widget__head:active {
+  cursor: grabbing;
+}
+.sg-widget__grip {
+  color: var(--dg-muted);
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.sg-widget__title {
+  flex: 1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sg-widget__x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dg-muted);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.sg-widget__x:hover {
+  background: var(--dg-accent-soft);
+  color: var(--dg-accent);
+}
+.sg-widget__body {
+  --sg-body-pad-y: 0.7rem;
+  --sg-body-pad-x: 0.8rem;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sg-body-pad-y) var(--sg-body-pad-x);
+}
+
+.sg-kpi {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  gap: 0.5rem;
+}
+.sg-kpi__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.sg-kpi__value {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.sg-kpi__delta {
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.sg-kpi__delta--up {
+  color: var(--dg-up);
+}
+.sg-kpi__delta--down {
+  color: var(--dg-down);
+}
+
+/* Charts fill the remaining body space. */
+.sg-spark {
+  display: block;
+  width: 100%;
+  height: 34px;
+}
+.sg-chart {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+.sg-chart--donut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sg-chart__axis {
+  fill: var(--dg-muted);
+  font-size: 9px;
+  font-family: var(--font-sans);
+}
+.sg-donut__num {
+  fill: var(--dg-ink);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+}
+.sg-donut__sub {
+  fill: var(--dg-muted);
+  font-size: 9px;
+  font-family: var(--font-sans);
+}
+.sg-donutwrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0.7rem;
+}
+.sg-donutwrap .sg-chart {
+  flex: 1;
+}
+
+.sg-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 0.8rem;
+}
+.sg-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  color: var(--dg-ink);
+}
+.sg-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex: none;
+}
+.sg-legend__val {
+  margin-left: auto;
+  color: var(--dg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sg-activity {
+  list-style: none;
+  /* Full-bleed scroll: break out of the body's padding (the inherited
+     --sg-body-pad-* vars) so the scroll area runs edge-to-edge, then re-apply it
+     inside so items stay inset. Stays in sync if the body padding changes. */
+  flex: 1;
+  min-height: 0;
+  margin: calc(-1 * var(--sg-body-pad-y)) calc(-1 * var(--sg-body-pad-x));
+  padding: var(--sg-body-pad-y) var(--sg-body-pad-x);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  overflow: auto;
+}
+.sg-activity li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+.sg-activity__text {
+  color: var(--dg-muted);
+  line-height: 1.3;
+}
+.sg-activity__text strong {
+  color: var(--dg-ink);
+  font-weight: 600;
+}
+.sg-activity__when {
+  margin-left: auto;
+  flex: none;
+  color: var(--dg-muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.sg-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--dg-muted);
+  padding: 0 0.5rem 0.45rem;
+  border-bottom: 1px solid var(--dg-line);
+  white-space: nowrap;
+}
+.sg-table td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--dg-line);
+  color: var(--dg-ink);
+}
+.sg-table tr:last-child td {
+  border-bottom: 0;
+}
+.sg-table__num {
+  text-align: right;
+}
+.sg-table__mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.sg-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+}
+.sg-badge--paid {
+  background: rgba(74, 124, 89, 0.16);
+  color: var(--dg-up);
+}
+.sg-badge--pending {
+  background: var(--dg-accent-soft);
+  color: var(--dg-accent);
+}
+.sg-badge--refunded {
+  background: rgba(120, 113, 108, 0.16);
+  color: var(--dg-muted);
+}
+
+/* Avatars (DiceBear Lorelei). Soft fallback bg so an offline load still reads
+   as an avatar rather than a broken image. */
+.sg-avatar {
+  display: block;
+  flex: none;
+  border-radius: 50%;
+  background: var(--dg-accent-soft);
+}
+
+/* "Who's online" presence stack — overlapping avatars with a ring + overflow. */
+.sg-avstack {
+  display: inline-flex;
+  align-items: center;
+}
+.sg-avstack__item {
+  display: inline-flex;
+  margin-left: -8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--dg-paper);
+}
+.sg-avstack__item:first-child {
+  margin-left: 0;
+}
+.sg-avstack__more {
+  margin-left: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--dg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Team — a nested grid of resizable, size-aware member cards. Fills the tile
+   body so its measured height drives the inner row height (no leftover gap). */
+.sg-teamgrid {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+/* Scroll lives on the inner wrapper, not the measured .sg-teamgrid, so a
+   scrollbar can't shrink the measured size and oscillate the layout. */
+.sg-teamgrid__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.sg-tm {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--dg-line);
+  border-radius: 10px;
+  background: var(--dg-paper);
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+}
+.sg-tm:active {
+  cursor: grabbing;
+}
+.sg-tm__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+/* Compact: avatar over name, centered — fits the smallest tiles. */
+.sg-tm[data-variant="compact"] {
+  padding: 0.4rem;
+}
+.sg-tm[data-variant="compact"] .sg-tm__head {
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: center;
+}
+/* Feature: promoted — bigger avatar, a profile blurb, an accent ring. */
+.sg-tm[data-variant="feature"] {
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-color: var(--dg-accent);
+  background: linear-gradient(var(--dg-accent-soft), transparent);
+}
+.sg-tm[data-variant="feature"] .sg-tm__head {
+  gap: 0.85rem;
+}
+.sg-tm__av {
+  position: relative;
+  flex: none;
+  line-height: 0;
+}
+.sg-tm__av::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--dg-muted);
+  box-shadow: 0 0 0 2px var(--dg-paper);
+}
+.sg-tm[data-variant="feature"] .sg-tm__av::after {
+  box-shadow: 0 0 0 2px var(--dg-card);
+}
+.sg-tm__av[data-online]::after {
+  background: var(--dg-up);
+}
+.sg-tm__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  line-height: 1.15;
+}
+.sg-tm__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sg-tm[data-variant="compact"] .sg-tm__name {
+  font-size: 0.66rem;
+  max-width: 100%;
+}
+.sg-tm[data-variant="feature"] .sg-tm__name {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+.sg-tm__role {
+  font-size: 0.72rem;
+  color: var(--dg-muted);
+}
+.sg-tm__status {
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--dg-muted);
+}
+.sg-tm__status[data-online] {
+  color: var(--dg-up);
+}
+.sg-tm__desc {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--dg-muted);
+  line-height: 1.4;
+}
+
+/* Warm placeholder + a visible corner grip for the showcase grid. */
+.sg-dash .snapgrid-placeholder {
+  background: var(--dg-accent-soft) !important;
+  border: 1px dashed var(--dg-accent) !important;
+  border-radius: 14px !important;
+}
+.sg-dash .snapgrid-resize-handle--se::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--dg-muted);
+  border-bottom: 2px solid var(--dg-muted);
+  border-bottom-right-radius: 2px;
+}
+.sg-dash .snapgrid-item:hover .snapgrid-resize-handle--se::after {
+  border-color: var(--dg-accent);
+}
+/* The SE handle hangs 7px off each tile's corner by default (snapgrid sets it
+   inline for grabbability). The team tile lives in a scroll box, so edge-tile
+   handles poke past the grid and flash a scrollbar on the otherwise exact fit.
+   Pull them flush inside the tiles — genuine resize-past-the-tile still scrolls. */
+.sg-teamgrid .snapgrid-resize-handle--se {
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+/* ── 404 — the "404" is a draggable snapgrid in a DemoFrame ──────────────── */
+.dg-404 {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+.dg-404__inner {
+  width: 100%;
+  /* Frame width is tuned so the stage (frame − 2px border) is a whole number of
+     16px dot cells (592 = 37×16), so the dotted background tiles to the edges
+     without a clipped column. */
+  max-width: 594px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+  text-align: center;
+}
+.dg-404__inner .dg-demo {
+  width: 100%;
+}
+/* Start the dots at the cell origin (not the global -1px nudge) so they're
+   symmetric against the now-aligned edges. */
+.dg-404 .dg-demo__stage {
+  background-position: 0 0;
+}
+.dg-404__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  color: var(--dg-ink);
+}
+.dg-404__brand .dg-logo__mark {
+  width: 22px;
+  height: 22px;
+}
+.dg-404__brand .dg-logo__word {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+/* The draggable digit tiles. Unscoped (like .sg-widget) so the styling reaches
+   the drag overlay, which snapgrid portals to <body> — outside .dg-404. Also
+   mirrored in the StackBlitz sandbox CSS so a fork matches (see stackblitz.ts). */
+.cell {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 11vw, 3.75rem);
+  line-height: 1;
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 12px;
+  background: var(--dg-card);
+  color: var(--dg-ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  cursor: grab;
+  user-select: none;
+}
+.cell:active {
+  cursor: grabbing;
+}
+.cell--accent {
+  background: var(--dg-accent);
+  border-color: var(--dg-accent);
+  color: #fff;
+}
+/* Lift the floating preview while a digit is being dragged (scoped to .cell so
+   it only affects this grid, not the dashboard's own overlay styling). */
+.snapgrid-overlay .cell {
+  border-color: var(--dg-accent);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+  cursor: grabbing;
+}
+/* The nav tiles are `static` (pinned) — styled as buttons, not draggable. */
+.dg-404 .btn {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--dg-line-strong);
+  border-radius: 12px;
+  background: var(--dg-card);
+  color: var(--dg-ink);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease;
+}
+.dg-404 .btn:hover {
+  border-color: var(--dg-ink);
+  transform: translateY(-1px);
+}
+.dg-404 .btn--primary {
+  background: var(--dg-accent);
+  border-color: var(--dg-accent);
+  color: #fff;
+}
+.dg-404 .btn--primary:hover {
+  border-color: var(--dg-accent);
+}
+.dg-404 .snapgrid-placeholder {
+  background: var(--dg-accent-soft) !important;
+  border: 1px dashed var(--dg-accent) !important;
+  border-radius: 12px !important;
+}
+.dg-404__lead {
+  margin: 0;
+  max-width: 30rem;
+  color: var(--dg-muted);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 640px) {
+  .sg-dash__tools {
+    width: 100%;
+  }
+  /* Stack the roadmap teaser into pill / text / CTA rather than cramming the
+     horizontal band into a narrow column. */
+  .dg-roadmap-teaser {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .dg-roadmap-teaser__text {
+    flex: 0 0 auto;
+  }
+  .dg-roadmap-teaser__more {
+    margin-left: 0;
+  }
+}
+
+/* Nextra's content wrapper always renders a bottom element where the "Last
+   updated" line goes: the dated line (x:mt-12) on docs pages, or an EMPTY
+   spacer (x:mt-16) on pages with timestamp:false (home, showcase). On those
+   full-bleed pages the empty spacer is just a dead ~4rem gap before the footer,
+   so hide it. Docs pages use x:mt-12 (non-empty) and are unaffected. */
+article > div.x\:mt-16:empty {
+  display: none;
+}

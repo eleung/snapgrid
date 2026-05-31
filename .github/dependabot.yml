@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # npm/pnpm dependencies across the workspace (directory "/" covers the
+  # pnpm workspace, including apps/* and packages/*).
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # Batch routine bumps into two PRs instead of dozens, to cut review noise.
+      production-dependencies:
+        dependency-type: production
+      dev-dependencies:
+        dependency-type: development
+
+  # Keep GitHub Actions in .github/workflows pinned and current.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

@@ -1,0 +1,163 @@
+---
+title: Getting Started
+description: Install snapgrid and render your first draggable, resizable grid in a few minutes.
+---
+
+import { Callout, Steps, Tabs } from "nextra/components";
+import { BasicGridDemo } from "@/components/demos";
+
+# Getting Started
+
+**snapgrid** is a [react-grid-layout](https://github.com/react-grid-layout/react-grid-layout) v2
+alternative built on [dnd-kit](https://github.com/clauderic/dnd-kit). It gives you draggable,
+resizable, responsive grid layouts, plus things RGL can't do, like dragging tiles **between**
+grids and swapping the packing algorithm at runtime.
+
+It's **controlled** (you own the layout array) and **headless-first** (it ships behaviour, not
+markup), with a thin drop-in component layer for the common case.
+
+<BasicGridDemo />
+
+## Install
+
+snapgrid is split into three packages. Most apps only need `@snapgrid/react`, which pulls in
+`@snapgrid/core`. Add the dnd-kit peers alongside it.
+
+<Tabs items={["pnpm", "npm", "yarn", "bun"]}>
+<Tabs.Tab>
+
+```sh
+pnpm add @snapgrid/react @dnd-kit/react @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+npm install @snapgrid/react @dnd-kit/react @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+yarn add @snapgrid/react @dnd-kit/react @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+bun add @snapgrid/react @dnd-kit/react @dnd-kit/dom
+```
+
+</Tabs.Tab>
+</Tabs>
+
+<Callout type="info">
+  `@snapgrid/extras` adds optional packing algorithms (masonry, gravity, shelf). Install it only if
+  you need them: `pnpm add @snapgrid/extras`.
+</Callout>
+
+## Your first grid
+
+<Steps>
+
+### Hold the layout in state
+
+A layout is an array of items, each with an id (`i`), a position (`x`, `y`), and a size (`w`, `h`)
+in grid units. snapgrid never mutates it. You keep it in state and apply every change yourself.
+
+```tsx
+import { useState } from "react";
+import type { Layout } from "@snapgrid/react";
+
+const [layout, setLayout] = useState<Layout>([
+  { i: "a", x: 0, y: 0, w: 4, h: 2 },
+  { i: "b", x: 4, y: 0, w: 4, h: 2 },
+  { i: "c", x: 8, y: 0, w: 4, h: 2 },
+]);
+```
+
+### Measure the container width
+
+The grid needs a pixel width to map columns to positions. `useContainerWidth` measures it with a
+`ResizeObserver`. Attach its `containerRef` to the element whose width should drive the grid.
+
+```tsx
+import { useContainerWidth } from "@snapgrid/react";
+
+const { width, containerRef } = useContainerWidth();
+```
+
+### Render `<GridLayout>` with keyed children
+
+Each child is keyed by its item's `i`. snapgrid positions it; you render whatever's inside.
+
+```tsx
+import { GridLayout } from "@snapgrid/react";
+
+<div ref={containerRef}>
+  <GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
+    {layout.map((item) => (
+      <div key={item.i} className="tile">
+        {item.i}
+      </div>
+    ))}
+  </GridLayout>
+</div>;
+```
+
+### Drag and resize
+
+That's it: tiles drag, the rest compact upward, and a resize handle sits in the bottom-right
+corner by default. Every committed change flows back through `onLayoutChange`.
+
+</Steps>
+
+## Putting it together
+
+```tsx filename="Board.tsx"
+import { GridLayout, useContainerWidth, type Layout } from "@snapgrid/react";
+import { useState } from "react";
+
+export function Board() {
+  const { width, containerRef } = useContainerWidth();
+  const [layout, setLayout] = useState<Layout>([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 3 },
+    { i: "d", x: 0, y: 2, w: 6, h: 2 },
+  ]);
+
+  return (
+    <div ref={containerRef}>
+      <GridLayout
+        layout={layout}
+        width={width}
+        onLayoutChange={setLayout}
+        gridConfig={{ cols: 12, rowHeight: 60, margin: [12, 12] }}
+        resizeConfig={{ handles: ["se", "e", "s"] }}
+      >
+        {layout.map((item) => (
+          <div key={item.i} className="tile">
+            {item.i}
+          </div>
+        ))}
+      </GridLayout>
+    </div>
+  );
+}
+```
+
+<Callout type="default">
+  snapgrid ships **no CSS** of its own. The tiles above are styled by your own `.tile` class. See
+  [Styling](/docs/guides/styling) for the classes and data attributes snapgrid exposes.
+</Callout>
+
+## Where to next
+
+- [Core Concepts](/docs/concepts): controlled state, the two layers, and how compaction works.
+- [Dragging](/docs/guides/dragging) and [Resizing](/docs/guides/resizing): fine-tune the interaction.
+- [Cross-grid dragging](/docs/guides/cross-grid): drag tiles between grids.
+- [API Reference](/docs/api/overview): every component, hook, and type.

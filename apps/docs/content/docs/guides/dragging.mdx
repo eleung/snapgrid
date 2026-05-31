@@ -1,0 +1,94 @@
+---
+title: Dragging
+description: Configure drag behaviour, including handles, cancel regions, activation threshold, and grid snapping.
+---
+
+import { Callout } from "nextra/components";
+import { DragHandleDemo, SnapDemo } from "@/components/demos";
+
+# Dragging
+
+Items drag by default. Configure how with the `dragConfig` prop, and toggle it per item with
+`isDraggable` / `static` on the layout item.
+
+```tsx
+<GridLayout
+  layout={layout}
+  width={width}
+  onLayoutChange={setLayout}
+  dragConfig={{ handle: ".card-grip", threshold: 4 }}
+/>
+```
+
+## `dragConfig` options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `true` | Grid-level on/off for dragging. |
+| `handle` | `string` | — | CSS selector for a drag handle inside each item. Only pointer-downs within it start a drag. |
+| `cancel` | `string` | — | CSS selector for regions that should **never** start a drag (e.g. buttons, inputs). |
+| `threshold` | `number` | `3` | Pixels the pointer must travel before a drag begins, so clicks aren't drags. |
+| `bounded` | `boolean` | `false` | Keep the dragged item within the grid container bounds. |
+| `snapToGrid` | `boolean` | `false` | Snap the dragged tile itself to cells while dragging (see below). |
+
+## Drag handles
+
+Set `handle` to a selector and only that region starts a drag. The rest of the tile stays
+interactive. Pair it with `cancel` for fine-grained control.
+
+```tsx
+<GridLayout dragConfig={{ handle: ".dg-grip" }} /* … */>
+  {layout.map((item) => (
+    <div key={item.i} className="card">
+      <span className="dg-grip">⠿</span> {/* drag starts here */}
+      <button onClick={…}>still clickable</button>
+    </div>
+  ))}
+</GridLayout>
+```
+
+<DragHandleDemo />
+
+<Callout type="info">
+  Resize handles are always excluded from drag activation automatically. You never need to add them
+  to `cancel`.
+</Callout>
+
+## Snap to grid
+
+By default the dragged tile follows the pointer smoothly and only the **placeholder** snaps to
+cells (matching react-grid-layout). Set `snapToGrid: true` to snap the tile itself, axis-by-axis,
+to the column and row pitch.
+
+<SnapDemo />
+
+## Keyboard accessibility
+
+Tiles are keyboard-draggable out of the box. Each tile is focusable and announced as draggable
+(`tabindex="0"`, `role="button"`, `aria-roledescription="draggable"`), and arrow keys move it a cell
+at a time:
+
+- **Tab** to focus a tile.
+- **Enter** or **Space** to pick it up.
+- **Arrow keys** to move it one cell at a time. The layout reflows live.
+- **Enter** / **Space** to drop, or **Escape** to cancel and snap back.
+
+Keyboard dragging is in-grid only (there's no pointer to land a tile in another grid), and, like
+pointer dragging, a packed axis can pull the tile back (e.g. moving down under vertical compaction).
+
+<Callout type="info">
+  A `handle` restricts only **pointer** dragging. Keyboard users can always pick up a focused tile
+  with Enter/Space, so dragging stays accessible regardless of where the handle is.
+</Callout>
+
+## Per-item control
+
+- `isDraggable: false` on a `LayoutItem` disables dragging for that item only.
+- `static: true` disables both dragging and resizing, and other items flow around it. See
+  [Static items](/docs/guides/static-items).
+- The grid-level `isDraggable` prop on `<GridLayout>` overrides everything when set to `false`.
+
+## Lifecycle
+
+`onDragStart`, `onDrag`, and `onDragStop` fire with the react-grid-layout-compatible signature
+`(layout, oldItem, newItem, placeholder, event, node)`. See [Events & lifecycle](/docs/guides/events).

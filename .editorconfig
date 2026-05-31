@@ -1,0 +1,18 @@
+# EditorConfig governs how editors indent/format as you type.
+# Values mirror biome.json so the editor and the formatter never disagree.
+# https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+max_line_length = 100
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Markdown/MDX: two trailing spaces are a hard line break, so don't strip them.
+[*.{md,mdx}]
+trim_trailing_whitespace = false

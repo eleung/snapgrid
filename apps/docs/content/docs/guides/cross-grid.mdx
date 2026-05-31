@@ -1,0 +1,54 @@
+---
+title: Cross-grid dragging
+description: Wrap grids in a SnapGridGroup to drag tiles between them.
+---
+
+import { Callout } from "nextra/components";
+import { CrossGridDemo } from "@/components/demos";
+
+# Cross-grid dragging
+
+Wrap two or more grids in a `<SnapGridGroup>` and tiles can be dragged **between** them. The source
+grid loses the tile; the destination gains it. Each grid keeps its own controlled layout.
+
+```tsx
+import { SnapGridGroup, GridLayout } from "@snapgrid/react";
+
+<SnapGridGroup>
+  <GridLayout layout={left} width={w} onLayoutChange={setLeft} gridConfig={cfg}>
+    {left.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
+  </GridLayout>
+  <GridLayout layout={right} width={w} onLayoutChange={setRight} gridConfig={cfg}>
+    {right.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
+  </GridLayout>
+</SnapGridGroup>;
+```
+
+<CrossGridDemo />
+
+## How it works
+
+A standalone grid provides its own dnd-kit context. Inside a `<SnapGridGroup>`, all grids share one
+provider and a registry, so a drag that starts in one grid can be received by another. On drop:
+
+- the **source** grid removes the tile and fires its `onLayoutChange` with the tile gone;
+- the **destination** grid inserts the tile at the drop cell and fires its `onLayoutChange` with the
+  tile added.
+
+Both updates happen in the same gesture, each against its own layout state.
+
+<Callout type="warning">
+  **Item ids must be unique across every grid in a group.** They share one drag manager. If two
+  grids can hold an item with the same `i`, a cross-grid drop can't tell them apart.
+</Callout>
+
+## Callbacks
+
+The destination grid signals a received tile through `onLayoutChange` only. It does **not** fire
+`onDragStop`, because it never fired `onDragStart` (the source grid owns the drag's start/stop
+pair). Wire cross-grid persistence to `onLayoutChange` on both grids.
+
+## Dropping outside any grid
+
+If a tile is dropped outside every grid in the group, the move reverts. The source keeps it and no
+`onLayoutChange` fires.

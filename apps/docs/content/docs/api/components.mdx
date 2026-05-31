@@ -1,0 +1,115 @@
+---
+title: Components
+description: GridLayout, ResponsiveGridLayout, GridItem, GridPlaceholder, GridDragOverlay, SnapGridProvider, SnapGridGroup.
+---
+
+import { Callout } from "nextra/components";
+
+# Components
+
+## GridLayout
+
+The drop-in controlled grid. Children are keyed by their layout item's `i`.
+
+```tsx
+<GridLayout
+  layout={layout}
+  width={width}
+  onLayoutChange={setLayout}
+  gridConfig={{ cols: 12, rowHeight: 60, margin: [12, 12] }}
+  resizeConfig={{ handles: ["se", "e", "s"] }}
+>
+  {layout.map((item) => (
+    <div key={item.i}>{item.i}</div>
+  ))}
+</GridLayout>
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `layout` | `Layout` | — | **Required.** Controlled array of items. Never mutated. |
+| `width` | `number` | — | **Required.** Container width in px (from `useContainerWidth`). |
+| `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. |
+| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/docs/guides/dragging). |
+| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/docs/guides/resizing). |
+| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/docs/guides/external-drop). |
+| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/docs/guides/compaction). |
+| `isDraggable` | `boolean` | `true` | Grid-level drag toggle. |
+| `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
+| `autoSize` | `boolean` | `true` | Grow the container height to fit content. |
+| `id` | `string` | auto (`useId`) | Stable id for the droppable surface. |
+| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/docs/guides/events). |
+| `onResizeStart` `onResize` `onResizeStop` | `GridEventCallback` | — | Resize lifecycle. |
+| `onDrop` | `(layout, item, event) => void` | — | Fired when an external draggable is dropped in. |
+| `className` | `string` | — | Appended to `snapgrid`. |
+| `style` | `CSSProperties` | — | Merged over the surface's positioning style. |
+
+## ResponsiveGridLayout
+
+Switches columns and layout by breakpoint as `width` changes. See
+[Responsive layouts](/docs/guides/responsive).
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `width` | `number` | — | **Required.** Container width in px. |
+| `layouts` | `ResponsiveLayouts` | — | **Required.** Per-breakpoint layout map. |
+| `onLayoutChange` | `(layout, layouts) => void` | — | Active layout **and** the updated map. |
+| `onBreakpointChange` | `(breakpoint, cols) => void` | — | Fired when the active breakpoint changes. |
+| `breakpoints` | `Breakpoints` | `DEFAULT_BREAKPOINTS` | Breakpoint → min width (px). |
+| `cols` | `BreakpointCols` | `DEFAULT_BREAKPOINT_COLS` | Breakpoint → column count. |
+| `rowHeight` | `number` | `150` | Row height in px. |
+| `margin` | `[number, number]` | `[10, 10]` | Gap between items. |
+| `containerPadding` | `[number, number] \| null` | `null` | Surface padding; falls back to `margin`. |
+| `compactor` `dragConfig` `resizeConfig` `isDraggable` `isResizable` `autoSize` `className` `style` | | | As on `GridLayout`. |
+
+## GridItem
+
+A positioned tile with stable classes (`snapgrid-item`, `data-grid-id`, `data-dragging`) and the
+configured resize handles. Use it inside your own surface, or let `GridLayout` create them.
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `id` | `string` | **Required.** Matches the layout item's `i`. |
+| `children` | `ReactNode` | Tile content. |
+| `className` | `string` | Appended to `snapgrid-item`. |
+| `style` | `CSSProperties` | Merged over the positioning style. |
+
+## GridPlaceholder
+
+Renders the landing-cell marker, or nothing when idle. Customize with `className` / `style`, or use
+[`useGridPlaceholder`](/docs/api/hooks#usegridplaceholder) for full control.
+
+## GridDragOverlay
+
+Renders the floating drag preview in a portal at `document.body` so it follows the pointer across
+grids unclipped. Takes a render function:
+
+```tsx
+<GridDragOverlay>{(item) => <MyCard id={item.i} />}</GridDragOverlay>
+```
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `children` | `(item: LayoutItem) => ReactNode` | **Required.** Renders the dragged item. |
+| `className` | `string` | Appended to `snapgrid-overlay`. |
+| `style` | `CSSProperties` | Merged over the positioning style. |
+
+## SnapGridProvider
+
+The headless provider. Same props as `GridLayout` minus `className`/`style`; instead of mapped
+children you render your own markup with the [hooks](/docs/api/hooks). See
+[Headless usage](/docs/guides/headless).
+
+## SnapGridGroup
+
+Wraps multiple grids so tiles can be dragged between them: one shared dnd-kit provider and a
+registry. Takes only `children`. See [Cross-grid dragging](/docs/guides/cross-grid).
+
+<Callout type="warning">
+  Item ids must be unique across all grids in a group.
+</Callout>

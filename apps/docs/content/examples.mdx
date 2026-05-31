@@ -1,0 +1,89 @@
+---
+title: Examples
+description: Live, interactive examples of every snapgrid feature, including drag, resize, packing, responsive, cross-grid, external drop, and headless.
+---
+
+import {
+  BasicGridDemo,
+  CompactorDemo,
+  ResizeDemo,
+  DragHandleDemo,
+  SnapDemo,
+  StaticItemDemo,
+  ResponsiveDemo,
+  CrossGridDemo,
+  NestedDemo,
+  ExternalDropDemo,
+  HeadlessDemo,
+} from "@/components/demos";
+
+# Examples
+
+Every demo below is the real library running in your browser: drag, resize, and play. Each links
+to the guide that explains it.
+
+## Drag & resize
+
+The basics: drag a tile, resize it from the corner, watch the rest compact upward. → [Getting Started](/docs/getting-started)
+
+<BasicGridDemo />
+
+## Compaction & packing
+
+Swap the packing algorithm at runtime: vertical, horizontal, masonry, gravity, shelf, or free. → [Compaction guide](/docs/guides/compaction)
+
+<CompactorDemo />
+
+## Resize constraints
+
+Every edge and corner, with per-item `minW` / `maxW` / `minH` / `maxH` enforced. → [Resizing guide](/docs/guides/resizing)
+
+<ResizeDemo />
+
+## Drag handles
+
+Drag only by the grip; the rest of the tile stays interactive. → [Dragging guide](/docs/guides/dragging)
+
+<DragHandleDemo />
+
+## Snap to grid
+
+Toggle whether the dragged tile glides with the pointer or snaps to cells. → [Dragging guide](/docs/guides/dragging#snap-to-grid)
+
+<SnapDemo />
+
+## Static items
+
+Pin a tile so it never moves while others flow around it. → [Static items guide](/docs/guides/static-items)
+
+<StaticItemDemo />
+
+## Responsive
+
+Columns and layout change as the width crosses breakpoints. → [Responsive guide](/docs/guides/responsive)
+
+<ResponsiveDemo />
+
+## Cross-grid dragging
+
+Two grids in a `SnapGridGroup`. Drag tiles between them. → [Cross-grid guide](/docs/guides/cross-grid)
+
+<CrossGridDemo />
+
+## Nested grids
+
+A grid inside another grid's tile. Drag the panel by its header, or rearrange the inner tiles. → [Nesting guide](/docs/guides/nesting)
+
+<NestedDemo />
+
+## External drop
+
+Drag a chip from a palette into the grid; the grid synthesizes a new item. → [External drop guide](/docs/guides/external-drop)
+
+<ExternalDropDemo />
+
+## Headless
+
+The same engine with entirely custom markup, via `SnapGridProvider` + hooks. → [Headless guide](/docs/guides/headless)
+
+<HeadlessDemo />
