@@ -312,6 +312,20 @@ export function ResponsiveDemo() {
   const max = Math.max(RESP_MIN, Math.round(avail));
   const previewW = Math.min(Math.max(requested, RESP_MIN), max);
 
+  // A preset is hidden when its target width can't fit the stage (it would just
+  // clamp to full and duplicate Large). The active preset is derived once so the
+  // buckets stay mutually exclusive: Large is the catch-all and wins at full
+  // width, so a folded/hidden range never leaves nothing — or two pills — lit.
+  const showSmall = max >= 300;
+  const showMedium = max >= 420;
+  const atFull = previewW >= max;
+  const active =
+    !atFull && showSmall && previewW < 360
+      ? "small"
+      : !atFull && showMedium && previewW < 480
+        ? "medium"
+        : "large";
+
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     drag.current = { x: e.clientX, w: previewW };
@@ -347,13 +361,17 @@ export function ResponsiveDemo() {
       code={EXAMPLE_CODE.responsive}
     >
       <div style={ROW}>
-        <Pill active={previewW < 360} onClick={() => setRequested(300)}>
-          Small
-        </Pill>
-        <Pill active={previewW >= 360 && previewW < 480} onClick={() => setRequested(420)}>
-          Medium
-        </Pill>
-        <Pill active={previewW >= 480} onClick={() => setRequested(Number.POSITIVE_INFINITY)}>
+        {showSmall && (
+          <Pill active={active === "small"} onClick={() => setRequested(300)}>
+            Small
+          </Pill>
+        )}
+        {showMedium && (
+          <Pill active={active === "medium"} onClick={() => setRequested(420)}>
+            Medium
+          </Pill>
+        )}
+        <Pill active={active === "large"} onClick={() => setRequested(Number.POSITIVE_INFINITY)}>
           Large
         </Pill>
       </div>
@@ -477,6 +495,7 @@ function PaletteChip({ id, label, w, h }: { id: string; label: string; w: number
 export function ExternalDropDemo() {
   const { width, containerRef } = useContainerWidth({ initialWidth: 480 });
   const [layout, setLayout] = useState<Layout>([{ i: "seed", x: 0, y: 0, w: 3, h: 2 }]);
+  const dropCount = useRef(0);
   return (
     <DemoFrame
       title="External drop"
@@ -501,7 +520,13 @@ export function ExternalDropDemo() {
                 layout={layout}
                 width={Math.max(180, width)}
                 onLayoutChange={setLayout}
-                onDrop={(next) => setLayout(next)}
+                onDrop={(next, item) => {
+                  // The library mints a collision-safe but ugly id
+                  // (`<gridId>-dropped-N`); relabel the dropped tile with a short one.
+                  dropCount.current += 1;
+                  const shortId = `t${dropCount.current}`;
+                  setLayout(next.map((it) => (it.i === item.i ? { ...it, i: shortId } : it)));
+                }}
                 dropConfig={{ enabled: true, defaultItem: { w: 2, h: 2 } }}
                 gridConfig={{ cols: 8, rowHeight: 44, margin: [8, 8], containerPadding: [0, 0] }}
               >

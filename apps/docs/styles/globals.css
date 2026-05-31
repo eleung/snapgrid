@@ -915,7 +915,7 @@ html.dark .dg-democode .shiki span {
 .sg-showcase {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 2.5rem;
+  padding: 1.25rem 1.5rem 2.5rem;
 }
 .sg-dash__bar {
   display: flex;
@@ -1812,6 +1812,26 @@ html.dark .dg-democode .shiki span {
   }
   .dg-roadmap-teaser__more {
     margin-left: 0;
+  }
+}
+
+/* < md: the full-bleed home + showcase shells drop their own horizontal padding
+   so they line up with the MDX content wrapper; the showcase also drops its top
+   padding, the roadmap teaser its top margin, and the live-demo bar hides its
+   hint. */
+@media (max-width: 767px) {
+  .dg-home {
+    padding-inline: 0;
+  }
+  .sg-showcase {
+    padding-top: 0;
+    padding-inline: 0;
+  }
+  .dg-roadmap-teaser {
+    margin-top: 0;
+  }
+  .dg-demo__hint {
+    display: none;
   }
 }
 
