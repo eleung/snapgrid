@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://eleung.github.io/snapgrid
+    about: Guides, API reference, and live examples.
+  - name: Questions & discussion
+    url: https://github.com/eleung/snapgrid/discussions
+    about: Ask a question or share what you built.

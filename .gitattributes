@@ -1,0 +1,19 @@
+# Normalize line endings to LF on commit, regardless of contributor OS.
+# Pairs with .editorconfig's end_of_line = lf — editorconfig governs the editor,
+# this governs git itself.
+* text=eol=lf
+
+# Lockfiles & generated output: collapse in diffs and exclude from GitHub
+# language statistics so they don't skew the repo's language breakdown.
+pnpm-lock.yaml                          -diff linguist-generated
+apps/docs/components/generated/**       linguist-generated=true
+
+# Binary assets — never normalize line endings or attempt text diffs.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary

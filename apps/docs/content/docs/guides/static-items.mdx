@@ -1,0 +1,32 @@
+---
+title: Static items
+description: Pin tiles in place so they never move or resize while others flow around them.
+---
+
+import { StaticItemDemo } from "@/components/demos";
+
+# Static items
+
+Mark a layout item `static: true` to **pin** it. A static tile can't be dragged or resized, and
+other tiles compact around it instead of through it.
+
+```tsx
+const layout = [
+  { i: "a", x: 0, y: 0, w: 3, h: 2 },
+  { i: "pinned", x: 3, y: 0, w: 3, h: 2, static: true }, // never moves
+  { i: "b", x: 6, y: 0, w: 3, h: 2 },
+];
+```
+
+<StaticItemDemo />
+
+`static` is shorthand for "not draggable and not resizable, and an obstacle during compaction." It
+overrides the per-item `isDraggable` / `isResizable` flags.
+
+## Notes
+
+- Static placement is preserved by the **built-in** compactors (`vertical`, `horizontal`, `none`).
+  The [extra packers](/docs/guides/compaction#extra-packers) (masonry/gravity/shelf) repack
+  everything and do not preserve `static`. Use a built-in compactor when you need pinned tiles.
+- A static tile still renders through your normal markup; style it however you like (the demo above
+  uses a hatched fill). snapgrid exposes the item's state so you can branch on `item.static`.

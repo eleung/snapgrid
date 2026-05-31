@@ -1,0 +1,105 @@
+---
+title: Hooks
+description: useContainerWidth, useGridContainer, useGridItem, useGridResizeHandle, useGridPlaceholder, useGridDragOverlay, useResponsiveLayout.
+---
+
+# Hooks
+
+The headless layer. Each returns refs, styles, and state to spread onto your own elements. See
+[Headless usage](/docs/guides/headless) for the full picture.
+
+## useContainerWidth
+
+Measures a container's width with a `ResizeObserver` (SSR-safe). Replaces react-grid-layout's
+`WidthProvider`.
+
+```tsx
+const { width, mounted, containerRef } = useContainerWidth({ initialWidth: 1024 });
+```
+
+| | Type | Description |
+| --- | --- | --- |
+| `options.initialWidth` | `number` | Width before measurement. Default `1280`. |
+| → `width` | `number` | Measured width (or `initialWidth` before mount). |
+| → `mounted` | `boolean` | `true` once measured at least once. |
+| → `containerRef` | `(el: HTMLElement \| null) => void` | Attach to the element to measure. |
+
+## useGridContainer
+
+Registers the droppable surface and returns props to spread onto your container.
+
+```tsx
+const { containerProps, isDropTarget } = useGridContainer();
+return <div {...containerProps}>{/* items */}</div>;
+```
+
+`containerProps` has `ref`, a positioning `style` (relative + width + auto-sized height), and a
+`data-drop-target` attribute present while a compatible draggable is over the grid.
+
+## useGridItem
+
+Wires a single tile: drag activation, positioning style, and drag state.
+
+```tsx
+const { ref, style, isDragging, item } = useGridItem(id);
+return <div ref={ref} style={style}>{item?.i}</div>;
+```
+
+| → | Type | Description |
+| --- | --- | --- |
+| `ref` | `(el: Element \| null) => void` | Attach to the tile element. |
+| `style` | `CSSProperties` | `position`/`left`/`top`/`width`/`height` + reflow transition. |
+| `isDragging` | `boolean` | True while this tile is the active drag source. |
+| `item` | `LayoutItem \| undefined` | The tile's current (possibly reflowed) entry. |
+
+## useGridResizeHandle
+
+Models a resize handle as its own draggable. Position and style it however you like.
+
+```tsx
+const { ref, handleProps, isResizing } = useGridResizeHandle(itemId, "se");
+return <span ref={ref} {...handleProps} />;
+```
+
+`handleProps` carries the marker attribute that excludes the handle from item-drag activation.
+
+## useGridPlaceholder
+
+Returns where the landing-cell marker should render, or `null` when idle.
+
+```tsx
+const placeholder = useGridPlaceholder();
+{placeholder && <div style={placeholder.style} />}
+```
+
+## useGridDragOverlay
+
+Returns the floating preview's `item` + fixed-position `style` for the **source** grid, else `null`.
+Render it in a portal at `document.body` (or use [`GridDragOverlay`](/docs/api/components#griddragoverlay)).
+
+## useResponsiveLayout
+
+The headless engine behind `ResponsiveGridLayout`. Resolves the active breakpoint, columns, and
+layout from the container width.
+
+```tsx
+const { breakpoint, cols, layout, onLayoutChange } = useResponsiveLayout({
+  width,
+  layouts,
+  onLayoutChange: (active, all) => setLayouts(all),
+  onBreakpointChange: (bp, cols) => {},
+});
+```
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `width` | `number` | Current container width. |
+| `layouts` | `ResponsiveLayouts` | Per-breakpoint layout map. |
+| `breakpoints` | `Breakpoints` | Optional; defaults to `DEFAULT_BREAKPOINTS`. |
+| `cols` | `BreakpointCols` | Optional; defaults to `DEFAULT_BREAKPOINT_COLS`. |
+| `compactor` | `Compactor` | Used when generating a missing breakpoint's layout. |
+| `onLayoutChange` | `(layout, layouts) => void` | Active layout + updated map. |
+| `onBreakpointChange` | `(breakpoint, cols) => void` | On breakpoint change. |
+
+Returns the active `breakpoint`, its `cols`, the resolved `layout`, and an `onLayoutChange` to pass
+to the grid (it updates the active breakpoint's entry).

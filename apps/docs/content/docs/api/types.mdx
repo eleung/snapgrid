@@ -1,0 +1,121 @@
+---
+title: Types & config
+description: LayoutItem, GridConfig, DragConfig, ResizeConfig, DropConfig, Compactor, and the responsive types.
+---
+
+# Types & config
+
+All exported from `@snapgridjs/react`.
+
+## Layout & LayoutItem
+
+```ts
+type Layout = LayoutItem[];
+
+interface LayoutItem {
+  i: string;            // unique id — matches the child's key
+  x: number;            // column (0-based)
+  y: number;            // row (0-based)
+  w: number;            // width in columns
+  h: number;            // height in rows
+  minW?: number;        // resize limits (columns)
+  maxW?: number;
+  minH?: number;        // resize limits (rows)
+  maxH?: number;
+  static?: boolean;     // pinned: never moves/resizes; others flow around it
+  isDraggable?: boolean; // per-item override of the grid default
+  isResizable?: boolean;
+  resizeHandles?: ResizeHandleAxis[]; // per-item handle set
+}
+```
+
+## GridConfig
+
+```ts
+interface GridConfig {
+  cols: number;                              // default 12
+  rowHeight: number;                         // default 150 (px)
+  margin: [number, number];                  // default [10, 10] — [x, y] gap
+  containerPadding: [number, number] | null; // default null → falls back to margin
+  maxRows: number;                           // default Infinity
+}
+```
+
+Pass a `Partial<GridConfig>` to `<GridLayout gridConfig={…}>`; unset fields use the defaults above.
+
+## DragConfig
+
+```ts
+interface DragConfig {
+  enabled?: boolean;    // default true
+  bounded?: boolean;    // default false — keep within the container
+  handle?: string;      // CSS selector for a drag handle
+  cancel?: string;      // CSS selector for regions that cancel a drag
+  threshold?: number;   // default 3 — px before a drag starts
+  snapToGrid?: boolean; // default false — snap the dragged tile itself
+}
+```
+
+## ResizeConfig
+
+```ts
+interface ResizeConfig {
+  enabled?: boolean;             // default true
+  handles?: ResizeHandleAxis[];  // default ["se"]
+}
+
+type ResizeHandleAxis = "s" | "w" | "e" | "n" | "sw" | "nw" | "se" | "ne";
+```
+
+## DropConfig & GridDropData
+
+```ts
+interface DropConfig {
+  enabled?: boolean;                          // default false
+  defaultItem?: { w: number; h: number };     // default { w: 1, h: 1 }
+  accept?: (source: DragSourceInfo) => boolean;
+}
+
+interface GridDropData {  // carried on the external draggable's data.snapGridDrop
+  i?: string;
+  w?: number;
+  h?: number;
+}
+```
+
+## Compactor
+
+```ts
+interface Compactor {
+  type: "vertical" | "horizontal" | "wrap" | null;
+  compact(layout: Layout, cols: number): Layout;
+  allowOverlap?: boolean;
+  preventCollision?: boolean;
+}
+```
+
+See [Compaction & packing](/docs/guides/compaction#writing-a-custom-compactor) for writing your own.
+
+## Responsive types
+
+```ts
+type Breakpoints = Record<string, number>;       // name → min width (px)
+type BreakpointCols = Record<string, number>;     // name → column count
+type ResponsiveLayouts = Partial<Record<string, Layout>>; // breakpoint → layout
+```
+
+`DEFAULT_BREAKPOINTS` = `{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }`,
+`DEFAULT_BREAKPOINT_COLS` = `{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }`.
+
+## GridEventCallback
+
+```ts
+type GridEventCallback = (
+  layout: Layout,
+  oldItem: LayoutItem | null,
+  newItem: LayoutItem | null,
+  placeholder: LayoutItem | null,
+  event: Event | null,
+  node: HTMLElement | null,
+) => void;
+```

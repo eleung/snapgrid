@@ -1,0 +1,15 @@
+export default {
+  dragging: "Dragging",
+  resizing: "Resizing",
+  compaction: "Compaction & packing",
+  "static-items": "Static items",
+  responsive: "Responsive layouts",
+  "cross-grid": "Cross-grid dragging",
+  nesting: "Nested grids",
+  "external-drop": "External drop",
+  headless: "Headless usage",
+  styling: "Styling",
+  events: "Events & lifecycle",
+  ssr: "Server-side rendering",
+  "migrating-from-rgl": "Migrating from RGL",
+};

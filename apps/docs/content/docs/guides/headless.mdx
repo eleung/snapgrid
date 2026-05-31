@@ -1,0 +1,85 @@
+---
+title: Headless usage
+description: Compose SnapGridProvider with the hooks and render your own markup, no imposed DOM or CSS.
+---
+
+import { Callout } from "nextra/components";
+import { HeadlessDemo } from "@/components/demos";
+
+# Headless usage
+
+`<GridLayout>` is convenient, but it renders its own `<div>`s and class names. When you need full
+control of the markup — custom elements, your own placeholder, a bespoke drag preview — drop to the
+headless layer: `SnapGridProvider` plus a set of hooks.
+
+<HeadlessDemo />
+
+## The shape of it
+
+`SnapGridProvider` owns the drag/resize session and exposes it through context. You render the
+container, the items, the placeholder, and the overlay yourself using the hooks.
+
+```tsx
+import {
+  SnapGridProvider,
+  useGridContainer,
+  useGridItem,
+  useGridPlaceholder,
+  GridDragOverlay,
+} from "@snapgridjs/react";
+
+function Board({ layout, setLayout, width }) {
+  return (
+    <SnapGridProvider layout={layout} width={width} onLayoutChange={setLayout}>
+      <Surface items={layout} />
+    </SnapGridProvider>
+  );
+}
+
+function Surface({ items }) {
+  const { containerProps } = useGridContainer();
+  const placeholder = useGridPlaceholder();
+  return (
+    <div {...containerProps}>
+      {items.map((it) => (
+        <Tile key={it.i} id={it.i} />
+      ))}
+      {placeholder && <div className="my-placeholder" style={placeholder.style} />}
+      <GridDragOverlay>{(item) => <Tile id={item.i} preview />}</GridDragOverlay>
+    </div>
+  );
+}
+
+function Tile({ id }) {
+  const { ref, style, isDragging } = useGridItem(id);
+  return (
+    <div ref={ref} style={style} data-dragging={isDragging}>
+      {id}
+    </div>
+  );
+}
+```
+
+## The hooks
+
+| Hook | Returns | Renders |
+| --- | --- | --- |
+| `useGridContainer()` | `{ containerProps, isDropTarget }` | The positioned surface; registers the droppable. |
+| `useGridItem(id)` | `{ ref, style, isDragging, item }` | A single tile, positioned and drag-wired. |
+| `useGridResizeHandle(id, axis)` | `{ ref, handleProps, isResizing }` | A resize handle for an edge/corner. |
+| `useGridPlaceholder()` | `{ item, style } \| null` | The landing-cell marker (null when idle). |
+| `useGridDragOverlay()` | `{ item, style } \| null` | The floating preview (source grid only). |
+
+Spread the returned `ref` / `style` / props onto your own elements. You choose the tag, the class
+names, and the cosmetics. snapgrid only supplies positioning and state.
+
+<Callout type="info">
+  The floating overlay is meant to be portaled to `document.body` so it can cross between grids
+  unclipped. The `<GridDragOverlay>` convenience component does that for you; with the hook, render
+  it in a portal yourself.
+</Callout>
+
+## Mixing layers
+
+The two layers share one engine, so you can use `<GridLayout>` for most of the app and the hooks for
+one special grid, or use `<GridItem>` inside your own surface. Nothing is all-or-nothing.

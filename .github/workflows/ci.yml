@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Fail fast if the OG social card's version pill drifted from the package
+      # version (run `pnpm assets` on a minor/major bump). No rendering in CI.
+      - name: Check brand assets
+        run: pnpm check:og
+
+      # Build first so cross-package types (dist/*.d.ts) and Next types exist
+      # before typecheck runs on a clean checkout.
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Size limit
+        run: pnpm size
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The docs site consumes the workspace packages' built dist, so build
+      # before booting the dev server the Playwright config starts.
+      - name: Build
+        run: pnpm build
+
+      - name: Install Playwright browser
+        run: pnpm --filter @snapgridjs/docs exec playwright install --with-deps chromium
+
+      - name: E2E
+        run: pnpm e2e

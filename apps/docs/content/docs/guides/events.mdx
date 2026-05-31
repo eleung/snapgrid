@@ -1,0 +1,71 @@
+---
+title: Events & lifecycle
+description: The react-grid-layout-compatible drag/resize callbacks and when each fires.
+---
+
+import { Callout } from "nextra/components";
+
+# Events & lifecycle
+
+Beyond `onLayoutChange`, snapgrid fires react-grid-layout-compatible lifecycle callbacks so you can
+react to a gesture as it happens: analytics, autosave, side effects.
+
+## `onLayoutChange`
+
+The one you'll use most. Fires once when an interaction **commits** (drop or resize end) with the
+next layout. This is where you persist state.
+
+```tsx
+<GridLayout onLayoutChange={(next) => setLayout(next)} /* … */ />
+```
+
+## Drag & resize callbacks
+
+All six share the react-grid-layout signature:
+
+```ts
+type GridEventCallback = (
+  layout: Layout,
+  oldItem: LayoutItem | null,
+  newItem: LayoutItem | null,
+  placeholder: LayoutItem | null,
+  event: Event | null,
+  node: HTMLElement | null,
+) => void;
+```
+
+| Callback | Fires |
+| --- | --- |
+| `onDragStart` | When a drag begins. |
+| `onDrag` | On every move step during a drag. |
+| `onDragStop` | When the drag ends (commit or revert). |
+| `onResizeStart` | When a resize begins. |
+| `onResize` | On every step during a resize. |
+| `onResizeStop` | When the resize ends. |
+
+```tsx
+<GridLayout
+  onDragStart={(layout, oldItem) => console.log("picked up", oldItem?.i)}
+  onDrag={(layout, _o, newItem) => console.log("over", newItem?.x, newItem?.y)}
+  onDragStop={(layout, _o, newItem) => console.log("dropped at", newItem?.x, newItem?.y)}
+  /* … */
+/>
+```
+
+## External drop: `onDrop`
+
+When an external draggable is dropped in, `onDrop(layout, item, event)` fires instead of
+`onLayoutChange`. See [External drop](/docs/guides/external-drop).
+
+## Cross-grid notes
+
+In a `<SnapGridGroup>`, lifecycle callbacks belong to the grid that **owns** the drag:
+
+- The **source** grid fires `onDragStart` … `onDragStop` and an `onLayoutChange` (tile removed).
+- The **destination** grid fires `onLayoutChange` (tile added) only, not `onDragStop`, since it
+  never fired `onDragStart`.
+
+<Callout type="info">
+  Reach for `onLayoutChange` for persistence and the start/stop callbacks for transient UI (cursors,
+  toasts, drag-scoped overlays). Avoid heavy work in `onDrag`/`onResize`. They fire on every step.
+</Callout>

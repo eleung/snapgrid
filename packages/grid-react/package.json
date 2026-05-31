@@ -1,0 +1,76 @@
+{
+  "name": "@snapgridjs/react",
+  "version": "0.1.0",
+  "description": "React grid-layout components built on dnd-kit — a react-grid-layout v2 alternative.",
+  "license": "MIT",
+  "author": "Edmond Leung",
+  "homepage": "https://snapgrid.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eleung/snapgrid.git",
+    "directory": "packages/grid-react"
+  },
+  "bugs": "https://github.com/eleung/snapgrid/issues",
+  "keywords": [
+    "react",
+    "grid",
+    "grid-layout",
+    "react-grid-layout",
+    "drag-and-drop",
+    "draggable",
+    "resizable",
+    "responsive",
+    "dashboard",
+    "kanban",
+    "dnd-kit",
+    "snapgrid"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@snapgridjs/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "@dnd-kit/abstract": "^0.4.0",
+    "@dnd-kit/collision": "^0.4.0",
+    "@dnd-kit/dom": "^0.4.0",
+    "@dnd-kit/geometry": "^0.4.0",
+    "@dnd-kit/helpers": "^0.4.0",
+    "@dnd-kit/react": "^0.4.0"
+  },
+  "devDependencies": {
+    "@dnd-kit/abstract": "^0.4.0",
+    "@dnd-kit/collision": "^0.4.0",
+    "@dnd-kit/dom": "^0.4.0",
+    "@dnd-kit/geometry": "^0.4.0",
+    "@dnd-kit/helpers": "^0.4.0",
+    "@dnd-kit/react": "^0.4.0"
+  }
+}

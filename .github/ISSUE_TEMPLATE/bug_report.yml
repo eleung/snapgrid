@@ -1,0 +1,40 @@
+name: Bug report
+description: Something isn't working the way the docs say it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report! A minimal reproduction is the single most helpful thing you can add.
+  - type: input
+    id: version
+    attributes:
+      label: snapgrid version
+      placeholder: "@snapgridjs/react@x.y.z"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Link to a CodeSandbox / StackBlitz / minimal repo.
+      placeholder: https://stackblitz.com/edit/...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: React version, framework (Vite/Next/Remix), browser, OS.
+      placeholder: |
+        - react: 18.3.1
+        - framework: Next.js 14 (App Router)
+        - browser: Chrome 122
+    validations:
+      required: false

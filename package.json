@@ -1,0 +1,49 @@
+{
+  "name": "snapgrid-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.30.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "dev": "pnpm --filter @snapgridjs/docs dev",
+    "e2e": "pnpm --filter @snapgridjs/docs e2e",
+    "search:sync": "pnpm --filter @snapgridjs/docs search:sync",
+    "assets": "pnpm --filter @snapgridjs/docs assets",
+    "check:og": "pnpm --filter @snapgridjs/docs check:og",
+    "validate": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm size",
+    "size": "size-limit",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.31.0",
+    "@playwright/test": "1.60.0",
+    "@size-limit/file": "^12.1.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "jsdom": "^25.0.1",
+    "playwright": "^1.60.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "size-limit": "^12.1.0",
+    "tsdown": "^0.22.1",
+    "typescript": "^5.7.2",
+    "unrun": "^0.3.0",
+    "vitest": "^2.1.8"
+  }
+}

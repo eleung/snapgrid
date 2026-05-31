@@ -1,0 +1,78 @@
+---
+title: Core engine & extras
+description: The framework-agnostic @snapgridjs/core engine and the @snapgridjs/extras packers.
+---
+
+import { Callout } from "nextra/components";
+
+# Core engine & extras
+
+## `@snapgridjs/core`
+
+The framework-agnostic layout engine. `@snapgridjs/react` is a thin binding over it, so you rarely
+import it directly. Reach for it when integrating snapgrid into a non-React renderer, building
+custom tooling, or testing layout logic in isolation.
+
+<Callout type="info">
+  `@snapgridjs/core` is a thin adapter over `react-grid-layout/core` (re-exported) plus a small set of
+  original helpers that bridge to the dnd-kit interaction layer. The RGL dependency lives behind one
+  seam, so a future engine change touches a single file.
+</Callout>
+
+### Layout operations
+
+Pure functions that take a layout and return the next one (the caller's array is never mutated):
+
+| Function | Description |
+| --- | --- |
+| `moveItemWithCompactor(layout, item, x, y, opts)` | Move an item to `(x, y)` and re-pack. |
+| `resizeItemWithCompactor(layout, item, next, opts)` | Apply a new position/size and re-pack. |
+| `removeItemWithCompactor(layout, id, opts)` | Remove an item and re-pack the remainder. |
+| `insertItemWithCompactor(layout, item, x, y, opts)` | Insert (or move) an item at `(x, y)`. |
+
+`opts` is `{ compactor, cols }` (move also accepts `isUserAction`).
+
+### Drag session
+
+The state machine the React layer drives during an interaction:
+
+`beginDrag`, `beginResize`, `beginReceive`, `dragTo`, `dragResize`, `commitLayout`, `stripMoved`,
+and the `DragSession` / `DragAnchor` / `ResizeAnchor` / `DragContext` types.
+
+### Geometry & helpers
+
+`toPositionParams(grid, width)` builds the `PositionParams` the geometry helpers expect.
+The re-exported RGL helpers include `calcGridItemPosition`, `calcXY`, `calcWH`, `calcGridColWidth`,
+`clamp`, `bottom`, `cloneLayout`, `cloneLayoutItem`, `getAllCollisions`, `collides`,
+`correctBounds`, `sortLayoutItemsByRowCol`, `getCompactor`, and the responsive helpers
+`getBreakpointFromWidth`, `getColsFromBreakpoint`, `findOrGenerateResponsiveLayout`.
+
+## `@snapgridjs/extras`
+
+Extra packing styles, each a `Compactor` you pass to a grid's `compactor` prop.
+
+### Original packers
+
+| Export | Behaviour |
+| --- | --- |
+| `gravityCompactor` | Top-left gravity — earliest free hole, row-major. |
+| `masonryCompactor` | Minimizes height via shortest-column placement. |
+| `shelfCompactor` | Left-to-right rows, wrapping to a new shelf when full. |
+
+The underlying functions `gravityCompact`, `masonryCompact`, and `shelfCompact` `(layout, cols)` are
+also exported if you want to call them directly.
+
+### Re-exported from react-grid-layout
+
+| Export | Behaviour |
+| --- | --- |
+| `wrapCompactor` | Text-flow wrap — best for uniform-height items. |
+| `wrapOverlapCompactor` | Wrap, allowing overlap. |
+| `fastVerticalCompactor` / `fastHorizontalCompactor` | O(n log n) built-in packing for large layouts. |
+| `fastVerticalOverlapCompactor` / `fastHorizontalOverlapCompactor` | Fast variants that allow overlap. |
+
+<Callout type="warning">
+  The original packers (masonry/gravity/shelf) repack all items and do not preserve `static` or
+  enforce `maxRows`. Use a built-in compactor when you need either. See
+  [Compaction](/docs/guides/compaction#extra-packers).
+</Callout>

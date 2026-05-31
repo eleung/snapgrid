@@ -1,0 +1,24 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+
+# pnpm 10 blocks dependency build scripts by default; allow the native toolchain.
+onlyBuiltDependencies:
+  - esbuild
+  - '@biomejs/biome'
+  - rolldown
+
+# zod 4.4.0 regressed how a non-optional field reports a missing value (now throws
+# "expected nonoptional, received undefined"). Nextra 4.6.1's <Layout> relies on the
+# pre-4.4 behavior (its schema lists a required `children` it validates without one),
+# so 4.4.x breaks every docs page. Pin zod's v4 line below 4.4; the unrelated zod@3
+# consumer is untouched. See colinhacks/zod#5917.
+overrides:
+  'zod@^4': '~4.3.0'
+  # Force a single React 19 across the monorepo. The workspace packages declare a
+  # `react: ">=18"` peer, so without this pnpm kept a stale React 18 alongside 19,
+  # giving "A React Element from an older version of React was rendered" in tests.
+  react: ^19
+  react-dom: ^19
+  '@types/react': ^19
+  '@types/react-dom': ^19

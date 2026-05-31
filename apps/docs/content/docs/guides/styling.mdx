@@ -1,0 +1,72 @@
+---
+title: Styling
+description: The class names, data attributes, and positioning styles snapgrid exposes, and how to override them.
+---
+
+import { Callout } from "nextra/components";
+
+# Styling
+
+snapgrid ships **no CSS**. Components return inline positioning styles plus stable class names and
+data attributes; you bring the look.
+
+## Class names (`<GridLayout>`)
+
+The drop-in components apply these so you have predictable hooks to target:
+
+| Element | Class | Notes |
+| --- | --- | --- |
+| Surface | `.snapgrid` | `className` prop is appended. |
+| Item | `.snapgrid-item` | `data-grid-id`, `data-dragging` attributes. |
+| Resize handle | `.snapgrid-resize-handle`, `.snapgrid-resize-handle--{axis}` | One per configured handle. |
+| Placeholder | `.snapgrid-placeholder` | Landing-cell marker. |
+| Drag overlay | `.snapgrid-overlay` | Floating preview (body portal). |
+
+```css
+.snapgrid-item {
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+.snapgrid-item[data-dragging] {
+  opacity: 0.9;
+}
+.snapgrid-placeholder {
+  background: rgb(99 102 241 / 0.15);
+  border: 1px dashed rgb(99 102 241 / 0.6);
+  border-radius: 8px;
+}
+```
+
+## Positioning styles are inline
+
+Each item's `left` / `top` / `width` / `height` is computed and set inline. Don't override these.
+The component also applies a `transition` so non-active tiles animate as they reflow; you can
+override the transition in your `style` prop or class if you want a different feel.
+
+```tsx
+<GridItem id="a" style={{ transition: "all 120ms ease" }}>
+  …
+</GridItem>
+```
+
+## Data attributes
+
+- `data-grid-id`: the item's `i`, handy for selectors and tests.
+- `data-dragging`: present on the active tile while dragging.
+- `data-drop-target`: present on the container while a compatible draggable is over it.
+
+## Custom placeholder & overlay
+
+Want a different placeholder or drag preview? Use the headless hooks and render your own element with
+the returned `style`:
+
+```tsx
+const placeholder = useGridPlaceholder();
+{placeholder && <div className="my-ghost" style={placeholder.style} />}
+```
+
+<Callout type="info">
+  The convenience `<GridPlaceholder>` ships a subtle default look you can override with `className`
+  or `style`. For anything more, call `useGridPlaceholder()` directly.
+</Callout>

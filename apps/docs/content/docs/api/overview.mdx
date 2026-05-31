@@ -1,0 +1,59 @@
+---
+title: API Overview
+description: Everything exported from @snapgridjs/react, /core, and /extras at a glance.
+---
+
+# API Overview
+
+A map of the public surface. Follow a link for details.
+
+## `@snapgridjs/react`
+
+The main package. Components, hooks, and a re-export of the engine types.
+
+### Components
+
+| Export | Purpose |
+| --- | --- |
+| [`GridLayout`](/docs/api/components#gridlayout) | Drop-in controlled grid with keyed children. |
+| [`ResponsiveGridLayout`](/docs/api/components#responsivegridlayout) | Per-breakpoint layouts. |
+| [`GridItem`](/docs/api/components#griditem) | A positioned tile with default markup + handles. |
+| [`GridPlaceholder`](/docs/api/components#gridplaceholder) | Default landing-cell marker. |
+| [`GridDragOverlay`](/docs/api/components#griddragoverlay) | Floating drag preview (body portal). |
+| [`SnapGridProvider`](/docs/api/components#dndgridprovider) | Headless provider — owns the session. |
+| [`SnapGridGroup`](/docs/api/components#dndgridgroup) | Wraps grids for cross-grid dragging. |
+
+### Hooks
+
+| Export | Returns |
+| --- | --- |
+| [`useContainerWidth`](/docs/api/hooks#usecontainerwidth) | `{ width, mounted, containerRef }` |
+| [`useGridContainer`](/docs/api/hooks#usegridcontainer) | `{ containerProps, isDropTarget }` |
+| [`useGridItem`](/docs/api/hooks#usegriditem) | `{ ref, style, isDragging, item }` |
+| [`useGridResizeHandle`](/docs/api/hooks#usegridresizehandle) | `{ ref, handleProps, isResizing }` |
+| [`useGridPlaceholder`](/docs/api/hooks#usegridplaceholder) | `{ item, style } \| null` |
+| [`useGridDragOverlay`](/docs/api/hooks#usegriddragoverlay) | `{ item, style } \| null` |
+| [`useResponsiveLayout`](/docs/api/hooks#useresponsivelayout) | `{ breakpoint, cols, layout, onLayoutChange }` |
+
+### Utilities & compactors
+
+`DEFAULT_BREAKPOINTS`, `DEFAULT_BREAKPOINT_COLS`, and the built-in compactors
+`verticalCompactor`, `horizontalCompactor`, `noCompactor`, `getCompactor`.
+
+### Types & config
+
+`Layout`, `LayoutItem`, `GridConfig`, `DragConfig`, `ResizeConfig`, `DropConfig`, `GridDropData`,
+`GridEventCallback`, `Compactor`, `CompactType`, `Breakpoints`, `BreakpointCols`,
+`ResponsiveLayouts`, `PositionParams`, `ResizeHandleAxis`. See [Types & config](/docs/api/types).
+
+## `@snapgridjs/core`
+
+The framework-agnostic engine: geometry, move/resize/insert/remove operations, and the drag
+session state machine. Most apps never import it directly. See
+[Core engine & extras](/docs/api/core).
+
+## `@snapgridjs/extras`
+
+Optional packers: `masonryCompactor`, `gravityCompactor`, `shelfCompactor`, plus `wrapCompactor`
+and the fast O(n log n) compactors re-exported from react-grid-layout. See
+[Core engine & extras](/docs/api/core#snapgrid-extras).

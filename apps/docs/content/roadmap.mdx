@@ -1,0 +1,52 @@
+---
+title: Roadmap
+description: Where snapgrid is headed. Bindings for Vue, Svelte, Solid and vanilla TypeScript, plus deeper dnd-kit interop with Droppable and Sortable.
+---
+
+import { Callout } from "nextra/components";
+
+# Roadmap
+
+snapgrid sits on two framework-agnostic foundations: react-grid-layout's packing core and dnd-kit's
+DOM engine. Today it ships as `@snapgridjs/react`, but neither the layout core nor the drag
+engine contains any React, which is what makes the directions below possible.
+
+<Callout type="info">
+  This is direction, not a dated commitment. To weigh in or help build any of it, open an issue or
+  PR on [GitHub](https://github.com/eleung/snapgrid).
+</Callout>
+
+## Framework bindings
+
+dnd-kit is framework-agnostic by design: a vanilla DOM engine with thin per-framework bindings.
+snapgrid is built the same way: `@snapgridjs/core` holds the layout math, compaction, and drag session
+with no framework code, and `@snapgridjs/react` is a small binding on top. The same core can drive
+others:
+
+- **Vanilla TypeScript** (no framework at all).
+- **Vue**
+- **Svelte**
+- **Solid**
+
+Each binding owns only the rendering glue — refs, reactivity, lifecycle — while the layout behaviour
+stays shared, so a grid behaves identically whichever framework renders it.
+
+## Deeper dnd-kit interop
+
+Because snapgrid speaks dnd-kit's drag protocol, a grid can exchange items with the rest of the
+dnd-kit ecosystem, not just with other grids. Today an external dnd-kit **Draggable** can be dropped
+into a grid (see the [external drop guide](/docs/guides/external-drop)). Next, to close the loop in
+both directions:
+
+- **Grid item → dnd-kit `Droppable`.** Drag a tile out of the grid and drop it on any dnd-kit drop
+  target, not only another snapgrid.
+- **Back-and-forth with dnd-kit `Sortable`.** Move items between a grid and a dnd-kit sortable list
+  either way, with live placeholders and reordering on both sides.
+
+The aim is for a snapgrid grid to be just another participant in a dnd-kit drag: items flow in and
+out of lists, boards, and drop zones without bespoke glue code.
+
+## Shape the roadmap
+
+These priorities follow what people actually build with snapgrid. Have a use case, or a framework you
+need? [Open an issue](https://github.com/eleung/snapgrid/issues). It genuinely steers what comes next.
