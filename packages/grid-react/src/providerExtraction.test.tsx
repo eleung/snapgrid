@@ -2,12 +2,11 @@ import { DragDropProvider, useDragDropManager } from "@dnd-kit/react";
 import type { Layout } from "@snapgridjs/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { GridLayout } from "./GridLayout.js";
-import { SnapGridGroup } from "./SnapGridGroup.js";
+import { GridLayout, SnapGridGroup } from "./GridLayout.js";
 
-// GridLayout supplies the dnd-kit DragDropProvider for the turnkey case, except
-// inside a SnapGridGroup which provides one shared across its grids.
-// SnapGridProvider itself no longer mints a provider.
+// GridLayout supplies the dnd-kit DragDropProvider for the turnkey case; nested
+// GridLayouts (or a SnapGridGroup) share one. A consumer's own provider is
+// honored — GridLayout only self-mints when no provider is above it.
 
 const gridConfig = {
   cols: 12,
@@ -71,25 +70,20 @@ describe("provider extraction", () => {
     expect(managers[0]).toBe(managers[1]);
   });
 
-  it("a SnapGridGroup mints its own provider even inside a consumer's provider", () => {
-    const outer: unknown[] = [];
-    const inner: unknown[] = [];
+  it("nested GridLayouts share one provider (cross-grid seam)", () => {
+    // Two GridLayouts under a SnapGridGroup resolve the SAME manager, so a tile
+    // can be dragged between them.
+    const managers: unknown[] = [];
     render(
-      <DragDropProvider>
-        <ManagerProbe onManager={(m) => outer.push(m)} />
-        <SnapGridGroup>
-          <GridLayout layout={layout} width={600} gridConfig={gridConfig}>
-            <ManagerProbe key="a" onManager={(m) => inner.push(m)} />
-          </GridLayout>
-        </SnapGridGroup>
-      </DragDropProvider>,
+      <SnapGridGroup>
+        <GridLayout id="g1" layout={layout} width={600} gridConfig={gridConfig}>
+          <ManagerProbe key="a" onManager={(m) => managers.push(m)} />
+        </GridLayout>
+        <GridLayout id="g2" layout={layout} width={600} gridConfig={gridConfig}>
+          <ManagerProbe key="a" onManager={(m) => managers.push(m)} />
+        </GridLayout>
+      </SnapGridGroup>,
     );
-    // KNOWN LIMITATION: the group mints its own provider (its registry binds the
-    // grids), so nested grids do NOT inherit the consumer's outer one. Acceptable
-    // for now — SnapGridGroup is slated for removal, when cross-grid becomes
-    // "share the ambient provider" directly.
-    expect(outer[0]).toBeTruthy();
-    expect(inner[0]).toBeTruthy();
-    expect(inner[0]).not.toBe(outer[0]);
+    expect(managers[0]).toBe(managers[1]);
   });
 });

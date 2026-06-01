@@ -1,12 +1,14 @@
 import type { ResizeHandleAxis } from "@snapgridjs/core";
-import type { CSSProperties, ReactNode } from "react";
-import { useGridRuntime } from "./context.js";
+import { type CSSProperties, type ReactNode, memo } from "react";
 import { useGridItem } from "./hooks/useGridItem.js";
 import { useGridResizeHandle } from "./hooks/useGridResizeHandle.js";
+import { useResolveController } from "./hooks/useResolveController.js";
 
 export interface GridItemProps {
   /** Matches the layout item's `i`. */
   id: string;
+  /** The owning grid's id (from its useGridContainer). */
+  group: string;
   children: ReactNode;
   /** Appended to the default `snapgrid-item` class. */
   className?: string;
@@ -48,8 +50,12 @@ function handleStyle(handle: ResizeHandleAxis): CSSProperties {
   return s;
 }
 
-function DefaultResizeHandle({ itemId, handle }: { itemId: string; handle: ResizeHandleAxis }) {
-  const { ref, handleProps } = useGridResizeHandle(itemId, handle);
+function DefaultResizeHandle({
+  itemId,
+  handle,
+  group,
+}: { itemId: string; handle: ResizeHandleAxis; group: string }) {
+  const { ref, handleProps } = useGridResizeHandle(itemId, handle, group);
   return (
     <span
       ref={ref}
@@ -63,12 +69,19 @@ function DefaultResizeHandle({ itemId, handle }: { itemId: string; handle: Resiz
 /**
  * Convenience wrapper over {@link useGridItem}: an absolutely-positioned `<div>`
  * with stable hooks (`.snapgrid-item`, `data-grid-id`, `data-dragging`) and the
- * configured resize handles. For full control, use the hooks directly.
+ * configured resize handles. `group` is the owning grid's id. For full control,
+ * use the hooks directly.
+ *
+ * Memoized so re-rendering the surface (e.g. its auto-height tracking the drag)
+ * doesn't re-render every tile — a tile re-renders only when its own slice
+ * changes (via useGridItem's subscription). Keeps a drag's React work scoped to
+ * the moved tile (see renderScope.test).
  */
-export function GridItem({ id, children, className, style }: GridItemProps) {
-  const rt = useGridRuntime();
-  const { ref, style: positionStyle, isDragging } = useGridItem(id);
-  const handles = rt.isItemResizable(id) ? rt.resizeHandlesFor(id) : [];
+function GridItemImpl({ id, group, children, className, style }: GridItemProps) {
+  const controller = useResolveController(group);
+  const { ref, style: positionStyle, isDragging } = useGridItem(id, group);
+  const config = controller.config;
+  const handles = config?.isItemResizable(id) ? config.resizeHandlesFor(id) : [];
   return (
     <div
       ref={ref}
@@ -79,8 +92,10 @@ export function GridItem({ id, children, className, style }: GridItemProps) {
     >
       {children}
       {handles.map((handle) => (
-        <DefaultResizeHandle key={handle} itemId={id} handle={handle} />
+        <DefaultResizeHandle key={handle} itemId={id} handle={handle} group={group} />
       ))}
     </div>
   );
 }
+
+export const GridItem = memo(GridItemImpl);

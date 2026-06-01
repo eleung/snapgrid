@@ -3,7 +3,6 @@
 import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
 import {
   type Layout,
-  SnapGridProvider,
   useContainerWidth,
   useGridContainer,
   useGridItem,
@@ -22,9 +21,7 @@ export function HeadlessExample() {
   return (
     <div ref={containerRef}>
       <DragDropProvider>
-        <SnapGridProvider layout={layout} width={width} onLayoutChange={setLayout}>
-          <Surface items={layout} />
-        </SnapGridProvider>
+        <Surface items={layout} width={width} onLayoutChange={setLayout} />
         <DragOverlay>
           {(source) => (source ? <div className="tile">{String(source.id)}</div> : null)}
         </DragOverlay>
@@ -33,22 +30,27 @@ export function HeadlessExample() {
   );
 }
 
-// Render your own markup with the hooks — snapgrid supplies positioning props.
-function Surface({ items }: { items: Layout }) {
-  const { containerProps } = useGridContainer();
-  const placeholder = useGridPlaceholder();
+// Render your own markup with the hooks — useGridContainer is the grid host;
+// items resolve it by the returned `group`.
+function Surface({
+  items,
+  width,
+  onLayoutChange,
+}: { items: Layout; width: number; onLayoutChange: (l: Layout) => void }) {
+  const { containerProps, group } = useGridContainer({ layout: items, width, onLayoutChange });
+  const placeholder = useGridPlaceholder(group);
   return (
     <div {...containerProps}>
       {items.map((item) => (
-        <Tile key={item.i} id={item.i} />
+        <Tile key={item.i} id={item.i} group={group} />
       ))}
       {placeholder && <div className="placeholder" style={placeholder.style} />}
     </div>
   );
 }
 
-function Tile({ id }: { id: string }) {
-  const { ref, style } = useGridItem(id);
+function Tile({ id, group }: { id: string; group: string }) {
+  const { ref, style } = useGridItem(id, group);
   return (
     <div ref={ref} style={style} className="tile">
       {id}

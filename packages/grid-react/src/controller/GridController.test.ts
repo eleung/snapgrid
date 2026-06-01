@@ -28,14 +28,14 @@ function moveSession(): DragSession {
 
 describe("GridController snapshots (fine-grained re-render basis)", () => {
   it("returns a stable item snapshot reference when nothing changed", () => {
-    const c = new GridController(layout);
+    const c = new GridController("g", layout);
     const first = c.itemSnapshot("a");
     expect(first.item?.i).toBe("a");
     expect(c.itemSnapshot("a")).toBe(first); // identical → React won't re-render
   });
 
   it("keeps UNMOVED items' snapshots stable across a session change", () => {
-    const c = new GridController(layout);
+    const c = new GridController("g", layout);
     const a0 = c.itemSnapshot("a");
     const b0 = c.itemSnapshot("b");
     const cc0 = c.itemSnapshot("c");
@@ -55,7 +55,7 @@ describe("GridController snapshots (fine-grained re-render basis)", () => {
   });
 
   it("notifies subscribers on session change and stops after unsubscribe", () => {
-    const c = new GridController(layout);
+    const c = new GridController("g", layout);
     const listener = vi.fn();
     const unsub = c.subscribe(listener);
     c.setSession(moveSession());
@@ -68,7 +68,7 @@ describe("GridController snapshots (fine-grained re-render basis)", () => {
   });
 
   it("setCommitted updates the layout WITHOUT notifying (it runs during render)", () => {
-    const c = new GridController(layout);
+    const c = new GridController("g", layout);
     const listener = vi.fn();
     c.subscribe(listener);
     const next: Layout = [{ i: "a", x: 5, y: 5, w: 1, h: 1 }];
@@ -80,7 +80,7 @@ describe("GridController snapshots (fine-grained re-render basis)", () => {
   });
 
   it("placeholder snapshot is null at rest, stable by value while dragging", () => {
-    const c = new GridController(layout);
+    const c = new GridController("g", layout);
     expect(c.placeholderSnapshot()).toBeNull();
     c.setSession(moveSession());
     const p1 = c.placeholderSnapshot();
@@ -89,7 +89,7 @@ describe("GridController snapshots (fine-grained re-render basis)", () => {
   });
 
   it("resize snapshot flips isResizing only for the resized item", () => {
-    const c = new GridController(layout);
+    const c = new GridController("g", layout);
     const a0 = c.resizeSnapshot("a");
     expect(a0.isResizing).toBe(false);
     c.setSession({

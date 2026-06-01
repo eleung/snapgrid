@@ -1,8 +1,8 @@
 import { useDraggable } from "@dnd-kit/react";
 import { type LayoutItem, calcGridItemPosition } from "@snapgridjs/core";
 import { type CSSProperties, useSyncExternalStore } from "react";
-import { useGridRuntime } from "../context.js";
 import { ITEM_FEEDBACK } from "./dndShared.js";
+import { useResolveController } from "./useResolveController.js";
 
 export interface UseGridItemResult {
   /** Attach to the element that represents this grid item. */
@@ -22,13 +22,13 @@ export interface UseGridItemResult {
 const REFLOW_TRANSITION = "transform 150ms ease, width 150ms ease, height 150ms ease";
 
 /**
- * Headless hook for a single grid item. Returns a ref, a positioning `style`,
- * and drag state — spread them onto whatever element you render. You own the
- * tag, className, content, and any cosmetic styling.
+ * Headless hook for a single grid item. `group` is the owning grid's id (from
+ * its {@link useGridContainer}), mirroring useSortable's `group`. Returns a ref,
+ * a positioning `style`, and drag state — spread them onto whatever element you
+ * render. You own the tag, className, content, and any cosmetic styling.
  */
-export function useGridItem(id: string): UseGridItemResult {
-  const rt = useGridRuntime();
-  const { controller } = rt;
+export function useGridItem(id: string, group: string): UseGridItemResult {
+  const controller = useResolveController(group);
   // Subscribe to just this item's slice → a drag elsewhere doesn't re-render it.
   const snap = useSyncExternalStore(
     controller.subscribe,
@@ -38,12 +38,13 @@ export function useGridItem(id: string): UseGridItemResult {
   const item = snap.item;
   const active = snap.isDragging;
   const hidden = snap.hidden;
+  const config = controller.config!;
   const { ref, isDragging } = useDraggable({
     id,
     type: "grid-item",
-    disabled: !rt.isItemDraggable(id),
-    sensors: rt.itemSensors,
-    modifiers: rt.itemModifiers,
+    disabled: !config.isItemDraggable(id),
+    sensors: config.itemSensors,
+    modifiers: config.itemModifiers,
     plugins: ITEM_FEEDBACK,
     // Carry the full item so another grid can render/insert it on a cross-grid drop.
     data: { snapGrid: { kind: "move", itemId: id, item } },
@@ -51,7 +52,7 @@ export function useGridItem(id: string): UseGridItemResult {
 
   let style: CSSProperties = { position: "absolute", touchAction: "none" };
   if (item) {
-    const pos = calcGridItemPosition(rt.positionParams, item.x, item.y, item.w, item.h);
+    const pos = calcGridItemPosition(config.positionParams, item.x, item.y, item.w, item.h);
     style = {
       position: "absolute",
       // Position via a GPU transform, not left/top — see REFLOW_TRANSITION. The

@@ -1,10 +1,10 @@
 import { DragDropProvider } from "@dnd-kit/react";
 import type { DragSession, Layout } from "@snapgridjs/core";
 import { act, render } from "@testing-library/react";
+import { memo } from "react";
 import { describe, expect, it } from "vitest";
-import { SnapGridProvider } from "./SnapGridProvider.js";
-import { useGridRuntime } from "./context.js";
 import type { GridController } from "./controller/GridController.js";
+import { useGridContainer } from "./hooks/useGridContainer.js";
 import { useGridItem } from "./hooks/useGridItem.js";
 
 // When one tile's slice changes, only that tile's useGridItem re-renders — not
@@ -24,33 +24,40 @@ const layout: Layout = [
 ];
 
 const renders: Record<string, number> = {};
-function Tile({ id }: { id: string }) {
-  const { ref, style } = useGridItem(id);
+// Memoized like the real GridItem: the host surface re-renders each drag frame
+// (its auto-height tracks the preview), so a tile must re-render only via its
+// own slice subscription, not because the parent re-rendered.
+const Tile = memo(function Tile({ id, group }: { id: string; group: string }) {
+  const { ref, style } = useGridItem(id, group);
   renders[id] = (renders[id] ?? 0) + 1;
   return <div ref={ref} style={style} data-tile={id} />;
-}
-
-// Capture the controller the provider created so the test can drive a session.
-function CaptureController({ onReady }: { onReady: (c: GridController) => void }) {
-  onReady(useGridRuntime().controller);
-  return null;
-}
+});
 
 describe("fine-grained re-render scope", () => {
   it("re-renders only the moved tile when the session changes one slice", () => {
     let controller!: GridController;
+    function Board() {
+      const {
+        containerProps,
+        group,
+        controller: c,
+      } = useGridContainer({
+        layout,
+        width: 1210,
+        gridConfig,
+      });
+      controller = c;
+      return (
+        <div {...containerProps}>
+          {layout.map((it) => (
+            <Tile key={it.i} id={it.i} group={group} />
+          ))}
+        </div>
+      );
+    }
     render(
       <DragDropProvider>
-        <SnapGridProvider layout={layout} width={1210} gridConfig={gridConfig}>
-          <CaptureController
-            onReady={(c) => {
-              controller = c;
-            }}
-          />
-          {layout.map((it) => (
-            <Tile key={it.i} id={it.i} />
-          ))}
-        </SnapGridProvider>
+        <Board />
       </DragDropProvider>,
     );
 

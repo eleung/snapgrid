@@ -2,6 +2,8 @@ import type { CSSProperties } from "react";
 import { useGridPlaceholder } from "./hooks/useGridPlaceholder.js";
 
 export interface GridPlaceholderProps {
+  /** The owning grid's id (from its useGridContainer). */
+  group: string;
   /** Appended to the default `snapgrid-placeholder` class. */
   className?: string;
   /** Merged over (and able to override) the default look. */
@@ -22,8 +24,8 @@ const DEFAULT_LOOK: CSSProperties = {
  * nothing when no drag is active. For a custom placeholder, call the hook
  * directly and render your own element with the returned `style`.
  */
-export function GridPlaceholder({ className, style }: GridPlaceholderProps) {
-  const placeholder = useGridPlaceholder();
+export function GridPlaceholder({ group, className, style }: GridPlaceholderProps) {
+  const placeholder = useGridPlaceholder(group);
   if (!placeholder) return null;
   return (
     <div

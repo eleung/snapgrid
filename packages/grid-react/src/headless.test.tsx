@@ -2,7 +2,6 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { type Layout, calcGridItemPosition, toPositionParams } from "@snapgridjs/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { SnapGridProvider } from "./SnapGridProvider.js";
 import { useGridContainer } from "./hooks/useGridContainer.js";
 import { useGridItem } from "./hooks/useGridItem.js";
 
@@ -19,8 +18,8 @@ const layout: Layout = [
 ];
 
 // A consumer rendering entirely their own markup (semantic tags, own classes).
-function Tile({ id }: { id: string }) {
-  const { ref, style } = useGridItem(id);
+function Tile({ id, group }: { id: string; group: string }) {
+  const { ref, style } = useGridItem(id, group);
   return (
     <article ref={ref} style={style} className="my-card" data-tile={id}>
       {id}
@@ -28,26 +27,24 @@ function Tile({ id }: { id: string }) {
   );
 }
 
+// useGridContainer is the grid host (creates the controller); items resolve it
+// by the returned `group`. The consumer supplies the DragDropProvider.
 function Board() {
-  const { containerProps } = useGridContainer();
+  const { containerProps, group } = useGridContainer({ layout, width: 1210, gridConfig });
   return (
     <section {...containerProps} className="my-board" data-testid="board">
       {layout.map((it) => (
-        <Tile key={it.i} id={it.i} />
+        <Tile key={it.i} id={it.i} group={group} />
       ))}
     </section>
   );
 }
 
-describe("headless API (SnapGridProvider + hooks, custom markup)", () => {
-  // Headless consumers supply the dnd-kit DragDropProvider themselves; the
-  // SnapGridProvider consumes that ambient manager rather than minting one.
+describe("headless API (useGridContainer + hooks, custom markup)", () => {
   function renderBoard() {
     return render(
       <DragDropProvider>
-        <SnapGridProvider layout={layout} width={1210} gridConfig={gridConfig}>
-          <Board />
-        </SnapGridProvider>
+        <Board />
       </DragDropProvider>,
     );
   }

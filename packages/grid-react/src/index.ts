@@ -11,18 +11,14 @@
  *    drop-in shell over the hooks for the common case.
  */
 
-// Headless layer
-export {
-  SnapGridProvider,
-  type SnapGridProviderProps,
-} from "./SnapGridProvider.js";
-// Wrap multiple grids in a group to drag tiles between them (shared provider).
-export { SnapGridGroup, type SnapGridGroupProps } from "./SnapGridGroup.js";
+// Headless layer. `useGridContainer` is the grid host (creates the controller +
+// drag monitor); items resolve it by `group` (= the grid's id).
 export { useGridContainer } from "./hooks/useGridContainer.js";
 export type {
   GridContainerProps,
   UseGridContainerResult,
 } from "./hooks/useGridContainer.js";
+export type { UseGridControllerOptions } from "./hooks/useGridController.js";
 export { useGridItem } from "./hooks/useGridItem.js";
 export type { UseGridItemResult } from "./hooks/useGridItem.js";
 export { useGridPlaceholder } from "./hooks/useGridPlaceholder.js";
@@ -39,7 +35,7 @@ export {
 } from "./hooks/useResponsiveLayout.js";
 
 // Component layer
-export { GridLayout, type GridLayoutProps } from "./GridLayout.js";
+export { GridLayout, type GridLayoutProps, SnapGridGroup } from "./GridLayout.js";
 export {
   ResponsiveGridLayout,
   type ResponsiveGridLayoutProps,

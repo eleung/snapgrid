@@ -1,4 +1,4 @@
-import { useDragDropMonitor } from "@dnd-kit/react";
+import { useDragDropManager, useDragDropMonitor, useInstance } from "@dnd-kit/react";
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/react";
 import {
   type Compactor,
@@ -20,120 +20,74 @@ import {
   toPositionParams,
   verticalCompactor,
 } from "@snapgridjs/core";
-import { type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef } from "react";
-import { GridContext, type GridRuntime, type SnapGridDragData } from "./context.js";
-import { GridController } from "./controller/GridController.js";
-import { SnapToGrid } from "./dnd/snapToGrid.js";
-import { classifyDrop, receiveCell } from "./dragFlow.js";
-import { type GridRegistry, SnapGridGroupContext, createGridRegistry } from "./grouping.js";
-import { buildItemSensors } from "./hooks/dndShared.js";
-import type {
-  DragConfig,
-  DropConfig,
-  GridDropData,
-  GridEventCallback,
-  ResizeConfig,
-} from "./types.js";
+import { useCallback, useEffect, useId, useMemo, useRef } from "react";
+import { GridController } from "../controller/GridController.js";
+import { getGrabOffset, registerController, setGrabOffset } from "../controller/registry.js";
+import { SnapToGrid } from "../dnd/snapToGrid.js";
+import { classifyDrop, dragData, externalDropSpec, receiveCell } from "../dragFlow.js";
+import type { DragConfig, DropConfig, GridEventCallback, ResizeConfig } from "../types.js";
+import { buildItemSensors } from "./dndShared.js";
 
 const DEFAULT_HANDLES = ["se"] as const;
 
 type Point = { x: number; y: number };
 
-/** Read snapgrid's payload off a dnd-kit drag source. */
-function dragData(event: {
-  operation: { source?: { data?: unknown } | null };
-}): SnapGridDragData | undefined {
-  const data = event.operation.source?.data as { snapGrid?: SnapGridDragData } | undefined;
-  return data?.snapGrid;
-}
-
-/** Size/id spec for an external (non-grid) draggable the grid may accept, or null. */
-export function externalDropSpec(
-  source: { id: string | number; type?: unknown; data?: unknown } | null | undefined,
-  dropConfig: DropConfig | undefined,
-): { i?: string; w: number; h: number } | null {
-  if (!dropConfig?.enabled || !source) return null;
-  const data = source.data as { snapGrid?: unknown; snapGridDrop?: GridDropData } | undefined;
-  if (data?.snapGrid) return null; // a grid item, not external
-  if (dropConfig.accept && !dropConfig.accept(source)) return null;
-  const spec = data?.snapGridDrop;
-  return {
-    i: spec?.i,
-    // Fall back to react-grid-layout's `defaultDropConfig.defaultItem` (1×1) for parity.
-    w: spec?.w ?? dropConfig.defaultItem?.w ?? 1,
-    h: spec?.h ?? dropConfig.defaultItem?.h ?? 1,
-  };
-}
-
-export interface SnapGridProviderProps {
-  children: ReactNode;
+/** Options the grid host ({@link useGridContainer}) feeds the controller. */
+export interface UseGridControllerOptions {
+  /** Stable id for the grid's droppable surface (auto-generated if omitted). */
+  id?: string;
   /** Container width in pixels (e.g. from {@link useContainerWidth}). */
   width: number;
   /** Controlled layout. Never mutated. */
   layout: Layout;
-  /** Called with the next layout after a drag/resize commits (incl. cross-grid add/remove). */
   onLayoutChange?: (layout: Layout) => void;
   gridConfig?: Partial<GridConfig>;
   dragConfig?: DragConfig;
   resizeConfig?: ResizeConfig;
-  /** Accept external (non-grid) dnd-kit draggables dropped into this grid. */
   dropConfig?: DropConfig;
   compactor?: Compactor;
-  /** Grid-level draggable toggle (item-level `isDraggable`/`static` override). @default true */
   isDraggable?: boolean;
-  /** Grid-level resizable toggle (item-level `isResizable`/`static` override). @default true */
   isResizable?: boolean;
-  /** Grow container height to fit content. @default true */
   autoSize?: boolean;
-  /** Stable id for the grid's droppable surface (auto-generated if omitted). */
-  id?: string;
   onDragStart?: GridEventCallback;
   onDrag?: GridEventCallback;
   onDragStop?: GridEventCallback;
   onResizeStart?: GridEventCallback;
   onResize?: GridEventCallback;
   onResizeStop?: GridEventCallback;
-  /** Called when an external draggable is dropped into the grid: the next layout, the new item, and the event. */
   onDrop?: (layout: Layout, item: LayoutItem, event: Event | null) => void;
 }
 
 /**
- * Headless provider for a grid. Consumes an ambient dnd-kit `DragDropProvider`
- * (supplied by {@link GridLayout} for turnkey use, by a {@link SnapGridGroup}
- * for cross-grid drags, or by the consumer in a headless app) — it does not mint
- * one itself. Owns this grid's drag/resize session; the consumer owns all
- * markup/styling.
+ * The grid's brain: owns the {@link GridController}, runs the dnd-kit drag/resize
+ * monitor for this grid, and writes per-grid config to the controller each render.
+ * Created by {@link useGridContainer}; items resolve the same controller by their
+ * `group` (= this grid's id) from the per-manager registry. Consumes the ambient
+ * `DragDropProvider` — it does not mint one.
  */
-export function SnapGridProvider(props: SnapGridProviderProps): React.JSX.Element {
-  const groupRegistry = useContext(SnapGridGroupContext);
-  return <SnapGridRuntime groupRegistry={groupRegistry} {...props} />;
-}
-
-type RuntimeProps = SnapGridProviderProps & { groupRegistry: GridRegistry | null };
-
-function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
+export function useGridController(opts: UseGridControllerOptions): GridController {
   const autoId = useId();
-  const containerId = props.id ?? autoId;
+  const containerId = opts.id ?? autoId;
 
   const gridConfig: GridConfig = useMemo(
-    () => ({ ...defaultGridConfig, ...props.gridConfig }),
-    [props.gridConfig],
+    () => ({ ...defaultGridConfig, ...opts.gridConfig }),
+    [opts.gridConfig],
   );
   const positionParams: PositionParams = useMemo(
-    () => toPositionParams(gridConfig, props.width),
-    [gridConfig, props.width],
+    () => toPositionParams(gridConfig, opts.width),
+    [gridConfig, opts.width],
   );
-  const compactor: Compactor = props.compactor ?? verticalCompactor;
+  const compactor: Compactor = opts.compactor ?? verticalCompactor;
 
-  // The live drag/resize store (see GridController), stable per grid instance.
-  const controllerRef = useRef<GridController | null>(null);
-  if (!controllerRef.current) controllerRef.current = new GridController(props.layout);
-  const controller = controllerRef.current;
-  controller.setCommitted(props.layout);
+  const manager = useDragDropManager();
+  const controller = useInstance<GridController>(
+    (m) => new GridController(containerId, opts.layout, m ?? undefined),
+  );
+  controller.setCommitted(opts.layout);
 
   // Refs read inside the stable monitor handlers so they never see stale values.
-  const propsRef = useRef(props);
-  propsRef.current = props;
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
   const ppRef = useRef(positionParams);
   ppRef.current = positionParams;
   const gridRef = useRef(gridConfig);
@@ -142,6 +96,8 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
   compactorRef.current = compactor;
   const containerIdRef = useRef(containerId);
   containerIdRef.current = containerId;
+  const managerRef = useRef(manager);
+  managerRef.current = manager;
   const sessionRef = useRef<DragSession | null>(null);
   const containerElRef = useRef<Element | null>(null);
   // True while the active move was started by the keyboard (Enter/Space on a
@@ -152,24 +108,19 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
   const dropSpecRef = useRef<{ i: string; w: number; h: number } | null>(null);
   const dropCounterRef = useRef(0);
 
-  // Each grid registers with a shared registry (group) or its own (standalone)
-  // so we can resolve which grid the pointer is over by geometry — dnd-kit's
-  // collision target is unavailable under `feedback: 'none'`.
-  const localRegistryRef = useRef<GridRegistry | null>(null);
-  if (!localRegistryRef.current) localRegistryRef.current = createGridRegistry();
-  const registry = props.groupRegistry ?? localRegistryRef.current;
-  const registryRef = useRef(registry);
-  registryRef.current = registry;
-
+  // Register the controller so items (and snapMove) resolve it by id. During
+  // render so child items resolve it on their first render (children render
+  // after the parent but before any layout effect). The effect's cleanup
+  // unregisters on unmount / id or manager change.
+  registerController(manager, containerId, controller);
   useEffect(
-    () =>
-      registry.register(containerId, () => containerElRef.current?.getBoundingClientRect() ?? null),
-    [registry, containerId],
+    () => registerController(manager, containerId, controller),
+    [manager, containerId, controller],
   );
 
   const committedById = useMemo(
-    () => new Map<string, LayoutItem>(props.layout.map((it) => [it.i, it])),
-    [props.layout],
+    () => new Map<string, LayoutItem>(opts.layout.map((it) => [it.i, it])),
+    [opts.layout],
   );
   const committedByIdRef = useRef(committedById);
   committedByIdRef.current = committedById;
@@ -201,7 +152,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
     const el = containerElRef.current;
     if (!el) return null;
     const rect = el.getBoundingClientRect();
-    return receiveCell(p, rect, registryRef.current.getGrabOffset(), item.w, item.h, ppRef.current);
+    return receiveCell(p, rect, getGrabOffset(managerRef.current), item.w, item.h, ppRef.current);
   }, []);
 
   const ctx = useCallback(
@@ -223,7 +174,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       if (!data) {
         // An external (non-grid) draggable: if we accept it, reserve a stable
         // synthesized id/size for the item this grid may receive on drop.
-        const spec = externalDropSpec(event.operation.source, propsRef.current.dropConfig);
+        const spec = externalDropSpec(event.operation.source, optsRef.current.dropConfig);
         if (spec) {
           dropCounterRef.current += 1;
           dropSpecRef.current = {
@@ -239,7 +190,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
         return;
       }
       dropSpecRef.current = null;
-      const layout = propsRef.current.layout;
+      const layout = optsRef.current.layout;
       const item = layout.find((it) => it.i === data.itemId);
       const p = event.operation.position.current;
       const pointer = { x: p.x, y: p.y };
@@ -247,7 +198,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
         if (!item) return; // resize only applies to the owning grid
         const rect = calcGridItemPosition(ppRef.current, item.x, item.y, item.w, item.h);
         setSessionBoth(beginResize(layout, { item, rect, pointer }, data.handle));
-        propsRef.current.onResizeStart?.(
+        optsRef.current.onResizeStart?.(
           layout,
           item,
           item,
@@ -270,9 +221,9 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
         const el = (event.operation.source as { element?: Element } | null)?.element;
         const cr = el?.getBoundingClientRect();
         if (cr) {
-          registryRef.current.setGrabOffset({ x: pointer.x - cr.left, y: pointer.y - cr.top });
+          setGrabOffset(managerRef.current, { x: pointer.x - cr.left, y: pointer.y - cr.top });
         }
-        propsRef.current.onDragStart?.(
+        optsRef.current.onDragStart?.(
           layout,
           item,
           item,
@@ -299,7 +250,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       if (current?.kind === "resize") {
         const next = dragResize(current, pointer, ctx());
         setSessionBoth(next);
-        propsRef.current.onResize?.(
+        optsRef.current.onResize?.(
           next.preview,
           next.anchor.item,
           next.placeholder,
@@ -317,7 +268,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
         const spec = dropSpecRef.current;
         if (spec && overMe(target)) {
           const foreign: LayoutItem = { i: spec.i, x: 0, y: 0, w: spec.w, h: spec.h };
-          const committed = propsRef.current.layout;
+          const committed = optsRef.current.layout;
           const cell = cellFromPointer(pointer, foreign) ?? { x: 0, y: 0 };
           setSessionBoth(beginReceive(committed, foreign, cell.x, cell.y, pointer, ctx()));
         } else if (sessionRef.current) {
@@ -345,7 +296,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
           };
         }
         setSessionBoth(next);
-        propsRef.current.onDrag?.(
+        optsRef.current.onDrag?.(
           next.preview,
           next.anchor.item,
           next.placeholder,
@@ -359,7 +310,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       // We don't own the item — maybe receive it.
       if (here) {
         const foreign = data.item;
-        const committed = propsRef.current.layout;
+        const committed = optsRef.current.layout;
         const cell = cellFromPointer(pointer, foreign) ?? { x: 0, y: 0 };
         setSessionBoth(beginReceive(committed, foreign, cell.x, cell.y, pointer, ctx()));
       } else if (sessionRef.current) {
@@ -380,10 +331,10 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       const targetId = event.operation.target?.id;
       const dest = keyboardRef.current ? myId : targetId != null ? String(targetId) : null;
       const ownsItem = data ? committedByIdRef.current.has(data.itemId) : false;
-      registryRef.current.setGrabOffset(null);
+      setGrabOffset(managerRef.current, null);
 
       const native = event.nativeEvent ?? null;
-      const p2 = propsRef.current;
+      const o = optsRef.current;
       // Pure classification of what this drop means for THIS grid; the switch
       // below maps each action to its callbacks (see dragFlow.ts for the contract).
       const action = classifyDrop({
@@ -397,15 +348,15 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
 
       switch (action) {
         case "cancel-resize":
-          p2.onResizeStop?.(p2.layout, current?.anchor.item ?? null, null, null, native, null);
+          o.onResizeStop?.(o.layout, current?.anchor.item ?? null, null, null, native, null);
           break;
         case "cancel-move":
-          p2.onDragStop?.(p2.layout, current?.anchor.item ?? null, null, null, native, null);
+          o.onDragStop?.(o.layout, current?.anchor.item ?? null, null, null, native, null);
           break;
         case "commit-resize":
           if (current) {
-            p2.onLayoutChange?.(commitLayout(current));
-            p2.onResizeStop?.(
+            o.onLayoutChange?.(commitLayout(current));
+            o.onResizeStop?.(
               current.preview,
               current.anchor.item,
               current.placeholder,
@@ -420,15 +371,15 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
         case "revert": {
           // Source grid finishing its drag: all fire onDragStop, differing only in layout.
           if (action === "commit-in-grid" && current) {
-            p2.onLayoutChange?.(commitLayout(current));
+            o.onLayoutChange?.(commitLayout(current));
           } else if (action === "remove-source" && data) {
             const { compactor: c, cols } = ctx();
-            p2.onLayoutChange?.(
-              removeItemWithCompactor(p2.layout, data.itemId, { compactor: c, cols }),
+            o.onLayoutChange?.(
+              removeItemWithCompactor(o.layout, data.itemId, { compactor: c, cols }),
             );
           } // "revert" → dropped outside any grid → no layout change.
-          p2.onDragStop?.(
-            current?.preview ?? p2.layout,
+          o.onDragStop?.(
+            current?.preview ?? o.layout,
             current?.anchor.item ?? null,
             current?.placeholder ?? null,
             current?.placeholder ?? null,
@@ -438,14 +389,14 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
           break;
         }
         case "commit-dest":
-          if (current) p2.onLayoutChange?.(commitLayout(current));
+          if (current) o.onLayoutChange?.(commitLayout(current));
           break;
         case "external-drop":
           // Hand the synthesized item to onDrop so the consumer can add it.
           if (current) {
             const committed = commitLayout(current);
             const dropped = committed.find((it) => it.i === current.activeId);
-            if (dropped) p2.onDrop?.(committed, dropped, native);
+            if (dropped) o.onDrop?.(committed, dropped, native);
           }
           break;
         // "noop" → nothing to do.
@@ -499,9 +450,9 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
   );
   useDragDropMonitor(monitorHandlers);
 
-  const dragThreshold = props.dragConfig?.threshold ?? 3;
+  const dragThreshold = opts.dragConfig?.threshold ?? 3;
   const itemSensors = useMemo(
-    () => buildItemSensors(dragThreshold, () => propsRef.current.dragConfig),
+    () => buildItemSensors(dragThreshold, () => optsRef.current.dragConfig),
     [dragThreshold],
   );
 
@@ -511,14 +462,14 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
     () => [
       SnapToGrid.configure({
         getPositionParams: () => ppRef.current,
-        isEnabled: () => propsRef.current.dragConfig?.snapToGrid ?? false,
+        isEnabled: () => optsRef.current.dragConfig?.snapToGrid ?? false,
       }),
     ],
     [],
   );
 
-  const gridDraggable = props.isDraggable ?? true;
-  const dragEnabled = props.dragConfig?.enabled ?? true;
+  const gridDraggable = opts.isDraggable ?? true;
+  const dragEnabled = opts.dragConfig?.enabled ?? true;
   const isItemDraggable = useCallback(
     (id: string) => {
       const it = committedById.get(id);
@@ -528,8 +479,8 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
     [committedById, gridDraggable, dragEnabled],
   );
 
-  const gridResizable = props.isResizable ?? true;
-  const resizeEnabled = props.resizeConfig?.enabled ?? true;
+  const gridResizable = opts.isResizable ?? true;
+  const resizeEnabled = opts.resizeConfig?.enabled ?? true;
   const isItemResizable = useCallback(
     (id: string) => {
       const it = committedById.get(id);
@@ -538,42 +489,26 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
     },
     [committedById, gridResizable, resizeEnabled],
   );
-  const defaultHandles = props.resizeConfig?.handles;
+  const defaultHandles = opts.resizeConfig?.handles;
   const resizeHandlesFor = useCallback(
     (id: string) => committedById.get(id)?.resizeHandles ?? defaultHandles ?? DEFAULT_HANDLES,
     [committedById, defaultHandles],
   );
 
-  const runtime: GridRuntime = useMemo(
-    () => ({
-      containerId,
-      width: props.width,
-      autoSize: props.autoSize ?? true,
-      gridConfig,
-      positionParams,
-      controller,
-      isItemDraggable,
-      isItemResizable,
-      resizeHandlesFor,
-      itemSensors,
-      itemModifiers,
-      setContainerElement,
-    }),
-    [
-      containerId,
-      props.width,
-      props.autoSize,
-      gridConfig,
-      positionParams,
-      controller,
-      isItemDraggable,
-      isItemResizable,
-      resizeHandlesFor,
-      itemSensors,
-      itemModifiers,
-      setContainerElement,
-    ],
-  );
+  // Publish per-grid config to the controller so items (resolved by group) read
+  // fresh geometry/predicates without a React context.
+  controller.setConfig({
+    positionParams,
+    gridConfig,
+    width: opts.width,
+    autoSize: opts.autoSize ?? true,
+    itemSensors,
+    itemModifiers,
+    isItemDraggable,
+    isItemResizable,
+    resizeHandlesFor,
+    setContainerElement,
+  });
 
-  return <GridContext.Provider value={runtime}>{props.children}</GridContext.Provider>;
+  return controller;
 }

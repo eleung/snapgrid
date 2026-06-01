@@ -1,4 +1,32 @@
-import type { DragSession, Layout, LayoutItem } from "@snapgridjs/core";
+import type { Modifiers, Sensors } from "@dnd-kit/abstract";
+import type { DragDropManager } from "@dnd-kit/dom";
+import type {
+  DragSession,
+  GridConfig,
+  Layout,
+  LayoutItem,
+  PositionParams,
+  ResizeHandleAxis,
+} from "@snapgridjs/core";
+
+/**
+ * Per-grid configuration the container host writes to the controller each render
+ * (during render, so items that resolve this controller by `group` read fresh
+ * config on the same pass). Replaces the fields the old GridContext exposed.
+ */
+export interface GridControllerConfig {
+  positionParams: PositionParams;
+  gridConfig: GridConfig;
+  width: number;
+  autoSize: boolean;
+  itemSensors: Sensors;
+  itemModifiers: Modifiers;
+  isItemDraggable: (id: string) => boolean;
+  isItemResizable: (id: string) => boolean;
+  resizeHandlesFor: (id: string) => readonly ResizeHandleAxis[];
+  /** Report the container element (used to map a pointer to a cell on receive). */
+  setContainerElement: (element: Element | null) => void;
+}
 
 export interface ItemSnapshot {
   item: LayoutItem | undefined;
@@ -30,12 +58,16 @@ function sameItem(a: LayoutItem | undefined, b: LayoutItem | undefined): boolean
  * context-value model re-rendered every tile every frame).
  */
 export class GridController {
+  readonly id: string;
   #committed: Layout;
   #session: DragSession | null = null;
   // True while the active drag was started by the keyboard (no floating overlay
   // → the in-grid tile must stay visible and move in place).
   #keyboard = false;
   #listeners = new Set<() => void>();
+  // Per-grid config, written by the container host each render (see setConfig).
+  // Non-null once mounted; items only read it after resolving a registered grid.
+  config: GridControllerConfig | null = null;
 
   // getSnapshot must return a stable reference while the slice is unchanged
   // (useSyncExternalStore contract, and the basis of the fine-grained re-render).
@@ -47,9 +79,25 @@ export class GridController {
   #renderedMap: Map<string, LayoutItem> | null = null;
   #renderedMapSource: Layout | null = null;
 
-  constructor(committed: Layout = []) {
+  /** The dnd-kit manager this grid is registered with (set by useInstance). */
+  manager: DragDropManager | undefined;
+
+  constructor(id: string, committed: Layout = [], manager?: DragDropManager) {
+    this.id = id;
     this.#committed = committed;
+    this.manager = manager;
   }
+
+  /** Replace the per-grid config (called by the container host during render). */
+  setConfig(config: GridControllerConfig): void {
+    this.config = config;
+  }
+
+  // Satisfies dnd-kit's `Instance` interface (useInstance calls this in a layout
+  // effect). Registry registration is handled by the host hook (it must happen
+  // during render so child items resolve this controller on their first render),
+  // so there's nothing to do here.
+  register = (): void => {};
 
   subscribe = (listener: () => void): (() => void) => {
     this.#listeners.add(listener);
@@ -73,7 +121,6 @@ export class GridController {
       this.#renderedMap = new Map(rendered.map((it) => [it.i, it]));
       this.#renderedMapSource = rendered;
     }
-    // biome-ignore lint/style/noNonNullAssertion: set above when source changed.
     return this.#renderedMap!;
   }
 

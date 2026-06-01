@@ -1,10 +1,38 @@
 import { type PositionParams, calcXY } from "@snapgridjs/core";
+import type { SnapGridDragData } from "./context.js";
+import type { DropConfig, GridDropData } from "./types.js";
 
 /**
- * Pure decision helpers for the drag interaction, extracted from
- * {@link SnapGridProvider} so the tricky bits — grab-offset cell mapping and the
- * cross-grid drop lifecycle — are unit-testable without a DOM or dnd-kit.
+ * Pure decision helpers for the drag interaction so the tricky bits — grab-offset
+ * cell mapping, the cross-grid drop lifecycle, and external-drop acceptance — are
+ * unit-testable without a DOM or dnd-kit.
  */
+
+/** Read snapgrid's payload off a dnd-kit drag source. */
+export function dragData(event: {
+  operation: { source?: { data?: unknown } | null };
+}): SnapGridDragData | undefined {
+  const data = event.operation.source?.data as { snapGrid?: SnapGridDragData } | undefined;
+  return data?.snapGrid;
+}
+
+/** Size/id spec for an external (non-grid) draggable the grid may accept, or null. */
+export function externalDropSpec(
+  source: { id: string | number; type?: unknown; data?: unknown } | null | undefined,
+  dropConfig: DropConfig | undefined,
+): { i?: string; w: number; h: number } | null {
+  if (!dropConfig?.enabled || !source) return null;
+  const data = source.data as { snapGrid?: unknown; snapGridDrop?: GridDropData } | undefined;
+  if (data?.snapGrid) return null; // a grid item, not external
+  if (dropConfig.accept && !dropConfig.accept(source)) return null;
+  const spec = data?.snapGridDrop;
+  return {
+    i: spec?.i,
+    // Fall back to react-grid-layout's `defaultDropConfig.defaultItem` (1×1) for parity.
+    w: spec?.w ?? dropConfig.defaultItem?.w ?? 1,
+    h: spec?.h ?? dropConfig.defaultItem?.h ?? 1,
+  };
+}
 
 /**
  * Map a client-space pointer to a grid cell, accounting for where *within* the

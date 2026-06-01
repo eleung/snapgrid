@@ -1,7 +1,7 @@
 "use client";
 
 import { Feedback } from "@dnd-kit/dom";
-import { DragOverlay, useDraggable } from "@dnd-kit/react";
+import { DragDropProvider, DragOverlay, useDraggable } from "@dnd-kit/react";
 import { gravityCompactor, masonryCompactor, shelfCompactor } from "@snapgridjs/extras";
 import {
   type Compactor,
@@ -10,7 +10,6 @@ import {
   ResponsiveGridLayout,
   type ResponsiveLayouts,
   SnapGridGroup,
-  SnapGridProvider,
   horizontalCompactor,
   noCompactor,
   useContainerWidth,
@@ -539,38 +538,42 @@ export function ExternalDropDemo() {
   );
 }
 
-/* ── Headless (provider + hooks, custom markup) ─────────────────────────── */
+/* ── Headless (hooks + custom markup) ───────────────────────────────────── */
 export function HeadlessDemo() {
   const { width, containerRef } = useContainerWidth({ initialWidth: 680 });
   const [layout, setLayout] = useState<Layout>(BASIC.slice(0, 4));
   return (
-    <DemoFrame
-      title="Headless"
-      hint="your own markup via SnapGridProvider + hooks"
-      code={EXAMPLE_CODE.headless}
-    >
+    <DemoFrame title="Headless" hint="your own markup via the hooks" code={EXAMPLE_CODE.headless}>
       <div ref={containerRef}>
-        <SnapGridProvider
-          layout={layout}
-          width={width}
-          onLayoutChange={setLayout}
-          gridConfig={GRID}
-          dragConfig={{ handle: ".dg-grip" }}
-        >
-          <HeadlessSurface items={layout} />
-        </SnapGridProvider>
+        <DragDropProvider>
+          <HeadlessSurface
+            items={layout}
+            width={width}
+            onLayoutChange={setLayout}
+          />
+        </DragDropProvider>
       </div>
     </DemoFrame>
   );
 }
 
-function HeadlessSurface({ items }: { items: Layout }) {
-  const { containerProps } = useGridContainer();
-  const placeholder = useGridPlaceholder();
+function HeadlessSurface({
+  items,
+  width,
+  onLayoutChange,
+}: { items: Layout; width: number; onLayoutChange: (l: Layout) => void }) {
+  const { containerProps, group } = useGridContainer({
+    layout: items,
+    width,
+    onLayoutChange,
+    gridConfig: GRID,
+    dragConfig: { handle: ".dg-grip" },
+  });
+  const placeholder = useGridPlaceholder(group);
   return (
     <div {...containerProps}>
       {items.map((it) => (
-        <HeadlessTile key={it.i} id={it.i} />
+        <HeadlessTile key={it.i} id={it.i} group={group} />
       ))}
       {placeholder ? (
         <div
@@ -595,8 +598,8 @@ function HeadlessSurface({ items }: { items: Layout }) {
   );
 }
 
-function HeadlessTile({ id }: { id: string }) {
-  const { ref, style, isDragging } = useGridItem(id);
+function HeadlessTile({ id, group }: { id: string; group: string }) {
+  const { ref, style, isDragging } = useGridItem(id, group);
   return (
     <div ref={ref} style={style} className={`dg-tile${isDragging ? " dg-tile--accent" : ""}`}>
       <span className="dg-grip" style={{ cursor: "grab" }}>
