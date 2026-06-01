@@ -1,4 +1,4 @@
-import { DragDropProvider } from "@dnd-kit/react";
+import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
 import {
   type CSSProperties,
   Children,
@@ -7,7 +7,6 @@ import {
   isValidElement,
   useContext,
 } from "react";
-import { GridDragOverlay } from "./GridDragOverlay.js";
 import { GridItem } from "./GridItem.js";
 import { GridPlaceholder } from "./GridPlaceholder.js";
 import { SnapGridProvider, type SnapGridProviderProps } from "./SnapGridProvider.js";
@@ -59,7 +58,9 @@ function GridSurface({
         );
       })}
       <GridPlaceholder />
-      <GridDragOverlay>{(item) => childById.get(item.i) ?? null}</GridDragOverlay>
+      <DragOverlay>
+        {(source) => (source ? (childById.get(String(source.id)) ?? null) : null)}
+      </DragOverlay>
     </div>
   );
 }

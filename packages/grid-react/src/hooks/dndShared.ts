@@ -1,19 +1,30 @@
 import {
+  type Draggable,
   Feedback,
   KeyboardSensor,
   PointerActivationConstraints,
   PointerSensor,
   type Sensors,
 } from "@dnd-kit/dom";
+import { isKeyboardEvent } from "@dnd-kit/dom/utilities";
 import type { DragConfig } from "../types.js";
 
 /** Marker attribute placed on resize-handle elements. */
 export const RESIZE_HANDLE_ATTR = "data-snapgrid-resize-handle";
 
-// `feedback: "none"` so dnd-kit doesn't move/transform the dragged element:
-// snapgrid hides the active tile in place and floats its own body-portal preview
-// (see GridDragOverlay). Module-level so the descriptor identity is stable across
-// re-renders.
+// Pointer drags float a clone in dnd-kit's <DragOverlay> (the in-grid tile
+// hides) and produce the moving shape the collision observer needs. Keyboard
+// drags get `none`: there's no pointer, so the tile stays visible and steps in
+// place — a clone would freeze at the origin. Module-level for stable identity.
+export const ITEM_FEEDBACK = [
+  Feedback.configure({
+    feedback: (_source: Draggable, manager) =>
+      isKeyboardEvent(manager.dragOperation.activatorEvent) ? "none" : "clone",
+  }),
+];
+
+// Resize handles are draggables too, but resizing isn't a move — there's no tile
+// to float — so they suppress dnd-kit's visual feedback entirely.
 export const NO_FEEDBACK = [Feedback.configure({ feedback: "none" })];
 
 /**

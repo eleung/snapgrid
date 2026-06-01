@@ -1,7 +1,7 @@
 "use client";
 
+import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
 import {
-  GridDragOverlay,
   type Layout,
   SnapGridProvider,
   useContainerWidth,
@@ -21,9 +21,14 @@ export function HeadlessExample() {
 
   return (
     <div ref={containerRef}>
-      <SnapGridProvider layout={layout} width={width} onLayoutChange={setLayout}>
-        <Surface items={layout} />
-      </SnapGridProvider>
+      <DragDropProvider>
+        <SnapGridProvider layout={layout} width={width} onLayoutChange={setLayout}>
+          <Surface items={layout} />
+        </SnapGridProvider>
+        <DragOverlay>
+          {(source) => (source ? <div className="tile">{String(source.id)}</div> : null)}
+        </DragOverlay>
+      </DragDropProvider>
     </div>
   );
 }
@@ -38,7 +43,6 @@ function Surface({ items }: { items: Layout }) {
         <Tile key={item.i} id={item.i} />
       ))}
       {placeholder && <div className="placeholder" style={placeholder.style} />}
-      <GridDragOverlay>{(item) => <div className="tile">{item.i}</div>}</GridDragOverlay>
     </div>
   );
 }

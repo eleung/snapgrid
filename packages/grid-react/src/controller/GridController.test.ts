@@ -67,14 +67,16 @@ describe("GridController snapshots (fine-grained re-render basis)", () => {
     expect(listener).toHaveBeenCalledTimes(2); // no further calls
   });
 
-  it("does not emit when setCommitted is given the same reference", () => {
+  it("setCommitted updates the layout WITHOUT notifying (it runs during render)", () => {
     const c = new GridController(layout);
     const listener = vi.fn();
     c.subscribe(listener);
-    c.setCommitted(layout); // same ref
+    const next: Layout = [{ i: "a", x: 5, y: 5, w: 1, h: 1 }];
+    c.setCommitted(next);
+    // No emit: notifying here would be a setState-during-render error. A layout
+    // prop change already re-renders the subtree, so the new value is picked up.
     expect(listener).not.toHaveBeenCalled();
-    c.setCommitted([...layout]); // new ref
-    expect(listener).toHaveBeenCalledTimes(1);
+    expect(c.itemSnapshot("a").item).toMatchObject({ x: 5, y: 5 });
   });
 
   it("placeholder snapshot is null at rest, stable by value while dragging", () => {

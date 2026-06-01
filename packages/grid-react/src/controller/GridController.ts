@@ -1,17 +1,11 @@
 import type { DragSession, Layout, LayoutItem } from "@snapgridjs/core";
 
-/** The floating drag preview (a body portal): item + fixed-viewport rect. */
-export interface GridOverlayInfo {
-  item: LayoutItem;
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
-
 export interface ItemSnapshot {
   item: LayoutItem | undefined;
   isDragging: boolean;
+  // Hide the in-grid tile: true only for a *pointer* drag (its clone floats in
+  // the overlay). Keyboard drags have no overlay, so the tile stays visible.
+  hidden: boolean;
 }
 
 export interface ResizeSnapshot {
@@ -30,7 +24,7 @@ function sameItem(a: LayoutItem | undefined, b: LayoutItem | undefined): boolean
 
 /**
  * Live per-grid drag/resize state as a plain observable: the provider writes
- * (`setSession`/`setOverlay`/`setCommitted`), hooks subscribe to just their own
+ * (`setSession`/`setKeyboard`/`setCommitted`), hooks subscribe to just their own
  * slice via `useSyncExternalStore`. Value-cached snapshots mean a drag re-renders
  * only the tiles whose slice changed, not the whole subtree (the old
  * context-value model re-rendered every tile every frame).
@@ -38,7 +32,9 @@ function sameItem(a: LayoutItem | undefined, b: LayoutItem | undefined): boolean
 export class GridController {
   #committed: Layout;
   #session: DragSession | null = null;
-  #overlay: GridOverlayInfo | null = null;
+  // True while the active drag was started by the keyboard (no floating overlay
+  // → the in-grid tile must stay visible and move in place).
+  #keyboard = false;
   #listeners = new Set<() => void>();
 
   // getSnapshot must return a stable reference while the slice is unchanged
@@ -81,10 +77,15 @@ export class GridController {
     return this.#renderedMap!;
   }
 
+  /**
+   * Sync the committed layout from the controlled `layout` prop. Called during
+   * the provider's render, so it must NOT notify — emitting here would update
+   * subscribed GridItems mid-render (a React "setState while rendering" error).
+   * No notify is needed: a `layout` prop change already re-renders the whole
+   * provider subtree, so every GridItem re-reads its snapshot on that pass.
+   */
   setCommitted(layout: Layout): void {
-    if (this.#committed === layout) return; // controlled prop, same ref → no-op
     this.#committed = layout;
-    this.#emit();
   }
 
   setSession(next: DragSession | null): void {
@@ -96,19 +97,27 @@ export class GridController {
     return this.#session;
   }
 
-  setOverlay(
-    next: GridOverlayInfo | null | ((prev: GridOverlayInfo | null) => GridOverlayInfo | null),
-  ): void {
-    this.#overlay = typeof next === "function" ? next(this.#overlay) : next;
+  /** Record whether the active drag is keyboard-driven (drives `hidden`). */
+  setKeyboard(value: boolean): void {
+    if (this.#keyboard === value) return;
+    this.#keyboard = value;
     this.#emit();
   }
 
   itemSnapshot = (id: string): ItemSnapshot => {
     const item = this.#renderedById().get(id);
     const isDragging = this.#session?.activeId === id;
+    const hidden = isDragging && this.#session?.kind === "move" && !this.#keyboard;
     const prev = this.#itemCache.get(id);
-    if (prev && prev.isDragging === isDragging && sameItem(prev.item, item)) return prev;
-    const snap: ItemSnapshot = { item, isDragging };
+    if (
+      prev &&
+      prev.isDragging === isDragging &&
+      prev.hidden === hidden &&
+      sameItem(prev.item, item)
+    ) {
+      return prev;
+    }
+    const snap: ItemSnapshot = { item, isDragging, hidden };
     this.#itemCache.set(id, snap);
     return snap;
   };
@@ -130,8 +139,6 @@ export class GridController {
     this.#resizeCache.set(itemId, snap);
     return snap;
   };
-
-  overlaySnapshot = (): GridOverlayInfo | null => this.#overlay;
 
   renderedSnapshot = (): Layout => this.#rendered();
 }

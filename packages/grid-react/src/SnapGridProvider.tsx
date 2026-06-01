@@ -23,6 +23,7 @@ import {
 import { type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef } from "react";
 import { GridContext, type GridRuntime, type SnapGridDragData } from "./context.js";
 import { GridController } from "./controller/GridController.js";
+import { SnapToGrid } from "./dnd/snapToGrid.js";
 import { classifyDrop, receiveCell } from "./dragFlow.js";
 import { type GridRegistry, SnapGridGroupContext, createGridRegistry } from "./grouping.js";
 import { buildItemSensors } from "./hooks/dndShared.js";
@@ -130,8 +131,6 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
   const controller = controllerRef.current;
   controller.setCommitted(props.layout);
 
-  const setOverlay = controller.setOverlay;
-
   // Refs read inside the stable monitor handlers so they never see stale values.
   const propsRef = useRef(props);
   propsRef.current = props;
@@ -220,6 +219,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       // Reset on every start (incl. the external/resize early-returns below) so a
       // keyboard flag can never leak from a prior drag into an unrelated one.
       keyboardRef.current = false;
+      controller.setKeyboard(false);
       const data = dragData(event);
       if (!data) {
         // An external (non-grid) draggable: if we accept it, reserve a stable
@@ -260,19 +260,18 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       }
       if (item) {
         // We own the item — this is the source grid.
-        keyboardRef.current = event.operation.activatorEvent instanceof KeyboardEvent;
+        const isKeyboard = event.operation.activatorEvent instanceof KeyboardEvent;
+        keyboardRef.current = isKeyboard;
+        controller.setKeyboard(isKeyboard);
         const rect = calcGridItemPosition(ppRef.current, item.x, item.y, item.w, item.h);
         setSessionBoth(beginDrag(layout, { item, left: rect.left, top: rect.top, pointer }));
-        // Capture the dragged element's client rect for the body-portal preview,
-        // so it can float across grids without being clipped.
+        // Share the grab offset (pointer position within the tile) so a receiving
+        // grid maps the pointer to the cell under the same point the user grabbed,
+        // not the tile's corner.
         const el = (event.operation.source as { element?: Element } | null)?.element;
         const cr = el?.getBoundingClientRect();
         if (cr) {
-          // Share the grab offset (pointer position within the tile) so both this
-          // grid's floating overlay and any receiving grid's placeholder align to
-          // it rather than snapping the tile's corner to the cursor.
           registryRef.current.setGrabOffset({ x: pointer.x - cr.left, y: pointer.y - cr.top });
-          setOverlay({ item, left: cr.left, top: cr.top, width: cr.width, height: cr.height });
         }
         propsRef.current.onDragStart?.(
           layout,
@@ -285,7 +284,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       }
       // Otherwise the item belongs to another grid; we may receive it on move.
     },
-    [setSessionBoth, setOverlay],
+    [setSessionBoth, controller],
   );
 
   const handleDragMove = useCallback(
@@ -338,7 +337,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
           next = dragTo(source, pointer, ctx());
         } else {
           // Leaving this grid: keep the item in place and hide the placeholder
-          // here; the floating overlay (body portal) tracks the pointer.
+          // here; the dnd-kit overlay clone tracks the pointer across grids.
           next = {
             ...source,
             preview: source.committed as LayoutItem[],
@@ -346,27 +345,6 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
           };
         }
         setSessionBoth(next);
-        // Position the floating tile. With `dragConfig.snapToGrid` it snaps onto
-        // the target cell (the placeholder's pixel rect); otherwise it tracks the
-        // pointer smoothly. (The placeholder always snaps either way.)
-        const grab = registryRef.current.getGrabOffset();
-        let oLeft = pointer.x - grab.x;
-        let oTop = pointer.y - grab.y;
-        if (propsRef.current.dragConfig?.snapToGrid && here && next.placeholder) {
-          const rect = containerElRef.current?.getBoundingClientRect();
-          if (rect) {
-            const cell = calcGridItemPosition(
-              ppRef.current,
-              next.placeholder.x,
-              next.placeholder.y,
-              next.placeholder.w,
-              next.placeholder.h,
-            );
-            oLeft = rect.left + cell.left;
-            oTop = rect.top + cell.top;
-          }
-        }
-        setOverlay((o) => (o ? { ...o, left: oLeft, top: oTop } : o));
         propsRef.current.onDrag?.(
           next.preview,
           next.anchor.item,
@@ -388,7 +366,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
         setSessionBoth(null); // pointer left; we're no longer receiving
       }
     },
-    [setSessionBoth, setOverlay, overMe, cellFromPointer, ctx],
+    [setSessionBoth, overMe, cellFromPointer, ctx],
   );
 
   const handleDragEnd = useCallback(
@@ -401,7 +379,6 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       // grid), so a keyboard drop always commits to this grid.
       const dest = keyboardRef.current ? myId : registryRef.current.gridAt({ x: p.x, y: p.y });
       const ownsItem = data ? committedByIdRef.current.has(data.itemId) : false;
-      setOverlay(null);
       registryRef.current.setGrabOffset(null);
 
       const native = event.nativeEvent ?? null;
@@ -474,14 +451,16 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       }
       dropSpecRef.current = null;
       keyboardRef.current = false;
+      controller.setKeyboard(false);
       setSessionBoth(null);
     },
-    [setSessionBoth, setOverlay, ctx],
+    [setSessionBoth, controller, ctx],
   );
 
   // Keyboard dragging: while a keyboard-initiated move is active, arrow keys step
-  // the tile one cell at a time and move the floating overlay to match. Enter /
-  // Space (drop) and Escape (cancel) fall through to dnd-kit's KeyboardSensor.
+  // the tile one cell at a time (it moves in place via the session preview — no
+  // overlay). Enter / Space (drop) and Escape (cancel) fall through to dnd-kit's
+  // KeyboardSensor.
   useEffect(() => {
     const STEP: Record<string, [number, number]> = {
       ArrowLeft: [-1, 0],
@@ -500,28 +479,11 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       // listener) from also moving — otherwise its internal operation position
       // drifts every keystroke. We run in capture on window, ahead of it.
       e.stopImmediatePropagation();
-      const next = nudge(session, step[0], step[1], ctx());
-      setSessionBoth(next);
-      const cell = next.placeholder;
-      const rect = containerElRef.current?.getBoundingClientRect();
-      if (cell && rect) {
-        const pos = calcGridItemPosition(ppRef.current, cell.x, cell.y, cell.w, cell.h);
-        setOverlay((o) =>
-          o
-            ? {
-                ...o,
-                left: rect.left + pos.left,
-                top: rect.top + pos.top,
-                width: pos.width,
-                height: pos.height,
-              }
-            : o,
-        );
-      }
+      setSessionBoth(nudge(session, step[0], step[1], ctx()));
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [ctx, setSessionBoth, setOverlay]);
+  }, [ctx, setSessionBoth]);
 
   // Stable handlers object: dnd-kit's monitor effect keys on the handlers
   // identity, so a fresh literal each render would tear down and re-add all
@@ -540,6 +502,18 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
   const itemSensors = useMemo(
     () => buildItemSensors(dragThreshold, () => propsRef.current.dragConfig),
     [dragThreshold],
+  );
+
+  // Snap-to-grid modifier (stable descriptor; reads live refs so it never goes
+  // stale). A no-op unless `dragConfig.snapToGrid` is set.
+  const itemModifiers = useMemo(
+    () => [
+      SnapToGrid.configure({
+        getPositionParams: () => ppRef.current,
+        isEnabled: () => propsRef.current.dragConfig?.snapToGrid ?? false,
+      }),
+    ],
+    [],
   );
 
   const gridDraggable = props.isDraggable ?? true;
@@ -581,6 +555,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       isItemResizable,
       resizeHandlesFor,
       itemSensors,
+      itemModifiers,
       setContainerElement,
     }),
     [
@@ -594,6 +569,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       isItemResizable,
       resizeHandlesFor,
       itemSensors,
+      itemModifiers,
       setContainerElement,
     ],
   );

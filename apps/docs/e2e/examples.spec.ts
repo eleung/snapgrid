@@ -35,7 +35,12 @@ test("keyboard: pick up, move with arrows, drop", async ({ page }) => {
   await item.evaluate((el) => (el as HTMLElement).focus());
   await page.keyboard.press("Enter");
   await expect(demo.locator(".snapgrid-placeholder")).toHaveCount(1);
+  // A keyboard drag has no floating overlay, so the in-grid tile must stay
+  // VISIBLE and move in place (unlike a pointer drag, which hides it and floats
+  // a clone). Guards the Phase 3 keyboard path.
+  await expect(item).toBeVisible();
   for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
+  await expect(item).toBeVisible();
   await page.keyboard.press("Enter");
   await page.waitForTimeout(300);
   const after = await item.boundingBox();
@@ -122,4 +127,50 @@ test("external drop: a palette chip lands in the grid", async ({ page }) => {
     (await dropGrid.boundingBox())!,
   );
   await expect(items).toHaveCount(n0 + 1);
+});
+
+test("snapToGrid: the floating overlay quantizes to whole cells", async ({ page }) => {
+  // The snap demo: toggle snapToGrid on, then drag a tile by a sub-cell amount
+  // and confirm the floating overlay clone snaps in cell-sized steps rather than
+  // gliding to the exact pointer.
+  const demo = page.locator(".dg-demo", { has: page.getByText("snapToGrid") });
+  await demo.scrollIntoViewIfNeeded();
+  await demo.getByText("snapToGrid").click();
+
+  const tile = demo.locator(".snapgrid-item").first();
+  const b = (await tile.boundingBox())!;
+  const fx = b.x + b.width / 2;
+  const fy = b.y + b.height / 2;
+
+  // Read the dragged clone's x from the OVERLAY THAT HAS CONTENT (the page hosts
+  // one inert overlay per demo; only the active one holds a child).
+  const overlayX = () =>
+    page.evaluate(() => {
+      const overlays = [...document.querySelectorAll("[data-dnd-overlay]")] as HTMLElement[];
+      const active = overlays.find((o) => o.children.length > 0);
+      return active ? Math.round(active.getBoundingClientRect().x) : null;
+    });
+
+  await page.mouse.move(fx, fy);
+  await page.mouse.down();
+  await page.mouse.move(fx + 10, fy, { steps: 4 }); // clear threshold; <1 cell
+  await page.waitForTimeout(80);
+  const xSmall = await overlayX();
+
+  // Nudge a bit more, still within the same cell — a snapped overlay must NOT move.
+  await page.mouse.move(fx + 24, fy, { steps: 4 });
+  await page.waitForTimeout(80);
+  const xStillSameCell = await overlayX();
+
+  // Move past a full cell — now the overlay should jump by a cell.
+  await page.mouse.move(fx + 220, fy, { steps: 10 });
+  await page.waitForTimeout(80);
+  const xNextCell = await overlayX();
+  await page.mouse.up();
+
+  expect(xSmall).not.toBeNull();
+  // Sub-cell nudge: snapped overlay stays put (quantized), unlike a gliding one.
+  expect(Math.abs((xStillSameCell ?? 0) - (xSmall ?? 0))).toBeLessThan(8);
+  // Crossing a cell boundary moves the overlay by a meaningful (cell-sized) jump.
+  expect((xNextCell ?? 0) - (xSmall ?? 0)).toBeGreaterThan(80);
 });

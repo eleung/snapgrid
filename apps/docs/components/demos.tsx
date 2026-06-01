@@ -1,11 +1,10 @@
 "use client";
 
 import { Feedback } from "@dnd-kit/dom";
-import { useDraggable } from "@dnd-kit/react";
+import { DragOverlay, useDraggable } from "@dnd-kit/react";
 import { gravityCompactor, masonryCompactor, shelfCompactor } from "@snapgridjs/extras";
 import {
   type Compactor,
-  GridDragOverlay,
   GridLayout,
   type Layout,
   ResponsiveGridLayout,
@@ -583,13 +582,15 @@ function HeadlessSurface({ items }: { items: Layout }) {
           }}
         />
       ) : null}
-      <GridDragOverlay>
-        {(item) => (
-          <div className="dg-tile dg-tile--accent" style={{ width: "100%", height: "100%" }}>
-            <span className="dg-grip">⠿ {item.i.toUpperCase()}</span>
-          </div>
-        )}
-      </GridDragOverlay>
+      <DragOverlay>
+        {(source) =>
+          source ? (
+            <div className="dg-tile dg-tile--accent" style={{ width: "100%", height: "100%" }}>
+              <span className="dg-grip">⠿ {String(source.id).toUpperCase()}</span>
+            </div>
+          ) : null
+        }
+      </DragOverlay>
     </div>
   );
 }

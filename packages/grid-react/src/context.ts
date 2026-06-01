@@ -1,9 +1,8 @@
+import type { Modifiers } from "@dnd-kit/abstract";
 import type { Sensors } from "@dnd-kit/dom";
 import type { GridConfig, LayoutItem, PositionParams, ResizeHandleAxis } from "@snapgridjs/core";
 import { createContext, useContext } from "react";
 import type { GridController } from "./controller/GridController.js";
-
-export type { GridOverlayInfo } from "./controller/GridController.js";
 
 /** Data attached to the dnd-kit draggables snapgrid creates. */
 export type SnapGridDragData =
@@ -41,6 +40,8 @@ export interface GridRuntime {
   resizeHandlesFor: (id: string) => readonly ResizeHandleAxis[];
   /** Sensors for item (move) draggables (threshold + handle/cancel gating). */
   itemSensors: Sensors;
+  /** Modifiers for item draggables (snap-to-grid; no-op unless enabled). */
+  itemModifiers: Modifiers;
   /** Called by {@link useGridContainer} to report the surface element (for cross-grid geometry). */
   setContainerElement: (element: Element | null) => void;
 }

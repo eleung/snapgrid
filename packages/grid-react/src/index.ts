@@ -29,8 +29,6 @@ export { useGridPlaceholder } from "./hooks/useGridPlaceholder.js";
 export type { GridPlaceholderInfo } from "./hooks/useGridPlaceholder.js";
 export { useGridResizeHandle } from "./hooks/useGridResizeHandle.js";
 export type { UseGridResizeHandleResult } from "./hooks/useGridResizeHandle.js";
-export { useGridDragOverlay } from "./hooks/useGridDragOverlay.js";
-export type { GridDragOverlay as GridDragOverlayInfo } from "./hooks/useGridDragOverlay.js";
 
 export {
   DEFAULT_BREAKPOINTS,
@@ -51,10 +49,10 @@ export {
   GridPlaceholder,
   type GridPlaceholderProps,
 } from "./GridPlaceholder.js";
-export {
-  GridDragOverlay,
-  type GridDragOverlayProps,
-} from "./GridDragOverlay.js";
+// The floating drag preview is dnd-kit's <DragOverlay> (GridLayout renders one;
+// headless consumers render their own). Re-exported so they need not add a
+// direct @dnd-kit/react import.
+export { DragOverlay } from "@dnd-kit/react";
 
 // Utilities
 export {
