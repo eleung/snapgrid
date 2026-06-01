@@ -155,9 +155,16 @@ export function Board() {
   [Styling](/docs/guides/styling) for the classes and data attributes snapgrid exposes.
 </Callout>
 
+<Callout type="info">
+  `<GridLayout>` is the turnkey layer — it bundles a dnd-kit `DragDropProvider` and renders default
+  markup. snapgrid is headless-first: when you want to own every element, or compose with other
+  dnd-kit draggables, drop to the [hooks](/docs/guides/headless). Same engine, your markup.
+</Callout>
+
 ## Where to next
 
-- [Core Concepts](/docs/concepts): controlled state, the two layers, and how compaction works.
+- [Core Concepts](/docs/concepts): controlled state, the headless & turnkey layers, the dnd-kit-native design.
+- [Headless usage](/docs/guides/headless): own the markup with the hooks.
 - [Dragging](/docs/guides/dragging) and [Resizing](/docs/guides/resizing): fine-tune the interaction.
 - [Cross-grid dragging](/docs/guides/cross-grid): drag tiles between grids.
-- [API Reference](/docs/api/overview): every component, hook, and type.
+- [API Reference](/docs/api/overview): every hook, component, and type.

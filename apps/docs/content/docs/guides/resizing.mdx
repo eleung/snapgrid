@@ -59,6 +59,6 @@ const layout = [
 
 ## Custom handles
 
-With the headless API you render handles yourself via `useGridResizeHandle(itemId, axis)`, which
-returns a `ref` and the marker props that exclude the handle from drag activation. See
-[Headless usage](/docs/guides/headless).
+With the headless API you render handles yourself via `useGridResizeHandle(itemId, axis, group)`
+(where `group` is the grid's id from `useGridContainer`), which returns a `ref` and the marker props
+that exclude the handle from drag activation. See [Headless usage](/docs/guides/headless).

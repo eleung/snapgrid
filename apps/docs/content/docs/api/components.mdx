@@ -1,15 +1,22 @@
 ---
 title: Components
-description: GridLayout, ResponsiveGridLayout, GridItem, GridPlaceholder, GridDragOverlay, SnapGridProvider, SnapGridGroup.
+description: GridLayout, ResponsiveGridLayout, GridItem, GridPlaceholder, SnapGridGroup.
 ---
 
 import { Callout } from "nextra/components";
 
 # Components
 
+The turnkey layer — a thin, react-grid-layout-style shell over the [hooks](/docs/api/hooks).
+`<GridLayout>` bundles the dnd-kit `DragDropProvider`, the container, the items, the placeholder, and
+the [`DragOverlay`](https://next.dndkit.com), so you never touch dnd-kit directly. For full control
+of the markup, or to compose with other dnd-kit draggables, use the hooks.
+
 ## GridLayout
 
-The drop-in controlled grid. Children are keyed by their layout item's `i`.
+The drop-in controlled grid. Children are keyed by their layout item's `i`. It supplies its own
+`DragDropProvider`; nest several (or wrap them in [`SnapGridGroup`](#snapgridgroup)) and they share
+one.
 
 ```tsx
 <GridLayout
@@ -70,46 +77,41 @@ Switches columns and layout by breakpoint as `width` changes. See
 ## GridItem
 
 A positioned tile with stable classes (`snapgrid-item`, `data-grid-id`, `data-dragging`) and the
-configured resize handles. Use it inside your own surface, or let `GridLayout` create them.
+configured resize handles. Memoized, so re-rendering the surface doesn't re-render every tile. Use
+it inside your own surface, or let `GridLayout` create them.
 
 | Prop | Type | Description |
 | --- | --- | --- |
 | `id` | `string` | **Required.** Matches the layout item's `i`. |
+| `group` | `string` | **Required.** The owning grid's id (from its `useGridContainer`). |
 | `children` | `ReactNode` | Tile content. |
 | `className` | `string` | Appended to `snapgrid-item`. |
 | `style` | `CSSProperties` | Merged over the positioning style. |
 
 ## GridPlaceholder
 
-Renders the landing-cell marker, or nothing when idle. Customize with `className` / `style`, or use
-[`useGridPlaceholder`](/docs/api/hooks#usegridplaceholder) for full control.
-
-## GridDragOverlay
-
-Renders the floating drag preview in a portal at `document.body` so it follows the pointer across
-grids unclipped. Takes a render function:
-
-```tsx
-<GridDragOverlay>{(item) => <MyCard id={item.i} />}</GridDragOverlay>
-```
+Renders the landing-cell marker, or nothing when idle. Takes the grid's `group`. Customize with
+`className` / `style`, or use [`useGridPlaceholder`](/docs/api/hooks#usegridplaceholder) for full
+control.
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `children` | `(item: LayoutItem) => ReactNode` | **Required.** Renders the dragged item. |
-| `className` | `string` | Appended to `snapgrid-overlay`. |
-| `style` | `CSSProperties` | Merged over the positioning style. |
+| `group` | `string` | **Required.** The owning grid's id. |
+| `className` | `string` | Appended to `snapgrid-placeholder`. |
+| `style` | `CSSProperties` | Merged over the default look. |
 
-## SnapGridProvider
-
-The headless provider. Same props as `GridLayout` minus `className`/`style`; instead of mapped
-children you render your own markup with the [hooks](/docs/api/hooks). See
-[Headless usage](/docs/guides/headless).
+<Callout type="info">
+  There is no snapgrid drag-overlay component. The floating preview is dnd-kit's
+  [`DragOverlay`](https://next.dndkit.com) — `GridLayout` renders one for you; in the headless layer
+  you render it yourself. See [Headless usage](/docs/guides/headless).
+</Callout>
 
 ## SnapGridGroup
 
-Wraps multiple grids so tiles can be dragged between them: one shared dnd-kit provider and a
-registry. Takes only `children`. See [Cross-grid dragging](/docs/guides/cross-grid).
+Shares one dnd-kit `DragDropProvider` across several sibling grids so tiles can be dragged between
+them. Takes only `children` — a thin wrapper over `DragDropProvider` (nesting `GridLayout`s already
+shares a provider, so this is just explicit). See [Cross-grid dragging](/docs/guides/cross-grid).
 
 <Callout type="warning">
-  Item ids must be unique across all grids in a group.
+  Item ids must be unique across all grids that share a provider.
 </Callout>

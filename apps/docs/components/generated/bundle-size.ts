@@ -2,8 +2,8 @@
 // Regenerate with: pnpm --filter @snapgridjs/docs measure
 // Minified + tree-shaken `import { GridLayout }`, brotli, React excluded.
 export const BUNDLE_SIZE = {
-  total: 33,
-  snapgrid: 6,
+  total: 34,
+  snapgrid: 7,
   dndkit: 27,
   unit: "kB",
   compression: "brotli",

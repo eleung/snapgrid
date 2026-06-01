@@ -1,6 +1,6 @@
 ---
 title: Headless usage
-description: Compose SnapGridProvider with the hooks and render your own markup, no imposed DOM or CSS.
+description: Compose the snapgrid hooks with dnd-kit's DragDropProvider and render your own markup — no imposed DOM or CSS.
 ---
 
 import { Callout } from "nextra/components";
@@ -8,50 +8,52 @@ import { HeadlessDemo } from "@/components/demos";
 
 # Headless usage
 
-`<GridLayout>` is convenient, but it renders its own `<div>`s and class names. When you need full
-control of the markup — custom elements, your own placeholder, a bespoke drag preview — drop to the
-headless layer: `SnapGridProvider` plus a set of hooks.
+The hooks are snapgrid's primary API. `<GridLayout>` is a thin shell over them; when you need full
+control of the markup — custom elements, your own placeholder, a bespoke drag preview, or to compose
+with other dnd-kit draggables — use the hooks directly.
 
 <HeadlessDemo />
 
 ## The shape of it
 
-`SnapGridProvider` owns the drag/resize session and exposes it through context. You render the
-container, the items, the placeholder, and the overlay yourself using the hooks.
+A headless grid is three pieces, all under a dnd-kit `DragDropProvider`:
+
+1. **`useGridContainer(options)`** is the grid *host*. You pass it the controlled `layout` /
+   `width` / `onLayoutChange` (and any config), and it returns `containerProps` for your surface
+   element plus the grid's **`group`** — the id that ties its tiles to it.
+2. **`useGridItem(id, group)`** wires one tile: a ref, a positioning style, and drag state. It
+   resolves its grid by `group` (the value `useGridContainer` returned), the way a dnd-kit sortable
+   item declares its list.
+3. **`<DragOverlay>`** (from dnd-kit) renders the floating drag preview.
 
 ```tsx
-import {
-  SnapGridProvider,
-  useGridContainer,
-  useGridItem,
-  useGridPlaceholder,
-  GridDragOverlay,
-} from "@snapgridjs/react";
+import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
+import { useGridContainer, useGridItem, useGridPlaceholder } from "@snapgridjs/react";
 
 function Board({ layout, setLayout, width }) {
   return (
-    <SnapGridProvider layout={layout} width={width} onLayoutChange={setLayout}>
-      <Surface items={layout} />
-    </SnapGridProvider>
+    <DragDropProvider>
+      <Surface items={layout} width={width} onLayoutChange={setLayout} />
+      <DragOverlay>{(source) => (source ? <Tile id={String(source.id)} preview /> : null)}</DragOverlay>
+    </DragDropProvider>
   );
 }
 
-function Surface({ items }) {
-  const { containerProps } = useGridContainer();
-  const placeholder = useGridPlaceholder();
+function Surface({ items, width, onLayoutChange }) {
+  const { containerProps, group } = useGridContainer({ layout: items, width, onLayoutChange });
+  const placeholder = useGridPlaceholder(group);
   return (
     <div {...containerProps}>
       {items.map((it) => (
-        <Tile key={it.i} id={it.i} />
+        <Tile key={it.i} id={it.i} group={group} />
       ))}
       {placeholder && <div className="my-placeholder" style={placeholder.style} />}
-      <GridDragOverlay>{(item) => <Tile id={item.i} preview />}</GridDragOverlay>
     </div>
   );
 }
 
-function Tile({ id }) {
-  const { ref, style, isDragging } = useGridItem(id);
+function Tile({ id, group }) {
+  const { ref, style, isDragging } = useGridItem(id, group);
   return (
     <div ref={ref} style={style} data-dragging={isDragging}>
       {id}
@@ -60,26 +62,40 @@ function Tile({ id }) {
 }
 ```
 
+<Callout type="info">
+  You bring the `DragDropProvider`. That's the point of the headless layer: the grid is just another
+  participant in *your* dnd-kit tree, so it can share a provider with sortable lists and other
+  draggables. (The turnkey `<GridLayout>` bundles a provider for you.)
+</Callout>
+
 ## The hooks
 
 | Hook | Returns | Renders |
 | --- | --- | --- |
-| `useGridContainer()` | `{ containerProps, isDropTarget }` | The positioned surface; registers the droppable. |
-| `useGridItem(id)` | `{ ref, style, isDragging, item }` | A single tile, positioned and drag-wired. |
-| `useGridResizeHandle(id, axis)` | `{ ref, handleProps, isResizing }` | A resize handle for an edge/corner. |
-| `useGridPlaceholder()` | `{ item, style } \| null` | The landing-cell marker (null when idle). |
-| `useGridDragOverlay()` | `{ item, style } \| null` | The floating preview (source grid only). |
+| `useGridContainer(options)` | `{ containerProps, group, controller }` | The positioned surface; registers the droppable + owns the grid. |
+| `useGridItem(id, group)` | `{ ref, style, isDragging, item }` | A single tile, positioned and drag-wired. |
+| `useGridResizeHandle(id, axis, group)` | `{ ref, handleProps, isResizing }` | A resize handle for an edge/corner. |
+| `useGridPlaceholder(group)` | `{ item, style } \| null` | The landing-cell marker (null when idle). |
 
 Spread the returned `ref` / `style` / props onto your own elements. You choose the tag, the class
-names, and the cosmetics. snapgrid only supplies positioning and state.
+names, and the cosmetics. snapgrid only supplies positioning and state. Every item-level hook takes
+the `group` from its `useGridContainer`.
 
 <Callout type="info">
-  The floating overlay is meant to be portaled to `document.body` so it can cross between grids
-  unclipped. The `<GridDragOverlay>` convenience component does that for you; with the hook, render
-  it in a portal yourself.
+  The floating drag preview is dnd-kit's [`DragOverlay`](https://next.dndkit.com), not a snapgrid
+  component. Render one under your `DragDropProvider` and return the dragged tile's content from its
+  render prop; dnd-kit portals and positions it so it crosses between grids unclipped.
 </Callout>
+
+## Memoize your tiles
+
+The surface re-renders as the grid's height tracks the drag. Wrap your tile component in
+`React.memo` so only the tile whose cell actually changed re-renders — each `useGridItem` subscribes
+to just its own slice, so a memoized tile stays put while its neighbours don't. (`<GridItem>` is
+already memoized.)
 
 ## Mixing layers
 
 The two layers share one engine, so you can use `<GridLayout>` for most of the app and the hooks for
-one special grid, or use `<GridItem>` inside your own surface. Nothing is all-or-nothing.
+one special grid, or drop `<GridItem id="…" group={group}>` inside your own surface. Nothing is
+all-or-nothing.

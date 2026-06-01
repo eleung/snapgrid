@@ -9,31 +9,32 @@ A map of the public surface. Follow a link for details.
 
 ## `@snapgridjs/react`
 
-The main package. Components, hooks, and a re-export of the engine types.
+The main package. Hooks (the headless layer), turnkey components, and a re-export of the engine
+types. Headless grids render inside a dnd-kit `DragDropProvider`; `<GridLayout>` bundles one.
 
-### Components
-
-| Export | Purpose |
-| --- | --- |
-| [`GridLayout`](/docs/api/components#gridlayout) | Drop-in controlled grid with keyed children. |
-| [`ResponsiveGridLayout`](/docs/api/components#responsivegridlayout) | Per-breakpoint layouts. |
-| [`GridItem`](/docs/api/components#griditem) | A positioned tile with default markup + handles. |
-| [`GridPlaceholder`](/docs/api/components#gridplaceholder) | Default landing-cell marker. |
-| [`GridDragOverlay`](/docs/api/components#griddragoverlay) | Floating drag preview (body portal). |
-| [`SnapGridProvider`](/docs/api/components#dndgridprovider) | Headless provider — owns the session. |
-| [`SnapGridGroup`](/docs/api/components#dndgridgroup) | Wraps grids for cross-grid dragging. |
-
-### Hooks
+### Hooks (headless)
 
 | Export | Returns |
 | --- | --- |
-| [`useContainerWidth`](/docs/api/hooks#usecontainerwidth) | `{ width, mounted, containerRef }` |
-| [`useGridContainer`](/docs/api/hooks#usegridcontainer) | `{ containerProps, isDropTarget }` |
+| [`useGridContainer`](/docs/api/hooks#usegridcontainer) | `{ containerProps, group, controller }` — the grid host |
 | [`useGridItem`](/docs/api/hooks#usegriditem) | `{ ref, style, isDragging, item }` |
 | [`useGridResizeHandle`](/docs/api/hooks#usegridresizehandle) | `{ ref, handleProps, isResizing }` |
 | [`useGridPlaceholder`](/docs/api/hooks#usegridplaceholder) | `{ item, style } \| null` |
-| [`useGridDragOverlay`](/docs/api/hooks#usegriddragoverlay) | `{ item, style } \| null` |
+| [`useContainerWidth`](/docs/api/hooks#usecontainerwidth) | `{ width, mounted, containerRef }` |
 | [`useResponsiveLayout`](/docs/api/hooks#useresponsivelayout) | `{ breakpoint, cols, layout, onLayoutChange }` |
+
+### Components (turnkey)
+
+| Export | Purpose |
+| --- | --- |
+| [`GridLayout`](/docs/api/components#gridlayout) | Drop-in controlled grid with keyed children (bundles the provider). |
+| [`ResponsiveGridLayout`](/docs/api/components#responsivegridlayout) | Per-breakpoint layouts. |
+| [`GridItem`](/docs/api/components#griditem) | A positioned tile with default markup + handles. |
+| [`GridPlaceholder`](/docs/api/components#gridplaceholder) | Default landing-cell marker. |
+| [`SnapGridGroup`](/docs/api/components#snapgridgroup) | Shares one provider across sibling grids (cross-grid). |
+
+The floating drag preview is dnd-kit's [`DragOverlay`](https://next.dndkit.com), re-exported for
+convenience.
 
 ### Utilities & compactors
 

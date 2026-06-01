@@ -1,6 +1,6 @@
 ---
 title: Core Concepts
-description: Controlled state, the layout model, the two API layers, and how compaction works.
+description: Controlled state, the layout model, the headless and turnkey layers, the dnd-kit-native design, and how compaction works.
 ---
 
 import { Callout } from "nextra/components";
@@ -16,10 +16,6 @@ while you drag, and hands you the next array through `onLayoutChange` when an in
 
 ```tsx
 const [layout, setLayout] = useState<Layout>(initial);
-
-<GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
-  {/* … */}
-</GridLayout>;
 ```
 
 This means there's no hidden internal state to fall out of sync with, undo/redo is trivial (keep
@@ -55,20 +51,77 @@ Pixels come from the **`GridConfig`** (`cols`, `rowHeight`, `margin`, `container
 `maxRows`) plus the measured container `width`. The geometry helpers turn `(x, y, w, h)` into
 `left/top/width/height` and back.
 
-## Two layers: drop-in and headless
+## Built on dnd-kit
 
-snapgrid is headless-first with a thin component shell on top. Use whichever fits:
+snapgrid is a grid layout built on **[dnd-kit](https://next.dndkit.com)** (the 0.4 rewrite). It does
+not ship its own drag engine — it composes dnd-kit's. A grid lives inside a dnd-kit
+`DragDropProvider`; tiles are dnd-kit draggables; the grid surface is a dnd-kit droppable; the drag
+target comes from dnd-kit's collision system. snapgrid's job is the *grid* part on top: the
+coordinate space, the packing, and the controlled layout.
 
-- **Components**: `<GridLayout>`, `<GridItem>`, `<GridPlaceholder>`, `<GridDragOverlay>`,
-  `<ResponsiveGridLayout>`. Keyed children, default markup and class names. Great for the common
-  case and the fastest way to ship.
-- **Headless**: `SnapGridProvider` + `useGridContainer` / `useGridItem` / `useGridResizeHandle` /
-  `useGridPlaceholder` / `useGridDragOverlay`. You render every element; snapgrid supplies refs,
-  positioning styles, and state. No imposed DOM or CSS.
+That dependency is what makes a grid compose with the rest of the dnd-kit ecosystem — multiple grids,
+sortable lists, and arbitrary draggables can share one provider and exchange items. The brains of
+the layout (geometry, collision cascade, compaction) come from
+[react-grid-layout](https://github.com/react-grid-layout/react-grid-layout)'s engine; the
+*interaction* is dnd-kit.
 
-`<GridLayout>` is literally `SnapGridProvider` + the hooks wired to default markup, so you can start
-with the component and drop to hooks for any piece without changing engines. See
-[Headless usage](/docs/guides/headless).
+## Headless first, with a turnkey layer
+
+snapgrid is **headless-first**. The primary API is a set of hooks you wire to your own markup; the
+`<GridLayout>` component is a thin, opinionated shell over those same hooks for the common case.
+
+```tsx
+// Headless — your markup, you own every element.
+function Board({ layout, width, onLayoutChange }) {
+  return (
+    <DragDropProvider>            {/* dnd-kit's provider */}
+      <Surface layout={layout} width={width} onLayoutChange={onLayoutChange} />
+      <DragOverlay>{(source) => <Tile id={String(source.id)} />}</DragOverlay>
+    </DragDropProvider>
+  );
+}
+
+function Surface({ layout, width, onLayoutChange }) {
+  // useGridContainer is the grid host: it owns the grid and returns its `group`.
+  const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange });
+  return (
+    <div {...containerProps}>
+      {layout.map((it) => <Tile key={it.i} id={it.i} group={group} />)}
+    </div>
+  );
+}
+
+function Tile({ id, group }) {
+  const { ref, style } = useGridItem(id, group); // resolves its grid by `group`
+  return <div ref={ref} style={style}>{id}</div>;
+}
+```
+
+```tsx
+// Turnkey — the same thing, wired for you. <GridLayout> bundles the provider,
+// the container, the items, the placeholder, and the overlay.
+<GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
+  {layout.map((item) => <div key={item.i}>{item.i}</div>)}
+</GridLayout>
+```
+
+<Callout type="info">
+  **Two designs, on purpose.** The **headless** hooks are designed in dnd-kit's idiom — you bring a
+  `DragDropProvider`, tiles declare a `group` the way [`useSortable`](https://next.dndkit.com)
+  declares one, and grids interoperate with other dnd-kit draggables through `type`/`accept`. The
+  **turnkey** `<GridLayout>` is designed in react-grid-layout's idiom — a controlled, drop-in
+  component with `layout` / `onLayoutChange`. Reach for headless when you're composing with dnd-kit
+  or need full control of the markup; reach for `<GridLayout>` when you want a grid that just works.
+  They share one engine, so you can start turnkey and drop to hooks for any piece.
+</Callout>
+
+## How a tile finds its grid: `group`
+
+In the headless API there is no per-grid React context — a tile resolves its grid by a **`group`**
+key, exactly like a dnd-kit sortable item declares which list it belongs to. `useGridContainer`
+returns the grid's `group` (its id); you pass it to each `useGridItem(id, group)`. This is what lets
+several grids share one provider and still keep their items straight (so ids must be unique across
+grids that share a provider).
 
 ## Compaction (packing)
 
@@ -80,19 +133,24 @@ where items settle:
 - `none`: free positioning; items stay where you put them and may overlap.
 - `masonry` / `gravity` / `shelf`: from `@snapgridjs/extras`, for variable-height packing.
 
-You can swap the compactor at runtime (it's just a prop) and even write your own. See
+You can swap the compactor at runtime (it's just an option) and even write your own. See
 [Compaction & packing](/docs/guides/compaction).
 
 ## The interaction model
 
-snapgrid drives positioning itself rather than letting dnd-kit move the element (it drags with
-`feedback: "none"`). While you drag:
+snapgrid leans on dnd-kit for the interaction and adds the grid math on top. While you drag:
 
-- the **active tile** is hidden in place and a floating **overlay** (a body portal) follows the
-  pointer, so it can cross between grids without being clipped;
-- a **placeholder** marks the cell where the tile will land after compaction;
-- other tiles animate to their reflowed positions in real time.
+- the dragged tile floats as a dnd-kit **`DragOverlay`** clone (so it can cross between grids
+  unclipped), while the in-grid tile is hidden in place;
+- dnd-kit's **collision** system resolves which grid the pointer is over (the drop target);
+- snapgrid maps the pointer to a **cell** and re-packs, so a **placeholder** marks where the tile
+  will land and other tiles animate to their reflowed positions in real time.
 
 On drop, the previewed layout becomes the committed layout and flows back through `onLayoutChange`.
 Lifecycle callbacks (`onDragStart`, `onDrag`, `onDragStop`, and the resize equivalents) fire
 throughout. See [Events & lifecycle](/docs/guides/events).
+
+<Callout type="info">
+  Keyboard drags have no floating clone: the tile stays visible and steps cell-by-cell with the
+  arrow keys (Enter/Space to pick up and drop, Escape to cancel).
+</Callout>

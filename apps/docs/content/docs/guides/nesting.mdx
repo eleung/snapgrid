@@ -44,11 +44,11 @@ the body. A pointer-down inside the inner grid then never arms the outer drag.
 
 ## Why it works
 
-Each `<GridLayout>` (or `<SnapGridProvider>`) that isn't inside a `<SnapGridGroup>` creates its own
-dnd-kit provider and its own grid registry. So the inner grid's draggables, droppable surface, and
-drag session are entirely separate from the outer's. The handle gating (`dragConfig.handle`) is what
-keeps the shared pointer event from arming both. The inner tiles sit outside the outer's handle, so
-only the inner grid responds.
+Each `<GridLayout>` that isn't already inside a provider creates its **own** dnd-kit
+`DragDropProvider`. So the inner grid's draggables, droppable surface, and drag session are entirely
+separate from the outer's. The handle gating (`dragConfig.handle`) is what keeps the shared pointer
+event from arming both. The inner tiles sit outside the outer's handle, so only the inner grid
+responds.
 
 <Callout type="warning">
   Without a handle the outer tile drags from anywhere, including the inner grid, so a single
@@ -58,9 +58,10 @@ only the inner grid responds.
 
 ## Limits
 
-- **Don't nest inside one `<SnapGridGroup>`.** A group resolves which grid the pointer is over by
-  geometry, with no "innermost wins" rule, so an inner grid nested in the same group would be
-  ambiguous. Keep nested grids as independent standalone grids.
+- **Don't nest two grids under one provider.** Grids that share a `DragDropProvider` (or a
+  `<SnapGridGroup>`) participate in one collision pass with no "innermost wins" rule, so a grid
+  nested inside another on the same provider would be ambiguous. Keep nested grids as independent
+  standalone grids (each its own provider).
 - **No cross-level dragging.** You can't drag a tile out of the inner grid into the outer (or vice
   versa). Each grid commits its own layout independently. Nesting is for *composition*, not for
   moving tiles between levels. To exchange tiles between grids, use
