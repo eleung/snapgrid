@@ -1,6 +1,6 @@
 import { useDraggable } from "@dnd-kit/react";
 import { type LayoutItem, calcGridItemPosition } from "@snapgridjs/core";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useSyncExternalStore } from "react";
 import { useGridRuntime } from "../context.js";
 import { NO_FEEDBACK } from "./dndShared.js";
 
@@ -28,7 +28,15 @@ const REFLOW_TRANSITION = "transform 150ms ease, width 150ms ease, height 150ms 
  */
 export function useGridItem(id: string): UseGridItemResult {
   const rt = useGridRuntime();
-  const item = rt.itemsById.get(id);
+  const { controller } = rt;
+  // Subscribe to just this item's slice → a drag elsewhere doesn't re-render it.
+  const snap = useSyncExternalStore(
+    controller.subscribe,
+    () => controller.itemSnapshot(id),
+    () => controller.itemSnapshot(id),
+  );
+  const item = snap.item;
+  const active = snap.isDragging;
   const { ref, isDragging } = useDraggable({
     id,
     type: "grid-item",
@@ -38,7 +46,6 @@ export function useGridItem(id: string): UseGridItemResult {
     // Carry the full item so another grid can render/insert it on a cross-grid drop.
     data: { snapGrid: { kind: "move", itemId: id, item } },
   });
-  const active = rt.session?.activeId === id;
 
   let style: CSSProperties = { position: "absolute", touchAction: "none" };
   if (item) {

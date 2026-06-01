@@ -1,6 +1,6 @@
 import { useDroppable } from "@dnd-kit/react";
 import { type GridConfig, bottom } from "@snapgridjs/core";
-import { type CSSProperties, useCallback } from "react";
+import { type CSSProperties, useCallback, useSyncExternalStore } from "react";
 import { useGridRuntime } from "../context.js";
 
 export interface GridContainerProps {
@@ -50,9 +50,14 @@ export function useGridContainer(): UseGridContainerResult {
     [ref, setContainerElement],
   );
 
-  const height = rt.autoSize
-    ? containerHeight(bottom(rt.renderedLayout), rt.gridConfig)
-    : undefined;
+  // Subscribe to the rendered layout (drag preview while dragging, else
+  // committed) so the surface auto-height tracks the content as it reflows.
+  const renderedLayout = useSyncExternalStore(
+    rt.controller.subscribe,
+    rt.controller.renderedSnapshot,
+    rt.controller.renderedSnapshot,
+  );
+  const height = rt.autoSize ? containerHeight(bottom(renderedLayout), rt.gridConfig) : undefined;
 
   return {
     containerProps: {

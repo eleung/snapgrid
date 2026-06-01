@@ -1,5 +1,5 @@
 import { type LayoutItem, calcGridItemPosition } from "@snapgridjs/core";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useSyncExternalStore } from "react";
 import { useGridRuntime } from "../context.js";
 
 export interface GridPlaceholderInfo {
@@ -15,7 +15,12 @@ export interface GridPlaceholderInfo {
  */
 export function useGridPlaceholder(): GridPlaceholderInfo | null {
   const rt = useGridRuntime();
-  const placeholder = rt.session?.placeholder;
+  const { controller } = rt;
+  const placeholder = useSyncExternalStore(
+    controller.subscribe,
+    controller.placeholderSnapshot,
+    controller.placeholderSnapshot,
+  );
   if (!placeholder) return null;
   const pos = calcGridItemPosition(
     rt.positionParams,

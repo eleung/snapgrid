@@ -1,5 +1,5 @@
 import type { LayoutItem } from "@snapgridjs/core";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useSyncExternalStore } from "react";
 import { useGridRuntime } from "../context.js";
 
 export interface GridDragOverlay {
@@ -16,8 +16,12 @@ export interface GridDragOverlay {
  * {@link GridDragOverlay} for the convenience component).
  */
 export function useGridDragOverlay(): GridDragOverlay | null {
-  const rt = useGridRuntime();
-  const o = rt.overlay;
+  const { controller } = useGridRuntime();
+  const o = useSyncExternalStore(
+    controller.subscribe,
+    controller.overlaySnapshot,
+    controller.overlaySnapshot,
+  );
   if (!o) return null;
   return {
     item: o.item,

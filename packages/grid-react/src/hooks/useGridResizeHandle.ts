@@ -1,5 +1,6 @@
 import { useDraggable } from "@dnd-kit/react";
 import type { ResizeHandleAxis } from "@snapgridjs/core";
+import { useSyncExternalStore } from "react";
 import { useGridRuntime } from "../context.js";
 import { NO_FEEDBACK, RESIZE_HANDLE_ATTR } from "./dndShared.js";
 
@@ -22,12 +23,17 @@ export function useGridResizeHandle(
   handle: ResizeHandleAxis,
 ): UseGridResizeHandleResult {
   const rt = useGridRuntime();
+  const { controller } = rt;
   const { ref } = useDraggable({
     id: `${itemId}::resize::${handle}`,
     disabled: !rt.isItemResizable(itemId),
     plugins: NO_FEEDBACK,
     data: { snapGrid: { kind: "resize", itemId, handle } },
   });
-  const isResizing = rt.session?.kind === "resize" && rt.session.activeId === itemId;
+  const { isResizing } = useSyncExternalStore(
+    controller.subscribe,
+    () => controller.resizeSnapshot(itemId),
+    () => controller.resizeSnapshot(itemId),
+  );
   return { ref, handleProps: { [RESIZE_HANDLE_ATTR]: true }, isResizing };
 }

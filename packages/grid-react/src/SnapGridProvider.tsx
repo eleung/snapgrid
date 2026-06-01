@@ -20,22 +20,9 @@ import {
   toPositionParams,
   verticalCompactor,
 } from "@snapgridjs/core";
-import {
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  GridContext,
-  type GridOverlayInfo,
-  type GridRuntime,
-  type SnapGridDragData,
-} from "./context.js";
+import { type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef } from "react";
+import { GridContext, type GridRuntime, type SnapGridDragData } from "./context.js";
+import { GridController } from "./controller/GridController.js";
 import { classifyDrop, receiveCell } from "./dragFlow.js";
 import { type GridRegistry, SnapGridGroupContext, createGridRegistry } from "./grouping.js";
 import { buildItemSensors } from "./hooks/dndShared.js";
@@ -137,9 +124,13 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
   );
   const compactor: Compactor = props.compactor ?? verticalCompactor;
 
-  const [session, setSession] = useState<DragSession | null>(null);
-  // The floating preview (body portal) while this grid is the drag source.
-  const [overlay, setOverlay] = useState<GridOverlayInfo | null>(null);
+  // The live drag/resize store (see GridController), stable per grid instance.
+  const controllerRef = useRef<GridController | null>(null);
+  if (!controllerRef.current) controllerRef.current = new GridController(props.layout);
+  const controller = controllerRef.current;
+  controller.setCommitted(props.layout);
+
+  const setOverlay = controller.setOverlay;
 
   // Refs read inside the stable monitor handlers so they never see stale values.
   const propsRef = useRef(props);
@@ -184,10 +175,13 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
   const committedByIdRef = useRef(committedById);
   committedByIdRef.current = committedById;
 
-  const setSessionBoth = useCallback((next: DragSession | null) => {
-    sessionRef.current = next;
-    setSession(next);
-  }, []);
+  const setSessionBoth = useCallback(
+    (next: DragSession | null) => {
+      sessionRef.current = next;
+      controller.setSession(next);
+    },
+    [controller],
+  );
 
   const setContainerElement = useCallback((element: Element | null) => {
     containerElRef.current = element;
@@ -291,7 +285,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       }
       // Otherwise the item belongs to another grid; we may receive it on move.
     },
-    [setSessionBoth],
+    [setSessionBoth, setOverlay],
   );
 
   const handleDragMove = useCallback(
@@ -394,7 +388,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
         setSessionBoth(null); // pointer left; we're no longer receiving
       }
     },
-    [setSessionBoth, overMe, cellFromPointer, ctx],
+    [setSessionBoth, setOverlay, overMe, cellFromPointer, ctx],
   );
 
   const handleDragEnd = useCallback(
@@ -482,7 +476,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       keyboardRef.current = false;
       setSessionBoth(null);
     },
-    [setSessionBoth, ctx],
+    [setSessionBoth, setOverlay, ctx],
   );
 
   // Keyboard dragging: while a keyboard-initiated move is active, arrow keys step
@@ -527,7 +521,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [ctx, setSessionBoth]);
+  }, [ctx, setSessionBoth, setOverlay]);
 
   // Stable handlers object: dnd-kit's monitor effect keys on the handlers
   // identity, so a fresh literal each render would tear down and re-add all
@@ -546,12 +540,6 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
   const itemSensors = useMemo(
     () => buildItemSensors(dragThreshold, () => propsRef.current.dragConfig),
     [dragThreshold],
-  );
-
-  const renderedLayout: Layout = session ? session.preview : props.layout;
-  const itemsById = useMemo(
-    () => new Map<string, LayoutItem>(renderedLayout.map((it) => [it.i, it])),
-    [renderedLayout],
   );
 
   const gridDraggable = props.isDraggable ?? true;
@@ -588,15 +576,12 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       autoSize: props.autoSize ?? true,
       gridConfig,
       positionParams,
-      renderedLayout,
-      itemsById,
-      session,
+      controller,
       isItemDraggable,
       isItemResizable,
       resizeHandlesFor,
       itemSensors,
       setContainerElement,
-      overlay,
     }),
     [
       containerId,
@@ -604,15 +589,12 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
       props.autoSize,
       gridConfig,
       positionParams,
-      renderedLayout,
-      itemsById,
-      session,
+      controller,
       isItemDraggable,
       isItemResizable,
       resizeHandlesFor,
       itemSensors,
       setContainerElement,
-      overlay,
     ],
   );
 

@@ -1,13 +1,9 @@
 import type { Sensors } from "@dnd-kit/dom";
-import type {
-  DragSession,
-  GridConfig,
-  Layout,
-  LayoutItem,
-  PositionParams,
-  ResizeHandleAxis,
-} from "@snapgridjs/core";
+import type { GridConfig, LayoutItem, PositionParams, ResizeHandleAxis } from "@snapgridjs/core";
 import { createContext, useContext } from "react";
+import type { GridController } from "./controller/GridController.js";
+
+export type { GridOverlayInfo } from "./controller/GridController.js";
 
 /** Data attached to the dnd-kit draggables snapgrid creates. */
 export type SnapGridDragData =
@@ -17,9 +13,12 @@ export type SnapGridDragData =
   | { kind: "resize"; itemId: string; handle: ResizeHandleAxis };
 
 /**
- * Live grid state shared by {@link SnapGridProvider} with the headless hooks.
- * Holds no DOM and imposes no styling — just the data hooks need to produce
- * refs, positioning styles, and state flags.
+ * Stable, per-grid configuration shared by {@link SnapGridProvider} with the
+ * headless hooks. Holds NO live drag/resize state — that lives in
+ * {@link GridController} (a useSyncExternalStore observable), so a drag
+ * re-renders only the tiles whose slice changed, not the whole subtree. This
+ * context value changes only when config (width/gridConfig/...) changes, not on
+ * every drag frame.
  */
 export interface GridRuntime {
   /** Stable id of the grid's droppable surface. */
@@ -32,12 +31,8 @@ export interface GridRuntime {
   gridConfig: GridConfig;
   /** Geometry params derived from gridConfig + width. */
   positionParams: PositionParams;
-  /** The layout currently being rendered (drag preview if dragging, else the controlled layout). */
-  renderedLayout: Layout;
-  /** Fast lookup into {@link renderedLayout} by item id. */
-  itemsById: ReadonlyMap<string, LayoutItem>;
-  /** The in-progress drag session, or null. */
-  session: DragSession | null;
+  /** The live drag/resize store (session, overlay, per-item snapshots). */
+  controller: GridController;
   /** Whether the item with this id may be dragged. */
   isItemDraggable: (id: string) => boolean;
   /** Whether the item with this id may be resized. */
@@ -48,18 +43,6 @@ export interface GridRuntime {
   itemSensors: Sensors;
   /** Called by {@link useGridContainer} to report the surface element (for cross-grid geometry). */
   setContainerElement: (element: Element | null) => void;
-  /** The floating drag preview for this grid's active drag (source grid only), or null. */
-  overlay: GridOverlayInfo | null;
-}
-
-/** Where/what to render as the floating drag preview (a body portal). */
-export interface GridOverlayInfo {
-  item: LayoutItem;
-  /** Fixed (viewport) coordinates and size of the preview. */
-  left: number;
-  top: number;
-  width: number;
-  height: number;
 }
 
 export const GridContext = createContext<GridRuntime | null>(null);
