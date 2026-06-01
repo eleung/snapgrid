@@ -187,13 +187,12 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
   }, []);
 
   /**
-   * Is THIS grid the one under `p` (client coords)? Resolved through the
-   * registry (not a self-only rect test) so the move-phase preview and the
-   * drop-phase commit — which both go through `gridAt` — always agree on which
-   * grid wins when grids overlap (`gridAt` returns a single first match).
+   * Is THIS grid the drop target dnd-kit's collision observer resolved? Both the
+   * move-phase preview and the drop-phase commit read `operation.target`, so they
+   * always agree on which grid wins (one oracle), including when grids overlap.
    */
   const overMe = useCallback(
-    (p: Point) => registryRef.current.gridAt(p) === containerIdRef.current,
+    (target: { id: string | number } | null | undefined) => target?.id === containerIdRef.current,
     [],
   );
 
@@ -311,11 +310,12 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
         return;
       }
 
+      const target = event.operation.target;
       const data = dragData(event);
       if (!data) {
         // External (non-grid) draggable: preview where it would land over us.
         const spec = dropSpecRef.current;
-        if (spec && overMe(pointer)) {
+        if (spec && overMe(target)) {
           const foreign: LayoutItem = { i: spec.i, x: 0, y: 0, w: spec.w, h: spec.h };
           const committed = propsRef.current.layout;
           const cell = cellFromPointer(pointer, foreign) ?? { x: 0, y: 0 };
@@ -326,7 +326,7 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
         return;
       }
       if (data.kind !== "move") return;
-      const here = overMe(pointer);
+      const here = overMe(target);
       const ownsItem = committedByIdRef.current.has(data.itemId);
 
       if (ownsItem) {
@@ -373,11 +373,12 @@ function SnapGridRuntime(props: RuntimeProps): React.JSX.Element {
     (event: DragEndEvent) => {
       const current = sessionRef.current;
       const data = dragData(event);
-      const p = event.operation.position.current;
       const myId = containerIdRef.current;
       // Keyboard drags are in-grid only (there is no pointer to land in another
-      // grid), so a keyboard drop always commits to this grid.
-      const dest = keyboardRef.current ? myId : registryRef.current.gridAt({ x: p.x, y: p.y });
+      // grid), so a keyboard drop always commits to this grid; otherwise the drop
+      // target is whichever grid the collision observer resolved.
+      const targetId = event.operation.target?.id;
+      const dest = keyboardRef.current ? myId : targetId != null ? String(targetId) : null;
       const ownsItem = data ? committedByIdRef.current.has(data.itemId) : false;
       registryRef.current.setGrabOffset(null);
 

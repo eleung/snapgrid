@@ -36,7 +36,15 @@ export function useGridContainer(): UseGridContainerResult {
   const { ref, isDropTarget } = useDroppable({
     id: rt.containerId,
     type: "grid",
-    accept: "grid-item",
+    // Accept grid tiles plus external draggables carrying a `snapGridDrop`
+    // payload. The latter have no type, so `accept: "grid-item"` would reject
+    // them and they'd never resolve as a drop target. (The provider still
+    // decides whether to actually receive an external source via dropConfig.)
+    accept: (source) => {
+      if (source.type === "grid-item") return true;
+      const data = source.data as { snapGridDrop?: unknown } | undefined;
+      return data?.snapGridDrop != null;
+    },
   });
 
   // Merge dnd-kit's droppable ref with reporting the element to the provider
