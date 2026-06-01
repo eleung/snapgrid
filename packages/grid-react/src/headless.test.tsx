@@ -1,3 +1,4 @@
+import { DragDropProvider } from "@dnd-kit/react";
 import { type Layout, calcGridItemPosition, toPositionParams } from "@snapgridjs/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
@@ -39,11 +40,15 @@ function Board() {
 }
 
 describe("headless API (SnapGridProvider + hooks, custom markup)", () => {
+  // Headless consumers supply the dnd-kit DragDropProvider themselves; the
+  // SnapGridProvider consumes that ambient manager rather than minting one.
   function renderBoard() {
     return render(
-      <SnapGridProvider layout={layout} width={1210} gridConfig={gridConfig}>
-        <Board />
-      </SnapGridProvider>,
+      <DragDropProvider>
+        <SnapGridProvider layout={layout} width={1210} gridConfig={gridConfig}>
+          <Board />
+        </SnapGridProvider>
+      </DragDropProvider>,
     );
   }
 

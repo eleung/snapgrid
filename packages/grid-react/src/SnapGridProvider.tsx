@@ -1,4 +1,4 @@
-import { DragDropProvider, useDragDropMonitor } from "@dnd-kit/react";
+import { useDragDropMonitor } from "@dnd-kit/react";
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/react";
 import {
   type Compactor,
@@ -110,17 +110,15 @@ export interface SnapGridProviderProps {
 }
 
 /**
- * Headless provider for a grid. Standalone grids get their own isolated dnd-kit
- * provider; grids inside a {@link SnapGridGroup} share that group's provider and
- * registry so tiles can be dragged between them. Owns this grid's drag/resize
- * session; the consumer owns all markup/styling.
+ * Headless provider for a grid. Consumes an ambient dnd-kit `DragDropProvider`
+ * (supplied by {@link GridLayout} for turnkey use, by a {@link SnapGridGroup}
+ * for cross-grid drags, or by the consumer in a headless app) — it does not mint
+ * one itself. Owns this grid's drag/resize session; the consumer owns all
+ * markup/styling.
  */
 export function SnapGridProvider(props: SnapGridProviderProps): React.JSX.Element {
   const groupRegistry = useContext(SnapGridGroupContext);
-  const runtime = <SnapGridRuntime groupRegistry={groupRegistry} {...props} />;
-  // In a group, share the group's provider; otherwise self-provide (so
-  // independent grids don't share a manager and collide item ids).
-  return groupRegistry ? runtime : <DragDropProvider>{runtime}</DragDropProvider>;
+  return <SnapGridRuntime groupRegistry={groupRegistry} {...props} />;
 }
 
 type RuntimeProps = SnapGridProviderProps & { groupRegistry: GridRegistry | null };

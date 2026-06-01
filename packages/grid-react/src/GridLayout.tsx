@@ -1,14 +1,17 @@
+import { DragDropProvider } from "@dnd-kit/react";
 import {
   type CSSProperties,
   Children,
   type ReactElement,
   type ReactNode,
   isValidElement,
+  useContext,
 } from "react";
 import { GridDragOverlay } from "./GridDragOverlay.js";
 import { GridItem } from "./GridItem.js";
 import { GridPlaceholder } from "./GridPlaceholder.js";
 import { SnapGridProvider, type SnapGridProviderProps } from "./SnapGridProvider.js";
+import { SnapGridGroupContext } from "./grouping.js";
 import { useGridContainer } from "./hooks/useGridContainer.js";
 
 export interface GridLayoutProps extends SnapGridProviderProps {
@@ -66,14 +69,21 @@ function GridSurface({
  * backed by dnd-kit. A thin shell over {@link SnapGridProvider} and the headless
  * hooks — children are keyed by their layout item's `i`. For full control over
  * markup/styling, use the provider + hooks directly.
+ *
+ * Supplies the dnd-kit `DragDropProvider` for the turnkey case so consumers
+ * don't manage one — except inside a {@link SnapGridGroup}, which already
+ * provides one shared across its grids.
  */
 export function GridLayout(props: GridLayoutProps): React.JSX.Element {
   const { className, style, children, ...providerProps } = props;
-  return (
+  const inGroup = useContext(SnapGridGroupContext) != null;
+  const grid = (
     <SnapGridProvider {...providerProps}>
       <GridSurface className={className} style={style}>
         {children}
       </GridSurface>
     </SnapGridProvider>
   );
+  // Self-provide a manager for standalone use; inside a group, share its.
+  return inGroup ? grid : <DragDropProvider>{grid}</DragDropProvider>;
 }
