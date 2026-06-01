@@ -1,6 +1,6 @@
 ---
 title: Migrating from react-grid-layout
-description: A prop-by-prop map from react-grid-layout to snapgrid, plus the three behaviours that differ.
+description: Migrating from react-grid-layout v1 (WidthProvider + flat props) to snapgrid — a prop-by-prop map, plus the three behaviours that differ. (v2 is nearly a no-op.)
 ---
 
 import { Callout } from "nextra/components";
@@ -9,11 +9,18 @@ import { BUNDLE_SIZE } from "@/components/generated/bundle-size";
 # Migrating from react-grid-layout
 
 snapgrid deliberately keeps react-grid-layout's mental model: a controlled array of
-`{ i, x, y, w, h }` items, a `cols` grid, `rowHeight`, and `onLayoutChange`. Most of the
-migration is moving a handful of top-level props into config objects, and deleting two CSS
-imports.
+`{ i, x, y, w, h }` items, a `cols` grid, `rowHeight`, and `onLayoutChange`.
 
-This guide assumes you're coming from `react-grid-layout` (RGL) and know its API.
+<Callout type="info">
+  **On react-grid-layout v2?** This guide isn't really for you. v2 already uses the composable
+  `gridConfig` / `dragConfig` / `compactor` objects and `useContainerWidth` that snapgrid mirrors, so
+  migrating is essentially **changing the import** (and renaming `ReactGridLayout` → `GridLayout`).
+  See the side-by-side diff on the [home page](/). The rest of this guide targets **v1** — the
+  `WidthProvider` HOC and flat-prop API — where there's actual mapping to do.
+</Callout>
+
+This guide assumes you're coming from `react-grid-layout` **v1** (RGL) and know its API. Most of the
+migration is moving a handful of top-level props into config objects, and deleting two CSS imports.
 
 ## What you keep, what you gain
 
@@ -221,6 +228,12 @@ uncontrolled mode.
 
 Placement is governed by the `compactor`, not collision flags. For free-form placement where tiles
 can sit anywhere (RGL's `allowOverlap` / `compactType={null}`), use `noCompactor`.
+
+## A v1 drop-in is on the roadmap
+
+The mapping above is by hand for now. A planned **`@snapgridjs/react/legacy`** entry will accept v1's
+`WidthProvider` HOC and flat props directly, so you can change one import and migrate to the modern
+API at your own pace — see the [roadmap](/roadmap).
 
 ## Anything missing?
 

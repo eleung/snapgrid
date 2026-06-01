@@ -546,11 +546,7 @@ export function HeadlessDemo() {
     <DemoFrame title="Headless" hint="your own markup via the hooks" code={EXAMPLE_CODE.headless}>
       <div ref={containerRef}>
         <DragDropProvider>
-          <HeadlessSurface
-            items={layout}
-            width={width}
-            onLayoutChange={setLayout}
-          />
+          <HeadlessSurface items={layout} width={width} onLayoutChange={setLayout} />
         </DragDropProvider>
       </div>
     </DemoFrame>

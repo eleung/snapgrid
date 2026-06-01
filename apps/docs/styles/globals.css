@@ -609,11 +609,19 @@ article a {
   padding: 0.6rem 0.9rem;
   border-bottom: 1px solid var(--dg-line);
 }
-.dg-codecard__bar span {
+.dg-codecard__bar span:not(.dg-codecard__label) {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: var(--dg-line-strong);
+}
+/* The example-style label (e.g. "Headless") at the right of the code-card bar. */
+.dg-codecard__label {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: var(--dg-muted);
 }
 /* Drop-in / Headless toggle in the code-card title bar. */
 .dg-codetabs {
@@ -873,6 +881,52 @@ html.dark .dg-democode .shiki span {
   font-weight: 700;
 }
 .dg-compare__list strong {
+  color: var(--dg-ink);
+}
+
+/* RGL v2 → snapgrid as a unified diff (the change is ~the import line). */
+.dg-diffcard {
+  margin: 1.4rem 0 0.6rem;
+}
+/* Each diff line spans the full code width so the row tint reaches both edges. */
+.dg-diffcard .shiki .line {
+  display: inline-block;
+  width: 100%;
+  padding-left: 1.4rem;
+  text-indent: -0.7rem; /* pull text right of the gutter sign */
+}
+.dg-diffcard .shiki .line.diff-add {
+  background: color-mix(in oklab, transparent, #22c55e 14%);
+}
+.dg-diffcard .shiki .line.diff-remove {
+  background: color-mix(in oklab, transparent, #ef4444 14%);
+}
+.dg-diffcard .shiki .line.diff-add::before,
+.dg-diffcard .shiki .line.diff-remove::before {
+  position: absolute;
+  left: 0.5rem;
+  font-weight: 700;
+  opacity: 0.7;
+}
+.dg-diffcard .shiki .line.diff-add::before {
+  content: "+";
+  color: #16a34a;
+}
+.dg-diffcard .shiki .line.diff-remove::before {
+  content: "-";
+  color: #dc2626;
+}
+.dg-diffcard .shiki code {
+  display: block;
+  position: relative;
+}
+.dg-compare__caption {
+  max-width: 70ch;
+  font-size: 0.9rem;
+  color: var(--dg-muted);
+  margin: 0 0 1.5rem;
+}
+.dg-compare__caption code {
   color: var(--dg-ink);
 }
 
