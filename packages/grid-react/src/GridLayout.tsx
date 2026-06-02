@@ -10,6 +10,7 @@ import {
 } from "react";
 import { GridItem } from "./GridItem.js";
 import { GridPlaceholder } from "./GridPlaceholder.js";
+import { dragOverlayStyle } from "./dragOverlayStyle.js";
 import { useGridContainer } from "./hooks/useGridContainer.js";
 import type { UseGridControllerOptions } from "./hooks/useGridController.js";
 
@@ -55,7 +56,7 @@ function GridSurface({ className, style, children, ...opts }: GridLayoutProps) {
         );
       })}
       <GridPlaceholder group={group} />
-      <DragOverlay>
+      <DragOverlay style={dragOverlayStyle}>
         {(source) => (source ? (childById.get(String(source.id)) ?? null) : null)}
       </DragOverlay>
     </div>

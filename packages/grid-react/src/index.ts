@@ -45,10 +45,18 @@ export {
   GridPlaceholder,
   type GridPlaceholderProps,
 } from "./GridPlaceholder.js";
-// The floating drag preview is dnd-kit's <DragOverlay> (GridLayout renders one;
-// headless consumers render their own). Re-exported so they need not add a
-// direct @dnd-kit/react import.
+// The floating drag preview. `GridDragOverlay` is the grid-aware wrapper — it
+// bakes in the out-of-flow style and resolves the dragged item for you; reach
+// for it in the headless layer. The raw dnd-kit `DragOverlay` (and the bare
+// `dragOverlayStyle`) are re-exported for full control. `<GridLayout>` renders
+// its own overlay.
+export {
+  GridDragOverlay,
+  type GridDragOverlayContext,
+  type GridDragOverlayProps,
+} from "./GridDragOverlay.js";
 export { DragOverlay } from "@dnd-kit/react";
+export { dragOverlayStyle } from "./dragOverlayStyle.js";
 
 // Utilities
 export {
