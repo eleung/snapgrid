@@ -7,6 +7,16 @@ import { useResolveController } from "./useResolveController.js";
 export interface UseGridItemResult {
   /** Attach to the element that represents this grid item. */
   ref: (element: Element | null) => void;
+  /**
+   * Optional drag handle (dnd-kit's native handle). Attach to a child element to
+   * restrict **pointer** drag activation to it — only a pointer-down inside the
+   * handle starts a drag, so the rest of the tile (buttons, inputs, links) stays
+   * interactive. Leave it unattached and the whole tile drags. Keyboard pickup is
+   * unaffected: a focused tile is always draggable with Enter/Space. This is the
+   * headless equivalent of `dragConfig.handle` (the CSS-selector form `<GridLayout>`
+   * uses) — reach for one or the other, not both.
+   */
+  handleRef: (element: Element | null) => void;
   /** Positioning style to spread onto your element (left/top/size). */
   style: CSSProperties;
   /** True while this item is the active drag source. */
@@ -24,8 +34,9 @@ const REFLOW_TRANSITION = "transform 150ms ease, width 150ms ease, height 150ms 
 /**
  * Headless hook for a single grid item. `group` is the owning grid's id (from
  * its {@link useGridContainer}), mirroring useSortable's `group`. Returns a ref,
- * a positioning `style`, and drag state — spread them onto whatever element you
- * render. You own the tag, className, content, and any cosmetic styling.
+ * an optional drag-handle ref, a positioning `style`, and drag state — spread
+ * them onto whatever element you render. You own the tag, className, content,
+ * and any cosmetic styling.
  */
 export function useGridItem(id: string, group: string): UseGridItemResult {
   const controller = useResolveController(group);
@@ -39,7 +50,7 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
   const active = snap.isDragging;
   const hidden = snap.hidden;
   const config = controller.config!;
-  const { ref, isDragging } = useDraggable({
+  const { ref, handleRef, isDragging } = useDraggable({
     id,
     type: "grid-item",
     disabled: !config.isItemDraggable(id),
@@ -72,5 +83,5 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
     };
   }
 
-  return { ref, style, isDragging, item };
+  return { ref, handleRef, style, isDragging, item };
 }
