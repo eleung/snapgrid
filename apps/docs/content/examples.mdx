@@ -1,6 +1,6 @@
 ---
 title: Examples
-description: Live, interactive examples of every snapgrid feature, including drag, resize, packing, responsive, cross-grid, external drop, and headless.
+description: Live, interactive examples of every snapgrid feature, including drag, resize, packing, responsive, cross-grid, external drop, and the turnkey component layer.
 ---
 
 import {
@@ -14,7 +14,7 @@ import {
   CrossGridDemo,
   NestedDemo,
   ExternalDropDemo,
-  HeadlessDemo,
+  ComponentLayerDemo,
 } from "@/components/demos";
 
 # Examples
@@ -82,8 +82,9 @@ Drag a chip from a palette into the grid; the grid synthesizes a new item. → [
 
 <ExternalDropDemo />
 
-## Headless
+## Component layer
 
-The same engine with entirely custom markup, via the hooks under a dnd-kit `DragDropProvider`. → [Headless guide](/docs/guides/headless)
+Every example above is headless. This is the turnkey shell: `<GridLayout>` wires the
+`DragDropProvider`, tiles, handles, placeholder, and overlay for you. → [Component layer guide](/docs/guides/component-layer)
 
-<HeadlessDemo />
+<ComponentLayerDemo />

@@ -1,18 +1,71 @@
 ---
 title: Styling
-description: The class names, data attributes, and positioning styles snapgrid exposes, and how to override them.
+description: The positioning styles and state the headless hooks expose, the component-layer class names, and how to override them.
 ---
 
 import { Callout } from "nextra/components";
 
 # Styling
 
-snapgrid ships **no CSS**. Components return inline positioning styles plus stable class names and
-data attributes; you bring the look.
+snapgrid ships **no CSS**. The headless hooks hand you inline positioning styles plus drag/resize
+state; you bring every class name and the entire look. The [component layer](/docs/guides/component-layer)
+adds a few stable class names and data attributes on top, so you have predictable hooks to target
+when you use `<GridLayout>`.
 
-## Class names (`<GridLayout>`)
+## Styling headless tiles
 
-The drop-in components apply these so you have predictable hooks to target:
+`useGridItem` returns the positioning `style` and `isDragging`; nothing else is imposed. You choose
+the element, the class names, and which state to reflect in the DOM:
+
+```tsx
+function Tile({ id, group }) {
+  const { ref, style, isDragging } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile" data-dragging={isDragging || undefined}>
+      {id}
+    </div>
+  );
+}
+```
+
+```css
+.tile {
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+.tile[data-dragging] {
+  opacity: 0.9;
+}
+```
+
+The grid surface from `useGridContainer` carries a `data-drop-target` attribute while a compatible
+draggable is over it, so you can highlight the drop zone:
+
+```css
+.my-surface[data-drop-target] {
+  outline: 2px dashed var(--accent);
+}
+```
+
+## Positioning styles are inline
+
+The `style` from `useGridItem` positions the tile with a **`transform: translate(…)`** (pinned at
+`left: 0 / top: 0`, sized with `width` / `height`) — a GPU transform, not animated `left`/`top`, so
+large grids stay smooth. `useGridContainer`'s `style` sets `position: relative` + the surface size.
+Spread them as-is and **don't override** these properties. Add your own visual properties alongside —
+including a `transition` on `transform` if you want non-active tiles to animate as they reflow:
+
+```tsx
+<div ref={ref} style={{ ...style, transition: "transform 120ms ease" }}>
+  …
+</div>
+```
+
+## Component-layer class names
+
+When you use the turnkey [`<GridLayout>`](/docs/guides/component-layer), it (and `<GridItem>` /
+`<GridPlaceholder>`) applies these stable hooks for you — the headless hooks apply **none** of them:
 
 | Element | Class | Notes |
 | --- | --- | --- |
@@ -20,9 +73,6 @@ The drop-in components apply these so you have predictable hooks to target:
 | Item | `.snapgrid-item` | `data-grid-id`, `data-dragging` attributes. |
 | Resize handle | `.snapgrid-resize-handle`, `.snapgrid-resize-handle--{axis}` | One per configured handle. |
 | Placeholder | `.snapgrid-placeholder` | Landing-cell marker. |
-
-The floating drag preview is dnd-kit's [`DragOverlay`](https://next.dndkit.com) — style the content
-you render inside it (and target its `[data-dnd-overlay]` wrapper if needed).
 
 ```css
 .snapgrid-item {
@@ -40,38 +90,51 @@ you render inside it (and target its `[data-dnd-overlay]` wrapper if needed).
 }
 ```
 
-## Positioning styles are inline
-
-Each item's `left` / `top` / `width` / `height` is computed and set inline. Don't override these.
-The component also applies a `transition` so non-active tiles animate as they reflow; you can
-override the transition in your `style` prop or class if you want a different feel.
-
-```tsx
-<GridItem id="a" group={group} style={{ transition: "all 120ms ease" }}>
-  …
-</GridItem>
-```
-
-## Data attributes
-
 - `data-grid-id`: the item's `i`, handy for selectors and tests.
 - `data-dragging`: present on the active tile while dragging.
-- `data-drop-target`: present on the container while a compatible draggable is over it.
+- `data-drop-target`: present on the container while a compatible draggable is over it (this one is
+  on the headless surface too — it comes from `containerProps`).
 
 ## Custom placeholder & overlay
 
-Want a different placeholder? Use the headless hook and render your own element with the returned
-`style` (`group` is the grid's id from `useGridContainer`):
+Render your own placeholder with the headless hook's returned `style` (`group` is the grid's id
+from `useGridContainer`):
 
 ```tsx
 const placeholder = useGridPlaceholder(group);
 {placeholder && <div className="my-ghost" style={placeholder.style} />}
 ```
 
-For a custom drag preview, render dnd-kit's [`DragOverlay`](https://next.dndkit.com) under your
-provider with your own content.
+For a custom drag preview, render [`<GridDragOverlay>`](/docs/guides/headless#dragoverlay) under your
+provider — it resolves the dragged `item` for you and is styled correctly out of the box:
+
+```tsx
+import { GridDragOverlay } from "@snapgridjs/react";
+
+<GridDragOverlay>{({ item }) => item && <div className="tile">{item.i}</div>}</GridDragOverlay>;
+```
+
+<Callout type="warning">
+  **If you use dnd-kit's raw `<DragOverlay>` instead, pin it out of flow.** It's a plain
+  `<div data-dnd-overlay>` that only gets `position: fixed` from a stylesheet dnd-kit injects *while
+  dragging*. In the frame around drop, before that applies, an overlay rendered inside (or next to)
+  your grid can reflow as a full-width block at the bottom of the grid — a one-frame flash. Give it a
+  fixed base so it can't. `<GridDragOverlay>` and `<GridLayout>` do this for you; for the raw overlay,
+  spread the exported `dragOverlayStyle`:
+
+  ```tsx
+  import { DragOverlay, dragOverlayStyle } from "@snapgridjs/react";
+
+  <DragOverlay style={dragOverlayStyle}>{(source) => /* … */}</DragOverlay>;
+  ```
+
+  Or do it in CSS — `[data-dnd-overlay] { position: fixed; top: 0; left: 0; pointer-events: none; }`.
+  dnd-kit's own `!important` rules still drive the live position during a real drag.
+</Callout>
 
 <Callout type="info">
   The convenience `<GridPlaceholder group={group}>` ships a subtle default look you can override with
-  `className` or `style`. For anything more, call `useGridPlaceholder(group)` directly.
+  `className` or `style`. For anything more, call `useGridPlaceholder(group)` directly. The floating
+  drag preview is always dnd-kit's [`DragOverlay`](https://next.dndkit.com) — style the content you
+  render inside it (and target its `[data-dnd-overlay]` wrapper if needed).
 </Callout>

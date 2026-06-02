@@ -192,6 +192,19 @@ article a {
   background-size: 16px 16px;
   background-position: -1px -1px;
 }
+
+/* dnd-kit's <DragOverlay> is a plain in-flow <div data-dnd-overlay>; it only
+   gets `position: fixed` from a stylesheet dnd-kit injects while dragging. In
+   the frame around drop where that isn't applied yet, an overlay rendered inside
+   a grid reflows as a full-width block at the grid's bottom. Pin it out of flow
+   so that can't happen (dnd-kit's own !important rules still drive the live drag
+   position). Mirrors @snapgridjs/react's exported `dragOverlayStyle`. */
+[data-dnd-overlay] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
 .dg-demo__controls {
   display: flex;
   flex-wrap: wrap;
@@ -252,6 +265,63 @@ article a {
 .dg-resize__handle:hover::before {
   opacity: 0.9;
 }
+
+/* Resize handle on headless demo tiles (GridTile → useGridResizeHandle). The
+   span is the grab area at the SE corner; ::after draws the corner grip,
+   matching the dashboard showcase. */
+.dg-rh {
+  position: absolute;
+  /* Match <GridLayout>'s built-in SE handle: a 14px box that overhangs the
+     corner by 7px, so the grip lands in the same spot as the component-layer
+     demo (the library sets these inline; we mirror them on the headless one). */
+  right: -7px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 4;
+}
+.dg-rh::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--dg-muted);
+  border-bottom: 2px solid var(--dg-muted);
+  border-bottom-right-radius: 2px;
+  transition: border-color 0.12s ease;
+}
+.dg-cell:hover .dg-rh::after {
+  border-color: var(--dg-accent);
+}
+
+/* Component-layer demo (<GridLayout>): it renders the library's own
+   .snapgrid-* placeholder + SE resize handle (no visible grip by default), so
+   give them the same look as the headless demos' .dg-placeholder / .dg-rh. */
+.dg-cl .snapgrid-placeholder {
+  border: 1px dashed var(--dg-accent) !important;
+  border-radius: 9px !important;
+  background: var(--dg-accent-soft) !important;
+}
+.dg-cl .snapgrid-resize-handle--se::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--dg-muted);
+  border-bottom: 2px solid var(--dg-muted);
+  border-bottom-right-radius: 2px;
+  transition: border-color 0.12s ease;
+}
+.dg-cl .snapgrid-item:hover .snapgrid-resize-handle--se::after {
+  border-color: var(--dg-accent);
+}
+
 .dg-subgrid__label {
   display: block;
   margin-bottom: 0.35rem;
@@ -863,10 +933,19 @@ html.dark .dg-democode .shiki span {
 .dg-compare__list {
   list-style: none;
   padding: 0;
-  margin: 1.1rem 0 1.5rem;
+  margin: 0 0 1rem;
   display: grid;
   gap: 0.7rem;
   max-width: 70ch;
+}
+/* Sub-group labels in the RGL comparison (Why switch / Migration path). */
+.dg-compare__grouplabel {
+  margin: 1.3rem 0 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .dg-compare__list li {
   position: relative;

@@ -48,8 +48,9 @@ body {
   color: var(--ink);
 }
 
-/* Grid tiles */
+/* Grid tiles (position:relative so resize handles anchor to the tile edges) */
 .tile {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -63,7 +64,6 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   font-size: 0.9rem;
   user-select: none;
-  overflow: hidden;
 }
 .tile__id { font-weight: 600; }
 .tile__dim { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -164,22 +164,66 @@ body {
 .subgrid { flex: 1; padding: 8px; }
 .subgrid__label { font-size: 0.75rem; color: var(--muted); }
 
-/* snapgrid ships no CSS — give the placeholder + SE resize handle a visible look */
+/* snapgrid ships no CSS — give the placeholder + resize handle a visible look.
+   The example renders a <span className="resize-handle">; this places + styles it. */
 .snapgrid-placeholder,
 .placeholder {
   background: rgba(217, 119, 87, 0.14) !important;
   border: 1px dashed rgba(217, 119, 87, 0.5) !important;
   border-radius: 10px !important;
 }
+.resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+.resize-handle::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  border-bottom-right-radius: 2px;
+  transition: border-color 0.12s ease;
+}
+.tile:hover .resize-handle::after {
+  border-color: var(--accent);
+}
+
+/* <GridLayout> renders its own SE handle (.snapgrid-resize-handle--se) — it sets
+   the box position inline but no visible grip; draw the same corner bracket. */
 .snapgrid-resize-handle--se::after {
   content: "";
   position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid #b8b1a4;
-  border-bottom: 2px solid #b8b1a4;
+  right: 4px;
+  bottom: 4px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  border-bottom-right-radius: 2px;
+  transition: border-color 0.12s ease;
+}
+.tile:hover .snapgrid-resize-handle--se::after {
+  border-color: var(--accent);
+}
+
+/* dnd-kit's <DragOverlay> is an in-flow <div data-dnd-overlay> until dnd-kit's
+   own stylesheet pins it (while dragging). Pin it out of flow so it can't flash
+   full-width at the bottom of the grid in the frame around drop. (@snapgridjs/react
+   exports this as \`dragOverlayStyle\` to spread onto the overlay directly.) */
+[data-dnd-overlay] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
 }
 `;
 

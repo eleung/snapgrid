@@ -1,12 +1,14 @@
 "use client";
 
 import { Feedback } from "@dnd-kit/dom";
-import { DragDropProvider, DragOverlay, useDraggable } from "@dnd-kit/react";
+import { DragDropProvider, useDraggable } from "@dnd-kit/react";
 import { gravityCompactor, masonryCompactor, shelfCompactor } from "@snapgridjs/extras";
 import {
   type Compactor,
+  GridDragOverlay,
   GridLayout,
   type Layout,
+  type LayoutItem,
   ResponsiveGridLayout,
   type ResponsiveLayouts,
   SnapGridGroup,
@@ -16,12 +18,20 @@ import {
   useGridContainer,
   useGridItem,
   useGridPlaceholder,
+  useGridResizeHandle,
   verticalCompactor,
 } from "@snapgridjs/react";
 import { Heart } from "lucide-react";
-import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { DemoFrame, Pill, ROW, Tile } from "./DemoFrame";
 import { EXAMPLE_CODE } from "./generated/example-code";
+import { GridSkeleton } from "./showcase/GridSkeleton";
 
 // containerPadding [0,0] so the first tile sits flush at the surface edge —
 // aligning with the controls/labels that sit at that same edge. Outer breathing
@@ -33,16 +43,155 @@ const GRID = {
   containerPadding: [0, 0] as [number, number],
 };
 
-function tiles(layout: Layout, accentId?: string) {
-  return layout.map((it) => (
+// The DemoFrame stage's measured width. Full-stage demos seed `initialWidth` with
+// it so their first paint matches the measured size — no reflow when the
+// ResizeObserver fires.
+const STAGE_WIDTH = 638;
+
+// Default tile content (label + size) shared by most demos; rendered both inside
+// the positioned grid tile and in the floating drag overlay.
+function tileContent(item: LayoutItem, accentId?: string): ReactNode {
+  return (
     <Tile
-      key={it.i}
-      label={it.i.toUpperCase()}
-      meta={`${it.w}×${it.h}`}
-      accent={it.i === accentId}
-      isStatic={it.static}
+      label={item.i.toUpperCase()}
+      meta={`${item.w}×${item.h}`}
+      accent={item.i === accentId}
+      isStatic={item.static}
     />
-  ));
+  );
+}
+
+// Options accepted by useGridContainer, minus the controlled state the helper threads.
+type GridOpts = Omit<Parameters<typeof useGridContainer>[0], "layout" | "width" | "onLayoutChange">;
+
+/**
+ * The headless wiring every demo shares: a dnd-kit DragDropProvider, the
+ * useGridContainer host, a positioned tile per item (useGridItem), and the
+ * floating DragOverlay. `renderContent` draws a tile's inner content (reused for
+ * the overlay clone). This is exactly the pattern the docs teach — demos just
+ * supply config + content. Pass `containerRef`/measured `width` from the caller.
+ *
+ * The DragDropProvider is the OUTERMOST element: `useGridContainer` must run
+ * inside it (it registers the grid's controller on the provider's dnd-kit
+ * manager), so the host lives in a child component, not in this body.
+ */
+function HeadlessGrid(props: {
+  layout: Layout;
+  width: number;
+  onLayoutChange: (next: Layout) => void;
+  options?: GridOpts;
+  renderContent?: (item: LayoutItem) => ReactNode;
+  /** Floating drag-clone content; defaults to `renderContent`. Override when the
+   * in-grid tile holds live/interactive children that shouldn't be re-mounted in
+   * the overlay (e.g. a nested grid — see NestedDemo). */
+  renderOverlay?: (item: LayoutItem) => ReactNode;
+  /** Render a bottom-right resize handle on each (resizable) tile. */
+  resizable?: boolean;
+}) {
+  return (
+    <DragDropProvider>
+      <HeadlessGridHost {...props} />
+    </DragDropProvider>
+  );
+}
+
+// The grid host — rendered inside HeadlessGrid's provider so useGridContainer
+// resolves the right manager. Renders the surface, tiles, and the overlay.
+function HeadlessGridHost({
+  layout,
+  width,
+  onLayoutChange,
+  options,
+  renderContent = (item) => tileContent(item),
+  renderOverlay,
+  resizable,
+}: {
+  layout: Layout;
+  width: number;
+  onLayoutChange: (next: Layout) => void;
+  options?: GridOpts;
+  renderContent?: (item: LayoutItem) => ReactNode;
+  renderOverlay?: (item: LayoutItem) => ReactNode;
+  resizable?: boolean;
+}) {
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange,
+    ...options,
+  });
+  const placeholder = useGridPlaceholder(group);
+  return (
+    <>
+      <div {...containerProps} className="dg-grid">
+        {layout.map((item) => (
+          <GridTile key={item.i} id={item.i} group={group} resizable={resizable}>
+            {renderContent(item)}
+          </GridTile>
+        ))}
+        <Placeholder placeholder={placeholder} />
+      </div>
+      {/* GridDragOverlay resolves the dragged item for us (and bakes the
+          out-of-flow style), so there's no source-id lookup. */}
+      <GridDragOverlay>
+        {({ item }) => (item ? (renderOverlay ?? renderContent)(item) : null)}
+      </GridDragOverlay>
+    </>
+  );
+}
+
+// A single positioned grid tile: spreads useGridItem's ref + style onto a
+// wrapper that holds whatever content the demo rendered, plus a resize handle.
+// `dg-cell` is the demo's own hook for styling/tests — headless tiles carry no
+// class from the library.
+function GridTile({
+  id,
+  group,
+  resizable,
+  children,
+}: {
+  id: string;
+  group: string;
+  resizable?: boolean;
+  children: ReactNode;
+}) {
+  const { ref, style, item } = useGridItem(id, group);
+  // Match the library's per-item gating: static or isResizable:false → no handle.
+  const showHandle = resizable && !!item && !item.static && item.isResizable !== false;
+  return (
+    <div ref={ref} style={style} className="dg-cell">
+      {children}
+      {showHandle && <ResizeHandle id={id} group={group} />}
+    </div>
+  );
+}
+
+// A bottom-right resize handle, modelled as its own draggable via
+// useGridResizeHandle. `handleProps` keeps a pointer-down on it from starting an
+// item drag; CSS (`.dg-rh`) places + styles it.
+function ResizeHandle({ id, group }: { id: string; group: string }) {
+  const { ref, handleProps } = useGridResizeHandle(id, "se", group);
+  return <span ref={ref} {...handleProps} className="dg-rh dg-rh--se" />;
+}
+
+// The landing-cell marker shown while a tile is dragged — useGridPlaceholder
+// returns its position (or null when idle). Headless grids render their own.
+function Placeholder({ placeholder }: { placeholder: ReturnType<typeof useGridPlaceholder> }) {
+  if (!placeholder) return null;
+  return (
+    <div
+      className="dg-placeholder"
+      style={{
+        ...placeholder.style,
+        border: "1px dashed var(--dg-accent)",
+        borderRadius: 9,
+        background: "var(--dg-accent-soft)",
+        // Ease the slide/resize as the landing cell moves, matching the
+        // component layer's <GridPlaceholder> (GridPlaceholder.tsx DEFAULT_LOOK).
+        transition: "transform 150ms ease, width 150ms ease, height 150ms ease",
+      }}
+    />
+  );
 }
 
 /* ── Basic grid ─────────────────────────────────────────────────────────── */
@@ -56,7 +205,7 @@ const BASIC: Layout = [
 ];
 
 export function BasicGridDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 680 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [layout, setLayout] = useState<Layout>(BASIC);
   return (
     <DemoFrame
@@ -65,15 +214,13 @@ export function BasicGridDemo() {
       code={EXAMPLE_CODE.basic}
     >
       <div ref={containerRef}>
-        <GridLayout
+        <HeadlessGrid
           layout={layout}
           width={width}
           onLayoutChange={setLayout}
-          gridConfig={GRID}
-          resizeConfig={{ handles: ["se", "e", "s"] }}
-        >
-          {tiles(layout)}
-        </GridLayout>
+          options={{ gridConfig: GRID, resizeConfig: { handles: ["se"] } }}
+          resizable
+        />
       </div>
     </DemoFrame>
   );
@@ -98,7 +245,7 @@ const PACK: Layout = [
 ];
 
 export function CompactorDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 680 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [packer, setPacker] = useState("vertical");
   const [layout, setLayout] = useState<Layout>(PACK);
   return (
@@ -122,15 +269,12 @@ export function CompactorDemo() {
         ))}
       </div>
       <div ref={containerRef}>
-        <GridLayout
+        <HeadlessGrid
           layout={layout}
           width={width}
           onLayoutChange={setLayout}
-          gridConfig={GRID}
-          compactor={PACKERS[packer]}
-        >
-          {tiles(layout)}
-        </GridLayout>
+          options={{ gridConfig: GRID, compactor: PACKERS[packer] }}
+        />
       </div>
     </DemoFrame>
   );
@@ -144,26 +288,23 @@ const RESIZE: Layout = [
 ];
 
 export function ResizeDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 680 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [layout, setLayout] = useState<Layout>(RESIZE);
   return (
     <DemoFrame
       title="Resize constraints"
-      hint="every edge & corner · min/max enforced"
+      hint="drag the corner · min/max enforced"
       code={EXAMPLE_CODE.resize}
     >
       <div ref={containerRef}>
-        <GridLayout
+        <HeadlessGrid
           layout={layout}
           width={width}
           onLayoutChange={setLayout}
-          gridConfig={GRID}
-          resizeConfig={{ handles: ["s", "w", "e", "n", "sw", "nw", "se", "ne"] }}
-        >
-          {layout.map((it) => (
-            <Tile key={it.i} label={it.i} meta={`${it.w}×${it.h}`} />
-          ))}
-        </GridLayout>
+          options={{ gridConfig: GRID, resizeConfig: { handles: ["se"] } }}
+          resizable
+          renderContent={(it) => <Tile label={it.i} meta={`${it.w}×${it.h}`} />}
+        />
       </div>
     </DemoFrame>
   );
@@ -177,9 +318,10 @@ const HANDLE: Layout = [
 ];
 
 export function DragHandleDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 680 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [layout, setLayout] = useState<Layout>(HANDLE);
   const [likes, setLikes] = useState<Record<string, number>>({});
+  const like = (id: string) => setLikes((l) => ({ ...l, [id]: (l[id] ?? 0) + 1 }));
   return (
     <DemoFrame
       title="Drag handle"
@@ -187,34 +329,91 @@ export function DragHandleDemo() {
       code={EXAMPLE_CODE.dragHandle}
     >
       <div ref={containerRef}>
-        <GridLayout
-          layout={layout}
-          width={width}
-          onLayoutChange={setLayout}
-          gridConfig={GRID}
-          dragConfig={{ handle: ".dg-grip" }}
-          isResizable={false}
-        >
-          {layout.map((it) => {
-            const n = likes[it.i] ?? 0;
-            return (
-              <div key={it.i} className="dg-tile dg-tile--barred">
-                <span className="dg-grip dg-grip--bar">⠿ {it.i.toUpperCase()}</span>
-                <button
-                  type="button"
-                  className="dg-likebtn"
-                  data-liked={n > 0 || undefined}
-                  onClick={() => setLikes((l) => ({ ...l, [it.i]: (l[it.i] ?? 0) + 1 }))}
-                >
-                  <Heart size={13} fill={n > 0 ? "currentColor" : "none"} />
-                  {n > 0 ? n : "Like"}
-                </button>
-              </div>
-            );
-          })}
-        </GridLayout>
+        <DragDropProvider>
+          <DragHandleSurface
+            layout={layout}
+            width={width}
+            onLayoutChange={setLayout}
+            likes={likes}
+            onLike={like}
+          />
+          <GridDragOverlay>
+            {({ item }) => (item ? <Tile label={item.i.toUpperCase()} /> : null)}
+          </GridDragOverlay>
+        </DragDropProvider>
       </div>
     </DemoFrame>
+  );
+}
+
+function DragHandleSurface({
+  layout,
+  width,
+  onLayoutChange,
+  likes,
+  onLike,
+}: {
+  layout: Layout;
+  width: number;
+  onLayoutChange: (next: Layout) => void;
+  likes: Record<string, number>;
+  onLike: (id: string) => void;
+}) {
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange,
+    gridConfig: GRID,
+    isResizable: false,
+  });
+  const placeholder = useGridPlaceholder(group);
+  return (
+    <div {...containerProps} className="dg-grid">
+      {layout.map((it) => (
+        <DragHandleTile
+          key={it.i}
+          id={it.i}
+          group={group}
+          likes={likes[it.i] ?? 0}
+          onLike={() => onLike(it.i)}
+        />
+      ))}
+      <Placeholder placeholder={placeholder} />
+    </div>
+  );
+}
+
+// The grip carries `handleRef` — only a pointer-down there starts a drag, so the
+// Like button stays clickable. No `dragConfig.handle` selector needed.
+function DragHandleTile({
+  id,
+  group,
+  likes,
+  onLike,
+}: {
+  id: string;
+  group: string;
+  likes: number;
+  onLike: () => void;
+}) {
+  const { ref, style, handleRef } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="dg-cell">
+      <div className="dg-tile dg-tile--barred" style={{ width: "100%", height: "100%" }}>
+        <span ref={handleRef} className="dg-grip dg-grip--bar">
+          ⠿ {id.toUpperCase()}
+        </span>
+        <button
+          type="button"
+          className="dg-likebtn"
+          data-liked={likes > 0 || undefined}
+          onClick={onLike}
+        >
+          <Heart size={13} fill={likes > 0 ? "currentColor" : "none"} />
+          {likes > 0 ? likes : "Like"}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -227,7 +426,7 @@ const STATIC: Layout = [
 ];
 
 export function StaticItemDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 680 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [layout, setLayout] = useState<Layout>(STATIC);
   return (
     <DemoFrame
@@ -236,9 +435,12 @@ export function StaticItemDemo() {
       code={EXAMPLE_CODE.static}
     >
       <div ref={containerRef}>
-        <GridLayout layout={layout} width={width} onLayoutChange={setLayout} gridConfig={GRID}>
-          {tiles(layout, undefined)}
-        </GridLayout>
+        <HeadlessGrid
+          layout={layout}
+          width={width}
+          onLayoutChange={setLayout}
+          options={{ gridConfig: GRID }}
+        />
       </div>
     </DemoFrame>
   );
@@ -246,7 +448,7 @@ export function StaticItemDemo() {
 
 /* ── Snap-to-grid ───────────────────────────────────────────────────────── */
 export function SnapDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 680 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [snap, setSnap] = useState(false);
   const [layout, setLayout] = useState<Layout>(BASIC.slice(0, 4));
   return (
@@ -264,15 +466,12 @@ export function SnapDemo() {
         </Pill>
       </div>
       <div ref={containerRef}>
-        <GridLayout
+        <HeadlessGrid
           layout={layout}
           width={width}
           onLayoutChange={setLayout}
-          gridConfig={GRID}
-          dragConfig={{ snapToGrid: snap }}
-        >
-          {tiles(layout)}
-        </GridLayout>
+          options={{ gridConfig: GRID, dragConfig: { snapToGrid: snap } }}
+        />
       </div>
     </DemoFrame>
   );
@@ -298,7 +497,7 @@ const RESP_MIN = 240;
 
 export function ResponsiveDemo() {
   // Measure the available stage width; the preview never exceeds it (no clipping).
-  const { width: avail, containerRef } = useContainerWidth({ initialWidth: 560 });
+  const { width: avail, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [layouts, setLayouts] = useState<ResponsiveLayouts>(RESP);
   // Infinity = "as wide as the stage allows" (clamped to `max` below), so the demo
   // opens truly Large/full-width instead of a fixed 520px that looks small in a
@@ -435,11 +634,16 @@ export function CrossGridDemo() {
       stageMinHeight={240}
       code={EXAMPLE_CODE.crossGrid}
     >
+      {/* SnapGridGroup supplies one shared DragDropProvider so tiles cross between
+          the two grids. Each grid is a useGridContainer host; one GridDragOverlay
+          serves the whole group — it resolves the dragged item (from either grid)
+          so the clone shows the same content as the in-grid tile. */}
       <SnapGridGroup>
         <div className="dg-gridrow">
           <CrossSubGrid label="Grid A" layout={left} onLayoutChange={setLeft} />
           <CrossSubGrid label="Grid B" layout={right} onLayoutChange={setRight} />
         </div>
+        <GridDragOverlay>{({ item }) => (item ? tileContent(item) : null)}</GridDragOverlay>
       </SnapGridGroup>
     </DemoFrame>
   );
@@ -447,7 +651,8 @@ export function CrossGridDemo() {
 
 // Each grid lives in its own bordered card so the two are visibly distinct. The
 // width is measured from an inner div (no padding/border) so the grid surface
-// fits exactly and can't overflow the card.
+// fits exactly and can't overflow the card. No DragDropProvider here — the
+// enclosing SnapGridGroup provides the shared one.
 function CrossSubGrid({
   label,
   layout,
@@ -457,19 +662,26 @@ function CrossSubGrid({
   layout: Layout;
   onLayoutChange: (next: Layout) => void;
 }) {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 280 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: 291 });
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange,
+    gridConfig: CROSS,
+  });
+  const placeholder = useGridPlaceholder(group);
   return (
     <div className="dg-subgrid">
       <span className="dg-subgrid__label">{label}</span>
       <div ref={containerRef}>
-        <GridLayout
-          layout={layout}
-          width={width}
-          onLayoutChange={onLayoutChange}
-          gridConfig={CROSS}
-        >
-          {tiles(layout)}
-        </GridLayout>
+        <div {...containerProps} className="dg-grid">
+          {layout.map((it) => (
+            <GridTile key={it.i} id={it.i} group={group}>
+              {tileContent(it)}
+            </GridTile>
+          ))}
+          <Placeholder placeholder={placeholder} />
+        </div>
       </div>
     </div>
   );
@@ -478,22 +690,37 @@ function CrossSubGrid({
 /* ── External drop ──────────────────────────────────────────────────────── */
 const PALETTE_CLONE = [Feedback.configure({ feedback: "clone" })];
 
-function PaletteChip({ id, label, w, h }: { id: string; label: string; w: number; h: number }) {
-  const { ref } = useDraggable({ id, data: { snapGridDrop: { w, h } }, plugins: PALETTE_CLONE });
+// One source for the palette: drives both the rendered chips and the overlay's
+// chip preview (looked up by id).
+const PALETTE = [
+  { id: "pal-sm", label: "small", w: 2, h: 1 },
+  { id: "pal-wide", label: "wide", w: 4, h: 1 },
+  { id: "pal-tall", label: "tall", w: 2, h: 3 },
+];
+const PALETTE_BY_ID = new Map(PALETTE.map((c) => [c.id, c]));
+
+function chipBody({ label, w, h }: { label: string; w: number; h: number }) {
   return (
-    <div ref={ref} className="dg-chip">
+    <>
       {label}
       <small>
         {w}×{h}
       </small>
+    </>
+  );
+}
+
+function PaletteChip({ id, label, w, h }: { id: string; label: string; w: number; h: number }) {
+  const { ref } = useDraggable({ id, data: { snapGridDrop: { w, h } }, plugins: PALETTE_CLONE });
+  return (
+    <div ref={ref} className="dg-chip">
+      {chipBody({ label, w, h })}
     </div>
   );
 }
 
 export function ExternalDropDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 480 });
   const [layout, setLayout] = useState<Layout>([{ i: "seed", x: 0, y: 0, w: 3, h: 2 }]);
-  const dropCount = useRef(0);
   return (
     <DemoFrame
       title="External drop"
@@ -501,107 +728,105 @@ export function ExternalDropDemo() {
       stageMinHeight={240}
       code={EXAMPLE_CODE.externalDrop}
     >
+      {/* SnapGridGroup gives the palette draggables and the grid one shared
+          provider, so a chip can be dropped into the grid. */}
       <SnapGridGroup>
         <div className="dg-gridrow">
           <div className="dg-subgrid dg-subgrid--auto">
             <span className="dg-subgrid__label">Palette</span>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <PaletteChip id="pal-sm" label="small" w={2} h={1} />
-              <PaletteChip id="pal-wide" label="wide" w={4} h={1} />
-              <PaletteChip id="pal-tall" label="tall" w={2} h={3} />
+              {PALETTE.map((c) => (
+                <PaletteChip key={c.id} {...c} />
+              ))}
             </div>
           </div>
-          <div className="dg-subgrid">
-            <span className="dg-subgrid__label">Grid (drop here)</span>
-            <div ref={containerRef}>
-              <GridLayout
-                layout={layout}
-                width={Math.max(180, width)}
-                onLayoutChange={setLayout}
-                onDrop={(next, item) => {
-                  // The library mints a collision-safe but ugly id
-                  // (`<gridId>-dropped-N`); relabel the dropped tile with a short one.
-                  dropCount.current += 1;
-                  const shortId = `t${dropCount.current}`;
-                  setLayout(next.map((it) => (it.i === item.i ? { ...it, i: shortId } : it)));
-                }}
-                dropConfig={{ enabled: true, defaultItem: { w: 2, h: 2 } }}
-                gridConfig={{ cols: 8, rowHeight: 44, margin: [8, 8], containerPadding: [0, 0] }}
-              >
-                {tiles(layout)}
-              </GridLayout>
-            </div>
-          </div>
+          <DropTargetGrid layout={layout} onLayoutChange={setLayout} />
         </div>
+        {/* The floating preview matches its source: a resolved grid tile (with
+            its size) when relocating one already dropped in, else the palette
+            chip — `item` is null for the external (non-grid) chips, so we branch
+            on `source`. */}
+        <GridDragOverlay>
+          {({ item, source }) => {
+            if (item) return tileContent(item);
+            const chip = PALETTE_BY_ID.get(String(source.id));
+            return chip ? <div className="dg-chip">{chipBody(chip)}</div> : null;
+          }}
+        </GridDragOverlay>
       </SnapGridGroup>
     </DemoFrame>
   );
 }
 
-/* ── Headless (hooks + custom markup) ───────────────────────────────────── */
-export function HeadlessDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 680 });
-  const [layout, setLayout] = useState<Layout>(BASIC.slice(0, 4));
-  return (
-    <DemoFrame title="Headless" hint="your own markup via the hooks" code={EXAMPLE_CODE.headless}>
-      <div ref={containerRef}>
-        <DragDropProvider>
-          <HeadlessSurface items={layout} width={width} onLayoutChange={setLayout} />
-        </DragDropProvider>
-      </div>
-    </DemoFrame>
-  );
-}
-
-function HeadlessSurface({
-  items,
-  width,
+function DropTargetGrid({
+  layout,
   onLayoutChange,
-}: { items: Layout; width: number; onLayoutChange: (l: Layout) => void }) {
+}: {
+  layout: Layout;
+  onLayoutChange: (next: Layout) => void;
+}) {
+  const { width, containerRef } = useContainerWidth({ initialWidth: 524 });
+  const dropCount = useRef(0);
   const { containerProps, group } = useGridContainer({
-    layout: items,
-    width,
+    layout,
+    width: Math.max(180, width),
     onLayoutChange,
-    gridConfig: GRID,
-    dragConfig: { handle: ".dg-grip" },
+    onDrop: (next, item) => {
+      // The library mints a collision-safe but ugly id (`<gridId>-dropped-N`);
+      // relabel the dropped tile with a short one.
+      dropCount.current += 1;
+      const shortId = `t${dropCount.current}`;
+      onLayoutChange(next.map((it) => (it.i === item.i ? { ...it, i: shortId } : it)));
+    },
+    dropConfig: { enabled: true, defaultItem: { w: 2, h: 2 } },
+    gridConfig: { cols: 8, rowHeight: 44, margin: [8, 8], containerPadding: [0, 0] },
   });
   const placeholder = useGridPlaceholder(group);
   return (
-    <div {...containerProps}>
-      {items.map((it) => (
-        <HeadlessTile key={it.i} id={it.i} group={group} />
-      ))}
-      {placeholder ? (
-        <div
-          style={{
-            ...placeholder.style,
-            border: "1px dashed var(--dg-accent)",
-            borderRadius: 9,
-            background: "var(--dg-accent-soft)",
-          }}
-        />
-      ) : null}
-      <DragOverlay>
-        {(source) =>
-          source ? (
-            <div className="dg-tile dg-tile--accent" style={{ width: "100%", height: "100%" }}>
-              <span className="dg-grip">⠿ {String(source.id).toUpperCase()}</span>
-            </div>
-          ) : null
-        }
-      </DragOverlay>
+    <div className="dg-subgrid">
+      <span className="dg-subgrid__label">Grid (drop here)</span>
+      <div ref={containerRef}>
+        <div {...containerProps} className="dg-grid">
+          {layout.map((it) => (
+            <GridTile key={it.i} id={it.i} group={group}>
+              {tileContent(it)}
+            </GridTile>
+          ))}
+          <Placeholder placeholder={placeholder} />
+        </div>
+      </div>
     </div>
   );
 }
 
-function HeadlessTile({ id, group }: { id: string; group: string }) {
-  const { ref, style, isDragging } = useGridItem(id, group);
+/* ── Component layer (turnkey <GridLayout>) ─────────────────────────────── */
+// The rest of the examples are headless (hooks + your own markup); this one
+// shows the turnkey layer. <GridLayout> mints its own DragDropProvider and
+// renders the tiles, resize handles, placeholder, and overlay — no dnd-kit
+// wiring. Children are keyed by their layout item's `i`.
+export function ComponentLayerDemo() {
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
+  const [layout, setLayout] = useState<Layout>(BASIC.slice(0, 4));
   return (
-    <div ref={ref} style={style} className={`dg-tile${isDragging ? " dg-tile--accent" : ""}`}>
-      <span className="dg-grip" style={{ cursor: "grab" }}>
-        ⠿ {id.toUpperCase()}
-      </span>
-    </div>
+    <DemoFrame
+      title="Component layer"
+      hint="the turnkey <GridLayout> — no hooks, no dnd-kit wiring"
+      code={EXAMPLE_CODE.componentLayer}
+    >
+      <div ref={containerRef} className="dg-cl">
+        <GridLayout
+          layout={layout}
+          width={width}
+          onLayoutChange={setLayout}
+          gridConfig={GRID}
+          resizeConfig={{ handles: ["se"] }}
+        >
+          {layout.map((it) => (
+            <Tile key={it.i} label={it.i.toUpperCase()} meta={`${it.w}×${it.h}`} />
+          ))}
+        </GridLayout>
+      </div>
+    </DemoFrame>
   );
 }
 
@@ -614,8 +839,12 @@ const HERO: Layout = [
   { i: "cross-grid", x: 6, y: 2, w: 6, h: 2 },
 ];
 
+// Accent every other tile, by starting position — a Set keyed by id so the
+// content renderer (which gets the item, not its index) can look it up.
+const HERO_ACCENT = new Set(HERO.filter((_, idx) => idx % 2 === 1).map((it) => it.i));
+
 export function HeroGrid() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 760 });
+  const { width, mounted, containerRef } = useContainerWidth({ initialWidth: 563 });
   const [layout, setLayout] = useState<Layout>(HERO);
   return (
     // Outer card carries the padding/border/dotted background; the INNER div is
@@ -624,17 +853,26 @@ export function HeroGrid() {
     // into an ever-growing measurement.
     <div className="dg-hero-grid">
       <div ref={containerRef}>
-        <GridLayout
-          layout={layout}
-          width={width}
-          onLayoutChange={setLayout}
-          gridConfig={{ cols: 12, rowHeight: 56, margin: [12, 12] }}
-          resizeConfig={{ handles: ["se"] }}
-        >
-          {layout.map((it, idx) => (
-            <Tile key={it.i} label={it.i} accent={idx % 2 === 1} />
-          ))}
-        </GridLayout>
+        {mounted ? (
+          <HeadlessGrid
+            layout={layout}
+            width={width}
+            onLayoutChange={setLayout}
+            options={{
+              gridConfig: { cols: 12, rowHeight: 56, margin: [12, 12] },
+              resizeConfig: { handles: ["se"] },
+            }}
+            renderContent={(it) => <Tile label={it.i} accent={HERO_ACCENT.has(it.i)} />}
+          />
+        ) : (
+          // Render only once measured, so the grid appears at its real width
+          // instead of reflowing from initialWidth. A skeleton ghosts the layout
+          // meanwhile; the padding mirrors the grid's containerPadding (12) so the
+          // tiles land in the same spots and the height matches — no shift.
+          <div style={{ padding: 12 }}>
+            <GridSkeleton items={HERO} cols={12} gap={12} rowHeight={56} radius={9} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -652,10 +890,31 @@ const NESTED_INNER: Layout = [
   { i: "3", x: 2, y: 0, w: 1, h: 1 },
   { i: "4", x: 0, y: 1, w: 2, h: 1 },
 ];
+const NESTED_INNER_GRID = {
+  cols: 4,
+  rowHeight: 36,
+  margin: [6, 6] as [number, number],
+  containerPadding: [0, 0] as [number, number],
+};
 
 export function NestedDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 680 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [layout, setLayout] = useState<Layout>(NESTED_OUTER);
+  // Inner-grid state is lifted here so BOTH the live panel tile and its drag
+  // overlay read the same current layout — otherwise the overlay would mount a
+  // fresh inner grid stuck at its initial arrangement.
+  const [inner, setInner] = useState<Layout>(NESTED_INNER);
+  // The panel chrome, shared by the in-grid tile and the overlay clone. The
+  // overlay gets a STATIC preview of the inner board (no second provider/grid),
+  // so it shows the inner tiles where they actually are right now.
+  const panel = (body: ReactNode) => (
+    <div className="dg-nest">
+      <div className="dg-nest__head">
+        <span className="dg-grip">⠿</span> Nested board
+      </div>
+      <div className="dg-nest__body">{body}</div>
+    </div>
+  );
   return (
     <DemoFrame
       title="Nested grids"
@@ -663,55 +922,89 @@ export function NestedDemo() {
       code={EXAMPLE_CODE.nested}
     >
       <div ref={containerRef}>
-        <GridLayout
+        <HeadlessGrid
           layout={layout}
           width={width}
           onLayoutChange={setLayout}
-          gridConfig={GRID}
-          // The outer tile drags only from its header, which sits OUTSIDE the
-          // inner grid — so a pointer-down on an inner tile never arms the outer.
-          dragConfig={{ handle: ".dg-nest__head" }}
-          isResizable={false}
-        >
-          {layout.map((it) =>
+          options={{
+            gridConfig: GRID,
+            // The outer tile drags only from its header, which sits OUTSIDE the
+            // inner grid — so a pointer-down on an inner tile never arms the outer.
+            dragConfig: { handle: ".dg-nest__head" },
+            isResizable: false,
+          }}
+          renderContent={(it) =>
             it.i === "panel" ? (
-              <div key={it.i} className="dg-nest">
-                <div className="dg-nest__head">
-                  <span className="dg-grip">⠿</span> Nested board
-                </div>
-                <div className="dg-nest__body">
-                  <NestedInner />
-                </div>
-              </div>
+              panel(<NestedInner layout={inner} onLayoutChange={setInner} />)
             ) : (
-              <Tile key={it.i} label={it.i.toUpperCase()} accent={it.i === "b"} />
-            ),
-          )}
-        </GridLayout>
+              <Tile label={it.i.toUpperCase()} accent={it.i === "b"} />
+            )
+          }
+          renderOverlay={(it) =>
+            it.i === "panel" ? (
+              panel(<NestedInnerPreview layout={inner} />)
+            ) : (
+              <Tile label={it.i.toUpperCase()} accent={it.i === "b"} />
+            )
+          }
+        />
       </div>
     </DemoFrame>
   );
 }
 
-/** The inner grid — its own standalone provider, so its drags stay isolated. */
-function NestedInner() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 280 });
-  const [layout, setLayout] = useState<Layout>(NESTED_INNER);
+/** The inner grid — its own standalone provider (HeadlessGrid supplies one), so
+ * its drags stay isolated from the outer grid. Controlled by NestedDemo so the
+ * overlay preview can mirror its current layout. */
+function NestedInner({
+  layout,
+  onLayoutChange,
+}: {
+  layout: Layout;
+  onLayoutChange: (next: Layout) => void;
+}) {
+  const { width, containerRef } = useContainerWidth({ initialWidth: 347 });
   return (
     <div ref={containerRef}>
-      <GridLayout
+      <HeadlessGrid
         layout={layout}
         width={width}
-        onLayoutChange={setLayout}
-        gridConfig={{ cols: 4, rowHeight: 36, margin: [6, 6], containerPadding: [0, 0] }}
-        isResizable={false}
-      >
-        {layout.map((it) => (
-          <div key={it.i} className="dg-nest__tile">
-            {it.i}
-          </div>
-        ))}
-      </GridLayout>
+        onLayoutChange={onLayoutChange}
+        options={{ gridConfig: NESTED_INNER_GRID, isResizable: false }}
+        renderContent={(it) => <div className="dg-nest__tile">{it.i}</div>}
+      />
+    </div>
+  );
+}
+
+/** A static, non-interactive snapshot of the inner board for the drag overlay:
+ * a plain CSS grid placing each tile at its current x/y/w/h. Width-independent
+ * (column tracks are `1fr`), so it fills the cloned panel without re-measuring
+ * or spinning up a second dnd-kit provider. */
+function NestedInnerPreview({ layout }: { layout: Layout }) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        height: "100%",
+        gridTemplateColumns: `repeat(${NESTED_INNER_GRID.cols}, 1fr)`,
+        gridAutoRows: `${NESTED_INNER_GRID.rowHeight}px`,
+        gap: `${NESTED_INNER_GRID.margin[1]}px ${NESTED_INNER_GRID.margin[0]}px`,
+        alignContent: "start",
+      }}
+    >
+      {layout.map((it) => (
+        <div
+          key={it.i}
+          className="dg-nest__tile"
+          style={{
+            gridColumn: `${it.x + 1} / span ${it.w}`,
+            gridRow: `${it.y + 1} / span ${it.h}`,
+          }}
+        >
+          {it.i}
+        </div>
+      ))}
     </div>
   );
 }

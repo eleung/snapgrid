@@ -1,13 +1,16 @@
 "use client";
 
+import { DragDropProvider } from "@dnd-kit/react";
 import { gravityCompactor, masonryCompactor, shelfCompactor } from "@snapgridjs/extras";
 import {
   type Compactor,
-  GridLayout,
+  GridDragOverlay,
   type Layout,
   horizontalCompactor,
   noCompactor,
   useContainerWidth,
+  useGridContainer,
+  useGridItem,
   verticalCompactor,
 } from "@snapgridjs/react";
 import { useState } from "react";
@@ -22,7 +25,6 @@ const PACKERS: Record<string, Compactor> = {
 };
 
 export function CompactorExample() {
-  const { width, containerRef } = useContainerWidth();
   const [packer, setPacker] = useState("vertical");
   const [layout, setLayout] = useState<Layout>([
     { i: "a", x: 0, y: 0, w: 3, h: 2 },
@@ -30,7 +32,7 @@ export function CompactorExample() {
     { i: "c", x: 5, y: 0, w: 4, h: 1 },
     { i: "d", x: 9, y: 0, w: 3, h: 2 },
   ]);
-
+  // The controls use no grid hooks, so they sit outside the provider.
   return (
     <div>
       <div className="controls">
@@ -48,24 +50,49 @@ export function CompactorExample() {
           </button>
         ))}
       </div>
-      <div ref={containerRef}>
-        <GridLayout
-          layout={layout}
-          width={width}
-          onLayoutChange={setLayout}
-          gridConfig={{ cols: 12, rowHeight: 52 }}
-          compactor={PACKERS[packer]}
-        >
-          {layout.map((item) => (
-            <div key={item.i} className="tile">
-              <span className="tile__id">{item.i}</span>
-              <span className="tile__dim">
-                {item.w}×{item.h}
-              </span>
-            </div>
-          ))}
-        </GridLayout>
+      <DragDropProvider>
+        <Board layout={layout} onLayoutChange={setLayout} compactor={PACKERS[packer]} />
+        <GridDragOverlay>
+          {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
+        </GridDragOverlay>
+      </DragDropProvider>
+    </div>
+  );
+}
+
+function Board({
+  layout,
+  onLayoutChange,
+  compactor,
+}: {
+  layout: Layout;
+  onLayoutChange: (next: Layout) => void;
+  compactor: Compactor;
+}) {
+  const { width, containerRef } = useContainerWidth();
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange,
+    gridConfig: { rowHeight: 80 },
+    compactor,
+  });
+  return (
+    <div ref={containerRef}>
+      <div {...containerProps}>
+        {layout.map((it) => (
+          <Tile key={it.i} id={it.i} group={group} />
+        ))}
       </div>
+    </div>
+  );
+}
+
+function Tile({ id, group }: { id: string; group: string }) {
+  const { ref, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
     </div>
   );
 }

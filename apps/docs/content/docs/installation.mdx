@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Packages, peer dependencies, and framework notes for installing snapgrid.
+description: Packages, peer dependencies, the single-import convenience, and framework notes for installing snapgrid.
 ---
 
 import { Callout, Tabs } from "nextra/components";
@@ -9,13 +9,13 @@ import { Callout, Tabs } from "nextra/components";
 
 ## Packages
 
-snapgrid is a small monorepo. Pick what you need:
+snapgrid is a small monorepo. Most apps install only `@snapgridjs/react`.
 
 | Package | What it is | When you need it |
 | --- | --- | --- |
-| `@snapgridjs/react` | React components + hooks. Pulls in `@snapgridjs/core`. | Always. This is the main entry point. |
-| `@snapgridjs/core` | Framework-agnostic layout engine (move/resize/compaction, geometry). | Installed automatically with `@snapgridjs/react`. Depend on it directly only for custom non-React integrations. |
-| `@snapgridjs/extras` | Optional packers: `masonry`, `gravity`, `shelf`, `wrap`. | Only if you use those packing styles. |
+| `@snapgridjs/react` | React components + hooks. Pulls in `@snapgridjs/core`. | **Always** — the main entry point. |
+| `@snapgridjs/core` | Framework-agnostic engine (move/resize/compaction, geometry). | Comes in automatically with `@snapgridjs/react`. Depend on it directly only for a custom, non-React integration. |
+| `@snapgridjs/extras` | Optional packers: `masonry`, `gravity`, `shelf`, `wrap`, and the fast `O(n log n)` compactors. | Only if you use those packing styles. |
 
 ## Install
 
@@ -52,28 +52,47 @@ bun add @snapgridjs/react @dnd-kit/react @dnd-kit/dom
 
 ## Peer dependencies
 
-snapgrid drives the interaction through dnd-kit, which you install alongside it:
+snapgrid drives the interaction through dnd-kit, declared as **peer dependencies** so you control the
+version and there's only ever one copy:
 
-- `@dnd-kit/react`: the React bindings (`useDraggable`, `DragDropProvider`).
-- `@dnd-kit/dom`: the DOM sensors and feedback plugins.
-- `react` and `react-dom` **18 or 19**.
+- `@dnd-kit/react` — the React bindings (`DragDropProvider`, `useDraggable`, `DragOverlay`).
+- `@dnd-kit/dom` — the DOM sensors and feedback plugins.
+- `react` / `react-dom` **18 or 19**.
 
 <Callout type="info">
-  snapgrid is built on **dnd-kit's latest framework-agnostic architecture** (`@dnd-kit/react` /
-  `@dnd-kit/dom`), the line [dnd-kit now recommends](https://dndkit.com/) over the legacy
-  `@dnd-kit/core`. snapgrid wraps it behind a single seam in `@snapgridjs/core`, so your app only ever
-  imports from `@snapgridjs/*`.
+  Because dnd-kit is a peer dependency, snapgrid doesn't bundle its own copy — it composes the one
+  you install. Your grid and any other dnd-kit draggables in your app share a single
+  `DragDropProvider` context, which is exactly what makes cross-grid and external drops work.
+</Callout>
+
+## One import source (optional)
+
+`@snapgridjs/react` re-exports the dnd-kit primitives you'll commonly need for a grid — `DragOverlay`,
+`useDraggable`, `useDroppable`, `Feedback`, `PointerSensor`, `KeyboardSensor` — so you can import
+everything from one place:
+
+```tsx
+// Either of these works; the re-export just saves an import line.
+import { DragOverlay, useDraggable } from "@snapgridjs/react";
+import { DragOverlay, useDraggable } from "@dnd-kit/react";
+```
+
+<Callout type="default">
+  `DragDropProvider` is **not** re-exported — import it from `@dnd-kit/react`. It's the one dnd-kit
+  piece you always reach for directly, a reminder that the grid lives in *your* dnd-kit tree.
 </Callout>
 
 ## No stylesheet to import
 
-snapgrid ships **zero CSS**. Components return positioning styles inline and a handful of stable
-class names / data attributes for you to target. There is no `import "@snapgridjs/react/styles.css"`
-step. See [Styling](/docs/guides/styling) for the hooks you can style against.
+snapgrid ships **zero CSS**. Components return positioning styles inline plus a few stable class
+names and data attributes for you to target. There is no `import "@snapgridjs/react/styles.css"`
+step. See [Styling](/docs/guides/styling) for what's exposed.
 
 ## Framework notes
 
-- **Vite / CRA / plain React**: nothing special; it just works.
-- **Next.js / Remix (SSR)**: fully supported. `useContainerWidth` is SSR-safe and renders at an
-  initial width on the server, then measures on the client. See [Server-side rendering](/docs/guides/ssr).
-- **TypeScript**: snapgrid is written in TypeScript and ships its own types. No `@types/*` needed.
+- **Vite / CRA / plain React** — nothing special; it just works.
+- **Next.js / Remix (SSR)** — fully supported. `useContainerWidth` is SSR-safe: it renders at an
+  initial width on the server, then measures on the client. The file that renders a grid must be a
+  client component (`"use client"`), since dnd-kit attaches sensors in effects. See
+  [Server-side rendering](/docs/guides/ssr).
+- **TypeScript** — snapgrid is written in TypeScript and ships its own types. No `@types/*` needed.

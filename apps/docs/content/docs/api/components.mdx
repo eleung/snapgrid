@@ -1,20 +1,21 @@
 ---
 title: Components
-description: GridLayout, ResponsiveGridLayout, GridItem, GridPlaceholder, SnapGridGroup.
+description: GridLayout, ResponsiveGridLayout, GridItem, GridPlaceholder, GridDragOverlay, SnapGridGroup.
 ---
 
 import { Callout } from "nextra/components";
 
 # Components
 
-The turnkey layer — a thin, react-grid-layout-style shell over the [hooks](/docs/api/hooks).
+The component layer — a thin shell in the react-grid-layout style over the [hooks](/docs/api/hooks).
 `<GridLayout>` bundles the dnd-kit `DragDropProvider`, the container, the items, the placeholder, and
 the [`DragOverlay`](https://next.dndkit.com), so you never touch dnd-kit directly. For full control
-of the markup, or to compose with other dnd-kit draggables, use the hooks.
+of the markup, or to compose with other dnd-kit draggables, use the hooks. See the
+[Component layer guide](/docs/guides/component-layer) for usage; this page is the prop reference.
 
 ## GridLayout
 
-The drop-in controlled grid. Children are keyed by their layout item's `i`. It supplies its own
+The turnkey controlled grid. Children are keyed by their layout item's `i`. It supplies its own
 `DragDropProvider`; nest several (or wrap them in [`SnapGridGroup`](#snapgridgroup)) and they share
 one.
 
@@ -100,10 +101,25 @@ control.
 | `className` | `string` | Appended to `snapgrid-placeholder`. |
 | `style` | `CSSProperties` | Merged over the default look. |
 
+## GridDragOverlay
+
+The floating drag preview — snapgrid's grid-aware wrapper over dnd-kit's
+[`DragOverlay`](https://next.dndkit.com). It resolves the dragged grid item for the render-prop and
+bakes in the out-of-flow style so the overlay can't flash. `GridLayout` renders one for you; in the
+headless layer you render it yourself. See [Headless usage](/docs/guides/headless#dragoverlay).
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `children` | `({ item, source }) => ReactNode` | **Required.** Render the preview. `item` is the dragged `LayoutItem` (`null` for external draggables); `source` is the raw dnd-kit drag source. |
+| `style` | `CSSProperties` | Merged over the built-in out-of-flow style (`dragOverlayStyle`). |
+| `className` | `string` | Forwarded to the overlay element. |
+| `dropAnimation` | `DropAnimation \| null` | dnd-kit drop-animation control. |
+| `tag` | `string` | The overlay element's tag (default `div`). |
+| `disabled` | `boolean \| ((source) => boolean)` | Forwarded to dnd-kit's `DragOverlay`. |
+
 <Callout type="info">
-  There is no snapgrid drag-overlay component. The floating preview is dnd-kit's
-  [`DragOverlay`](https://next.dndkit.com) — `GridLayout` renders one for you; in the headless layer
-  you render it yourself. See [Headless usage](/docs/guides/headless).
+  Prefer dnd-kit's exact API? The raw [`DragOverlay`](https://next.dndkit.com) is re-exported too —
+  spread the exported `dragOverlayStyle` onto it so it stays out of flow.
 </Callout>
 
 ## SnapGridGroup

@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-description: Where snapgrid is headed. Bindings for Vue, Svelte, Solid and vanilla TypeScript, deeper dnd-kit interop with Droppable and Sortable, and a /legacy drop-in for react-grid-layout v1.
+description: Where snapgrid is headed. Bindings for Vue, Svelte, Solid and vanilla TypeScript, deeper dnd-kit interop with Droppable and Sortable, and cross-level nested dragging.
 ---
 
 import { Callout } from "nextra/components";
@@ -46,25 +46,18 @@ both directions:
 The aim is for a snapgrid grid to be just another participant in a dnd-kit drag: items flow in and
 out of lists, boards, and drop zones without bespoke glue code.
 
-## A `/legacy` drop-in for react-grid-layout v1
+## Cross-level nested dragging
 
-snapgrid's `<GridLayout>` already mirrors **react-grid-layout v2** closely — for v2 users, migrating
-is essentially swapping the import (see the comparison on the [home page](/)). But the large v1
-installed base is still on the older `WidthProvider(GridLayout)` HOC and the flat `cols` / `rowHeight`
-/ `draggableHandle` props, which don't map one-to-one.
+[Nested grids](/docs/guides/nesting) are isolated by design — each on its own `DragDropProvider` — so
+today a tile can't be dragged between an inner grid and its outer one. Grids sharing a provider run a
+single collision pass with no **"innermost-wins"** rule, so a drag over a nested grid would be
+ambiguous; isolation is what keeps it predictable.
 
-The plan is a **`@snapgridjs/react/legacy`** entry that accepts the v1 prop shape and adapts it to
-snapgrid — so a v1 codebase can change one import line, keep its existing props, and migrate
-incrementally to the modern API at its own pace. This mirrors how RGL v2 itself ships a
-`react-grid-layout/legacy` build for its own v1 → v2 transition.
-
-- **`WidthProvider` HOC** → a compatible wrapper (or auto-measured width).
-- **Flat props** (`cols`, `rowHeight`, `margin`, `draggableHandle`, `compactType`, …) → mapped onto
-  snapgrid's `gridConfig` / `dragConfig` / `compactor`.
-- Same controlled `onLayoutChange` contract, so layout state and persistence carry over untouched.
-
-Until then, the [migration guide](/docs/guides/migrating-from-rgl) covers the prop-by-prop mapping by
-hand.
+We're thinking about lifting that — **if** we can land a clean innermost-wins collision model that
+unambiguously resolves the *deepest* grid under the pointer, paired with UX worth shipping (which
+grid receives, where the placeholder lands, how a drag escapes back to the parent). It's a maybe,
+gated on getting that resolution and feel right. Until then, move tiles with a **sibling** layout and
+[cross-grid dragging](/docs/guides/cross-grid).
 
 ## Shape the roadmap
 

@@ -2,53 +2,90 @@
 
 import { Feedback } from "@dnd-kit/dom";
 import { useDraggable } from "@dnd-kit/react";
-import { GridLayout, type Layout, SnapGridGroup, useContainerWidth } from "@snapgridjs/react";
+import {
+  GridDragOverlay,
+  type Layout,
+  SnapGridGroup,
+  useContainerWidth,
+  useGridContainer,
+  useGridItem,
+} from "@snapgridjs/react";
 import { useState } from "react";
 
 // Drag a copy (not the original) out of the palette.
 const clone = [Feedback.configure({ feedback: "clone" })];
 
-// A palette item: any draggable whose data carries `snapGridDrop` with the
-// size it should land as.
-function PaletteChip({ id, label, w, h }: { id: string; label: string; w: number; h: number }) {
-  const { ref } = useDraggable({ id, data: { snapGridDrop: { w, h } }, plugins: clone });
-  return (
-    <div ref={ref} className="chip">
-      {label} ({w}×{h})
-    </div>
-  );
-}
-
 export function ExternalDropExample() {
-  const { width, containerRef } = useContainerWidth();
   const [layout, setLayout] = useState<Layout>([{ i: "seed", x: 0, y: 0, w: 3, h: 2 }]);
-
+  // SnapGridGroup shares one provider across the palette + grid.
   return (
     <SnapGridGroup>
       <div style={{ display: "flex", gap: "1rem" }}>
         <div className="palette">
-          <PaletteChip id="small" label="small" w={2} h={1} />
-          <PaletteChip id="wide" label="wide" w={4} h={1} />
-          <PaletteChip id="tall" label="tall" w={2} h={3} />
+          <Chip id="small" w={2} h={1} />
+          <Chip id="wide" w={4} h={1} />
+          <Chip id="tall" w={2} h={3} />
         </div>
-        <div ref={containerRef} style={{ flex: 1 }}>
-          <GridLayout
-            layout={layout}
-            width={width}
-            onLayoutChange={setLayout}
-            // Accept external draggables; `onDrop` gives you the next layout.
-            dropConfig={{ enabled: true, defaultItem: { w: 2, h: 2 } }}
-            onDrop={(next) => setLayout(next)}
-            gridConfig={{ cols: 8, rowHeight: 44 }}
-          >
-            {layout.map((item) => (
-              <div key={item.i} className="tile">
-                {item.i}
-              </div>
-            ))}
-          </GridLayout>
-        </div>
+        <DropGrid layout={layout} onLayoutChange={setLayout} />
       </div>
+      {/* `item` resolves for grid tiles; palette chips are external (item null),
+          so branch on `source` to preview them. */}
+      <GridDragOverlay>
+        {({ item, source }) =>
+          item ? (
+            <div className="tile">{item.i}</div>
+          ) : (
+            <div className="chip">{String(source.id)}</div>
+          )
+        }
+      </GridDragOverlay>
     </SnapGridGroup>
+  );
+}
+
+// A palette item: a plain useDraggable carrying the size to land as.
+function Chip({ id, w, h }: { id: string; w: number; h: number }) {
+  const { ref } = useDraggable({ id, data: { snapGridDrop: { w, h } }, plugins: clone });
+  return (
+    <div ref={ref} className="chip">
+      {id}
+    </div>
+  );
+}
+
+function DropGrid({
+  layout,
+  onLayoutChange,
+}: {
+  layout: Layout;
+  onLayoutChange: (next: Layout) => void;
+}) {
+  const { width, containerRef } = useContainerWidth();
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange,
+    gridConfig: { cols: 8, rowHeight: 56 },
+    // Accept external draggables; `onDrop` gives you the next layout.
+    dropConfig: { enabled: true, defaultItem: { w: 2, h: 2 } },
+    onDrop: (next) => onLayoutChange(next),
+  });
+  return (
+    <div ref={containerRef} style={{ flex: 1 }}>
+      <div {...containerProps}>
+        {layout.map((it) => (
+          <Tile key={it.i} id={it.i} group={group} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Tile({ id, group }: { id: string; group: string }) {
+  const { ref, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+    </div>
   );
 }

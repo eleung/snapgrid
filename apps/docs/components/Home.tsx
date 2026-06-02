@@ -56,7 +56,7 @@ function InstallCommand() {
   );
 }
 
-/** The "30-second example" card — the headless API (the drop-in lives in the RGL comparison). */
+/** The "30-second example" card — the headless API (the turnkey layer lives in the RGL comparison). */
 function CodeExample() {
   return (
     <div className="dg-codecard">
@@ -75,7 +75,8 @@ function CodeExample() {
   );
 }
 
-/** RGL v2 → snapgrid as a unified diff — the change is essentially the import line. */
+/** RGL v2 → snapgrid as a unified diff — the component markup is near-identical (styling and any
+ * hook usage are the real migration work; see the migration guide). */
 function CompareCode() {
   return (
     <div className="dg-codecard dg-diffcard">
@@ -106,7 +107,7 @@ const FEATURES: Feature[] = [
     icon: Component,
     href: "/docs/guides/headless",
     title: "Headless-first, dnd-kit-native",
-    body: "Hooks you wire to your own markup, under your dnd-kit provider — tiles declare a group, like useSortable. <GridLayout> is the drop-in shell on top.",
+    body: "Hooks you wire to your own markup, under your dnd-kit provider — tiles declare a group, like useSortable. <GridLayout> is the turnkey shell on top.",
   },
   {
     icon: SlidersHorizontal,
@@ -136,7 +137,7 @@ const FEATURES: Feature[] = [
     icon: MonitorSmartphone,
     href: "/docs/guides/responsive",
     title: "Responsive",
-    body: "Per-breakpoint layouts via the useResponsiveLayout hook, or the <ResponsiveGridLayout> drop-in.",
+    body: "Per-breakpoint layouts via the useResponsiveLayout hook, or the turnkey <ResponsiveGridLayout>.",
   },
   {
     icon: Scaling,
@@ -172,7 +173,7 @@ export function Home() {
             <p className="dg-hero__sub">
               A headless-first grid layout built on <strong>dnd-kit</strong> — draggable, resizable,
               repacking tiles that compose with the sortables and droppables you already have. A
-              drop-in component layer covers react-grid-layout too.
+              component layer makes react-grid-layout users feel right at home too.
             </p>
             <div className="dg-hero__cta">
               <Link className="dg-cta dg-cta--primary" href="/docs/getting-started">
@@ -220,39 +221,29 @@ export function Home() {
         <p>
           The{" "}
           <strong>
-            drop-in <code>{"<GridLayout>"}</code>
+            <code>{"<GridLayout>"}</code> component layer
           </strong>{" "}
-          mirrors react-grid-layout v2, so migrating is a quick first step, not a rewrite — keep
-          your controlled layout, <code>onLayoutChange</code>, breakpoints, resize limits, and
-          static tiles. Then, at your own pace, drop any grid down to the headless hooks. Same
-          engine, no second migration.
+          mirrors react-grid-layout v2&apos;s model — same controlled <code>layout</code>,{" "}
+          <code>onLayoutChange</code>, and config objects — so RGL users adopt it quickly, then drop
+          any grid down to the headless hooks at their own pace. Same engine, no second migration.
         </p>
         <CompareCode />
-        <p className="dg-compare__caption">
-          Line-for-line the same, by design. The swap is essentially the import — and you lose the
-          CSS imports.
-        </p>
+        <p className="dg-compare__grouplabel">Migration path</p>
         <ul className="dg-compare__list">
           <li>
-            <strong>Already using dnd-kit?</strong> snapgrid slots into your existing interaction
-            layer, and adds only its own ~{BUNDLE_SIZE.snapgrid}&nbsp;kB on top of the dnd-kit you
-            already ship.
+            <strong>Not a literal drop-in.</strong> Same API shape, but you restyle — snapgrid ships
+            no CSS and uses its own class names.
           </li>
           <li>
-            <strong>Accessibility RGL lacks.</strong> dnd-kit gives every tile keyboard dragging and
-            screen-reader support out of the box; react-draggable / react-resizable don't.
+            <strong>v2 hooks aren&apos;t mirrored.</strong> <code>useGridLayout</code> /{" "}
+            <code>useResponsiveLayout</code> code moves to the{" "}
+            <Link href="/docs/guides/headless">headless API</Link>.
           </li>
           <li>
-            <strong>Modern, maintained input.</strong> One pointer · touch · keyboard sensor model
-            instead of RGL's older handlers.
-          </li>
-          <li>
-            <strong>Still on RGL v1?</strong> The diff above maps RGL v2. A{" "}
-            <Link href="/roadmap">
-              <code>/legacy</code> drop-in
-            </Link>{" "}
-            for v1's <code>WidthProvider</code> API is on the roadmap; until then the migration
-            guide covers the prop mapping.
+            <strong>On v1?</strong> No one-import shim — its <code>WidthProvider</code> / flat-prop
+            API is dated enough that it&apos;s worth modernising. The{" "}
+            <Link href="/docs/guides/migrating-from-rgl">migration guide</Link> maps it prop by
+            prop.
           </li>
         </ul>
         <Link className="dg-cta dg-cta--ghost" href="/docs/guides/migrating-from-rgl">

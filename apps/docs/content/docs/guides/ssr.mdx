@@ -35,14 +35,9 @@ measures. To avoid any flash you can render the grid only once measured:
 const { width, mounted, containerRef } = useContainerWidth();
 
 <div ref={containerRef}>
-  {mounted ? (
-    <GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
-      {/* … */}
-    </GridLayout>
-  ) : (
-    <div style={{ minHeight: 240 }} />
-  )}
+  {mounted ? <Board width={width} /> : <div style={{ minHeight: 240 }} />}
 </div>;
+// Board is your headless grid: a DragDropProvider wrapping useGridContainer.
 ```
 
 ## Next.js App Router
@@ -53,11 +48,13 @@ client-side.
 
 ```tsx
 "use client";
-import { GridLayout, useContainerWidth } from "@snapgridjs/react";
+import { DragDropProvider } from "@dnd-kit/react";
+import { useContainerWidth, useGridContainer } from "@snapgridjs/react";
 // …
 ```
 
 <Callout type="info">
-  The drag overlay portals to `document.body`, which only exists in the browser. snapgrid guards
-  this, so it simply renders nothing for the overlay during SSR and mounts it on the client.
+  The drag overlay is purely client-side: there's no active drag during SSR, so `<GridDragOverlay>`
+  renders nothing on the server and the floating preview appears only once a drag begins in the
+  browser. Nothing to guard.
 </Callout>

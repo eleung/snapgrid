@@ -3,9 +3,7 @@
 import { ResponsiveGridLayout, type ResponsiveLayouts, useContainerWidth } from "@snapgridjs/react";
 import { useState } from "react";
 
-// Provide a layout for your widest breakpoint; snapgrid generates the narrower
-// ones from it (override any by adding more keys). Default breakpoints/cols are
-// lg/md/sm/xs/xxs — see the Responsive guide.
+// Give a layout for the widest breakpoint; narrower ones are generated from it.
 const INITIAL: ResponsiveLayouts = {
   lg: [
     { i: "a", x: 0, y: 0, w: 4, h: 2 },
@@ -19,7 +17,6 @@ const INITIAL: ResponsiveLayouts = {
 export function ResponsiveExample() {
   const { width, containerRef } = useContainerWidth();
   const [layouts, setLayouts] = useState<ResponsiveLayouts>(INITIAL);
-
   return (
     <div ref={containerRef}>
       <ResponsiveGridLayout

@@ -1,6 +1,6 @@
 ---
 title: Resizing
-description: Resize handles, per-item min/max constraints, and grid bounds.
+description: Which handles to show, rendering them in the headless layer, per-item min/max constraints, and the preventCollision gotcha.
 ---
 
 import { Callout } from "nextra/components";
@@ -8,35 +8,66 @@ import { ResizeDemo } from "@/components/demos";
 
 # Resizing
 
-Items resize from their handles. The bottom-right (`se`) corner handle is shown by default;
-configure which handles appear with `resizeConfig`, and clamp sizes per item with
-`minW` / `maxW` / `minH` / `maxH`.
+A grid item resizes from **handles** at its edges and corners. You declare *which* axes are resizable
+with `resizeConfig`, and clamp each item's size with `minW` / `maxW` / `minH` / `maxH`. `resizeConfig`
+is an option on `useGridContainer` (and, identically, a prop on the
+[`<GridLayout>`](/docs/guides/component-layer) shell):
 
 ```tsx
-<GridLayout
-  layout={layout}
-  width={width}
-  onLayoutChange={setLayout}
-  resizeConfig={{ handles: ["se", "e", "s"] }}
-/>
+const { containerProps, group } = useGridContainer({
+  layout,
+  width,
+  onLayoutChange: setLayout,
+  resizeConfig: { handles: ["se", "e", "s"] },
+});
 ```
+
+<Callout type="warning">
+  **In the headless layer you render the handles yourself.** `resizeConfig.handles` only declares
+  which axes are *allowed* — a bare `useGridItem` tile shows nothing to grab. Render a handle per axis
+  with [`useGridResizeHandle`](#rendering-handles-headless) (below). `<GridLayout>` renders them for
+  you — reach for it if you'd rather not.
+</Callout>
+
+<ResizeDemo />
 
 ## `resizeConfig` options
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `enabled` | `boolean` | `true` | Grid-level on/off for resizing. |
-| `handles` | `ResizeHandleAxis[]` | `["se"]` | Which handles to show on each item. |
+| `handles` | `ResizeHandleAxis[]` | `["se"]` | Which handles each item may show. |
 
-The eight handle axes are `"n"`, `"e"`, `"s"`, `"w"`, `"ne"`, `"nw"`, `"se"`, `"sw"`. West and
-north handles keep the opposite edge anchored as you drag; east and south keep the top-left
-anchored and clamp to the grid's columns (and `maxRows`, if set).
+The eight axes are `"n"`, `"e"`, `"s"`, `"w"`, `"ne"`, `"nw"`, `"se"`, `"sw"`. West and north handles
+keep the opposite edge anchored as you drag; east and south keep the top-left anchored and clamp to
+the grid's columns (and `maxRows`, if set).
 
-<ResizeDemo />
+## Rendering handles (headless) [#rendering-handles-headless]
+
+`useGridResizeHandle(itemId, axis, group)` models a handle as its own draggable. Spread its `ref` and
+`handleProps` onto an element you position and style — `handleProps` marks the element so a
+pointer-down resizes instead of starting an item drag:
+
+```tsx
+function Tile({ id, group }) {
+  const { ref, style } = useGridItem(id, group);
+  const resize = useGridResizeHandle(id, "se", group);
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+      {/* CSS places + styles `.resize-handle` at the corner */}
+      <span ref={resize.ref} {...resize.handleProps} className="resize-handle" />
+    </div>
+  );
+}
+```
+
+Render one handle per axis you configured. `useGridResizeHandle` also returns `isResizing` for
+styling. See [Headless usage](/docs/guides/headless#usegridresizehandle) for the full picture.
 
 ## Per-item constraints
 
-Add limits directly to the layout item. snapgrid enforces them as you resize:
+Add limits directly to the layout item; snapgrid enforces them as you resize:
 
 ```tsx
 const layout = [
@@ -47,18 +78,12 @@ const layout = [
 
 | Field | Description |
 | --- | --- |
-| `minW` / `maxW` | Minimum / maximum width in columns. `maxW` defaults to the column count. |
-| `minH` / `maxH` | Minimum / maximum height in rows. `maxH` defaults to unbounded. |
+| `minW` / `maxW` | Min / max width in columns. `maxW` defaults to the column count. |
+| `minH` / `maxH` | Min / max height in rows. `maxH` defaults to unbounded. |
 | `resizeHandles` | Per-item handle set, overriding `resizeConfig.handles`. |
-| `isResizable` | Per-item on/off, overriding the grid default. |
+| `isResizable` | Per-item on/off, overriding the grid default. `static` items never resize. |
 
 <Callout type="info">
   When the active compactor has `preventCollision` set, a resize that would overlap another tile is
   rejected (the item keeps its previous size) rather than pushing neighbours.
 </Callout>
-
-## Custom handles
-
-With the headless API you render handles yourself via `useGridResizeHandle(itemId, axis, group)`
-(where `group` is the grid's id from `useGridContainer`), which returns a `ref` and the marker props
-that exclude the handle from drag activation. See [Headless usage](/docs/guides/headless).

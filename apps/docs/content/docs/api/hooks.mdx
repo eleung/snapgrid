@@ -46,14 +46,37 @@ return (
 );
 ```
 
-| | Type | Description |
-| --- | --- | --- |
-| `options` | `UseGridControllerOptions` | `layout`, `width`, `onLayoutChange`, `gridConfig`, `dragConfig`, `resizeConfig`, `dropConfig`, `compactor`, `isDraggable`, `isResizable`, `autoSize`, `id`, lifecycle callbacks, `onDrop`. Same surface as `GridLayout`'s props (minus `className`/`style`). |
-| → `containerProps` | `{ ref, style, "data-drop-target"? }` | Spread onto your surface element. `style` is relative + width + auto-sized height; `data-drop-target` is present while a compatible draggable is over the grid. |
-| → `group` | `string` | This grid's id. Pass it to every item-level hook below. |
-| → `controller` | `GridController` | The live store, for advanced composition. |
+### Options (`UseGridControllerOptions`)
 
-If you don't pass an `id`, one is generated; either way it's surfaced as `group`.
+The controlled state plus the per-grid config. These are exactly `<GridLayout>`'s props **minus
+`className` / `style`** (here you own the surface element, so you style it directly).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `layout` | `Layout` | — | **Required.** Controlled array of items. Never mutated. |
+| `width` | `number` | — | **Required.** Container width in px (from [`useContainerWidth`](#usecontainerwidth)). |
+| `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. The grid is controlled — apply it, or nothing moves. |
+| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. Unset fields use defaults. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/docs/guides/dragging): `handle` (CSS selector — headless prefers [`handleRef`](#usegriditem)), `cancel`, `threshold`, `bounded`, `snapToGrid`. |
+| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/docs/guides/resizing): which handle axes are allowed. |
+| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/docs/guides/external-drop): `enabled`, `defaultItem`, `accept`. |
+| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/docs/guides/compaction). Swap at runtime. |
+| `isDraggable` | `boolean` | `true` | Grid-level drag toggle (overrides per-item when `false`). |
+| `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
+| `autoSize` | `boolean` | `true` | Grow the surface height to fit content. |
+| `id` | `string` | auto (`useId`) | Stable id for the droppable surface; surfaced back as `group`. |
+| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/docs/guides/events) `(layout, oldItem, newItem, placeholder, event, node)`. |
+| `onResizeStart` `onResize` `onResizeStop` | `GridEventCallback` | — | Resize lifecycle, same signature. |
+| `onDrop` | `(layout, item, event) => void` | — | Fired when an external draggable is dropped in — instead of `onLayoutChange`. |
+
+### Returns (`UseGridContainerResult`)
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `containerProps` | `{ ref, style, "data-drop-target"? }` | Spread onto your surface element. `style` is `position: relative` + width + auto-sized height; `data-drop-target` is present while a compatible draggable is over the grid. |
+| `group` | `string` | This grid's id (the `id` option, or a generated one). Pass it to every item-level hook. |
+| `isDropTarget` | `boolean` | `true` while a compatible draggable is over the grid — handy for highlighting. |
+| `controller` | `GridController` | The live store, for advanced composition. |
 
 ## useGridItem
 
@@ -68,6 +91,7 @@ return <div ref={ref} style={style}>{item?.i}</div>;
 | → | Type | Description |
 | --- | --- | --- |
 | `ref` | `(el: Element \| null) => void` | Attach to the tile element. |
+| `handleRef` | `(el: Element \| null) => void` | Optional drag handle — attach to a child to restrict pointer dragging to it. The headless form of `dragConfig.handle`. |
 | `style` | `CSSProperties` | `position` + GPU `transform` + size + reflow transition. |
 | `isDragging` | `boolean` | True while this tile is the active drag source. |
 | `item` | `LayoutItem \| undefined` | The tile's current (possibly reflowed) entry. |
@@ -92,12 +116,6 @@ Returns where the landing-cell marker should render, or `null` when idle. `group
 const placeholder = useGridPlaceholder(group);
 {placeholder && <div style={placeholder.style} />}
 ```
-
-<Callout type="info">
-  There is no `useGridDragOverlay` hook — the floating drag preview is dnd-kit's
-  [`DragOverlay`](https://next.dndkit.com). Render one under your `DragDropProvider`; `<GridLayout>`
-  renders it for you.
-</Callout>
 
 ## useResponsiveLayout
 
@@ -125,3 +143,29 @@ const { breakpoint, cols, layout, onLayoutChange } = useResponsiveLayout({
 
 Returns the active `breakpoint`, its `cols`, the resolved `layout`, and an `onLayoutChange` to pass
 to the grid (it updates the active breakpoint's entry).
+
+## No useGridDragOverlay
+
+Every hook above hands you values — a `ref`, a `style`, some state — to spread onto an element **you**
+render. The floating drag preview doesn't fit that shape, so there's no `useGridDragOverlay` hook.
+It's a **component**: [`<GridDragOverlay>`](/docs/api/components#griddragoverlay).
+
+That mirrors dnd-kit. Its overlay is [`DragOverlay`](https://next.dndkit.com) — a component, not a
+hook — because the overlay **owns and renders its own element**, portaling it to the top layer so the
+dragged tile floats above everything and crosses between grids unclipped (while the in-grid tile
+hides). There's no element of yours to attach a `ref` to, so there's nothing for a hook to return.
+`<GridDragOverlay>` is snapgrid's thin wrapper over it: it resolves the dragged item for the
+render-prop and bakes in the out-of-flow style so the overlay can't flash full-width on drop.
+
+```tsx
+import { GridDragOverlay } from "@snapgridjs/react";
+
+// One overlay, rendered under your DragDropProvider as a sibling of the grid host.
+<GridDragOverlay>
+  {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
+</GridDragOverlay>
+```
+
+`<GridLayout>` renders one for you; in the headless layer you render it yourself. See the
+[`GridDragOverlay` reference](/docs/api/components#griddragoverlay) and
+[Headless usage](/docs/guides/headless#dragoverlay).

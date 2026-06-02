@@ -1,4 +1,6 @@
 export default {
+  headless: "Headless usage",
+  "component-layer": "Component layer",
   dragging: "Dragging",
   resizing: "Resizing",
   compaction: "Compaction & packing",
@@ -7,7 +9,6 @@ export default {
   "cross-grid": "Cross-grid dragging",
   nesting: "Nested grids",
   "external-drop": "External drop",
-  headless: "Headless usage",
   styling: "Styling",
   events: "Events & lifecycle",
   ssr: "Server-side rendering",

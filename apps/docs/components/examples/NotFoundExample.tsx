@@ -1,19 +1,36 @@
 "use client";
 
-import { GridLayout, type Layout, useContainerWidth } from "@snapgridjs/react";
+import { DragDropProvider } from "@dnd-kit/react";
+import {
+  GridDragOverlay,
+  type Layout,
+  useContainerWidth,
+  useGridContainer,
+  useGridItem,
+} from "@snapgridjs/react";
 import { useState } from "react";
 
-// The "404" is a snapgrid: the digits are draggable tiles. The nav tiles are
-// `static` — pinned, so they read as buttons (clickable, not draggable) and the
-// digits flow around them. Point the links wherever your app lives.
+// The "404" is a snapgrid: the digits drag; the nav tiles are `static` (pinned),
+// so they read as buttons and the digits flow around them.
 const SITE = "https://snapgrid.dev";
 
-const DIGITS = [
+type Cell = {
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  static?: boolean;
+  label: string;
+  accent?: boolean;
+  href?: string;
+  primary?: boolean;
+};
+
+const CELLS: Cell[] = [
   { i: "4a", x: 0, y: 0, w: 3, h: 3, label: "4" },
   { i: "0", x: 3, y: 0, w: 3, h: 3, label: "0", accent: true },
   { i: "4b", x: 6, y: 0, w: 3, h: 3, label: "4" },
-];
-const LINKS = [
   {
     i: "home",
     x: 9,
@@ -46,37 +63,68 @@ const LINKS = [
     href: `${SITE}/examples`,
   },
 ];
+const BY_ID = new Map(CELLS.map((c) => [c.i, c]));
 
 export function NotFoundExample() {
-  const { width, mounted, containerRef } = useContainerWidth();
-  const [layout, setLayout] = useState<Layout>([...DIGITS, ...LINKS]);
+  return (
+    <DragDropProvider>
+      <Board />
+    </DragDropProvider>
+  );
+}
 
-  // Render the grid only once the container has been measured. Until then
-  // `useContainerWidth` reports its 1280px default, so rendering immediately
-  // would lay the "404" out at full width and visibly reflow down to the narrow
-  // frame on mount. The ref stays mounted so the measurement can happen.
+function Board() {
+  const { width, mounted, containerRef } = useContainerWidth({ initialWidth: 560 });
+  const [layout, setLayout] = useState<Layout>(CELLS);
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange: setLayout,
+    gridConfig: { rowHeight: 52, containerPadding: [0, 0] },
+    isResizable: false,
+  });
+  // Render only once measured, so the "404" doesn't reflow from full width on mount.
   return (
     <div ref={containerRef}>
-      {mounted ? (
-        <GridLayout
-          layout={layout}
-          width={width}
-          onLayoutChange={setLayout}
-          gridConfig={{ cols: 12, rowHeight: 52, margin: [10, 10], containerPadding: [0, 0] }}
-          isResizable={false}
-        >
-          {DIGITS.map((d) => (
-            <div key={d.i} className={d.accent ? "cell cell--accent" : "cell"}>
-              {d.label}
-            </div>
-          ))}
-          {LINKS.map((l) => (
-            <a key={l.i} href={l.href} className={l.primary ? "btn btn--primary" : "btn"}>
-              {l.label}
-            </a>
-          ))}
-        </GridLayout>
-      ) : null}
+      {mounted && (
+        <>
+          <div {...containerProps}>
+            {layout.map((it) => (
+              <Tile key={it.i} id={it.i} group={group} />
+            ))}
+          </div>
+          <GridDragOverlay className="snapgrid-overlay">
+            {({ item }) => {
+              const cell = item && BY_ID.get(item.i);
+              return cell ? (
+                <div className={cell.accent ? "cell cell--accent" : "cell"}>{cell.label}</div>
+              ) : null;
+            }}
+          </GridDragOverlay>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Tile({ id, group }: { id: string; group: string }) {
+  const { ref, style } = useGridItem(id, group);
+  const cell = BY_ID.get(id);
+  if (cell?.href) {
+    return (
+      <a
+        ref={ref}
+        style={style}
+        href={cell.href}
+        className={cell.primary ? "btn btn--primary" : "btn"}
+      >
+        {cell.label}
+      </a>
+    );
+  }
+  return (
+    <div ref={ref} style={style} className={cell?.accent ? "cell cell--accent" : "cell"}>
+      {cell?.label}
     </div>
   );
 }

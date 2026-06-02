@@ -8,19 +8,41 @@ import { CrossGridDemo } from "@/components/demos";
 
 # Cross-grid dragging
 
-Wrap two or more grids in a `<SnapGridGroup>` and tiles can be dragged **between** them. The source
-grid loses the tile; the destination gains it. Each grid keeps its own controlled layout.
+Put two or more grids on **one dnd-kit provider** and tiles can be dragged **between** them. The
+source grid loses the tile; the destination gains it. Each grid keeps its own controlled layout.
+`<SnapGridGroup>` is that shared provider — it's just dnd-kit's `DragDropProvider`, named for intent
+— so each grid hosts itself with `useGridContainer` and the group needs only one `<GridDragOverlay>`.
 
 ```tsx
-import { SnapGridGroup, GridLayout } from "@snapgridjs/react";
+import { GridDragOverlay, SnapGridGroup, useGridContainer, useGridItem } from "@snapgridjs/react";
+
+function Grid({ layout, width, onLayoutChange }) {
+  // Each grid hosts itself and returns its own `group`; the shared provider
+  // comes from the enclosing SnapGridGroup.
+  const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange, gridConfig: cfg });
+  return (
+    <div {...containerProps}>
+      {layout.map((it) => (
+        <Tile key={it.i} id={it.i} group={group} />
+      ))}
+    </div>
+  );
+}
+
+function Tile({ id, group }) {
+  const { ref, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+    </div>
+  );
+}
 
 <SnapGridGroup>
-  <GridLayout layout={left} width={w} onLayoutChange={setLeft} gridConfig={cfg}>
-    {left.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
-  </GridLayout>
-  <GridLayout layout={right} width={w} onLayoutChange={setRight} gridConfig={cfg}>
-    {right.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
-  </GridLayout>
+  <Grid layout={left} width={w} onLayoutChange={setLeft} />
+  <Grid layout={right} width={w} onLayoutChange={setRight} />
+  {/* One overlay for the whole group — it resolves the dragged item from either grid. */}
+  <GridDragOverlay>{({ item }) => (item ? <div className="tile">{item.i}</div> : null)}</GridDragOverlay>
 </SnapGridGroup>;
 ```
 
@@ -29,8 +51,8 @@ import { SnapGridGroup, GridLayout } from "@snapgridjs/react";
 ## How it works
 
 Cross-grid dragging is just two grids on **one dnd-kit `DragDropProvider`**. `<SnapGridGroup>`
-supplies that shared provider (nesting `GridLayout`s shares one too); a drag that starts in one grid
-is received by whichever grid dnd-kit's collision system resolves under the pointer. On drop:
+supplies that shared provider; a drag that starts in one grid is received by whichever grid
+dnd-kit's collision system resolves under the pointer. On drop:
 
 - the **source** grid removes the tile and fires its `onLayoutChange` with the tile gone;
 - the **destination** grid inserts the tile at the drop cell and fires its `onLayoutChange` with the
@@ -38,15 +60,24 @@ is received by whichever grid dnd-kit's collision system resolves under the poin
 
 Both updates happen in the same gesture, each against its own layout state.
 
-<Callout type="info">
-  Headless? You don't need `<SnapGridGroup>` at all — render your grids under one
-  `DragDropProvider` and they exchange tiles the same way. The group component is just the turnkey
-  convenience.
-</Callout>
-
 <Callout type="warning">
   **Item ids must be unique across every grid in a group.** They share one drag manager. If two
   grids can hold an item with the same `i`, a cross-grid drop can't tell them apart.
+</Callout>
+
+<Callout type="info">
+  `<SnapGridGroup>` is exactly dnd-kit's `<DragDropProvider>` — use whichever you like; grids under
+  one provider exchange tiles either way. Prefer the turnkey shell? Swap each `<Grid>` for a
+  [`<GridLayout>`](/docs/guides/component-layer) with keyed children inside the same group; it
+  bundles the container, items, and overlay for you.
+</Callout>
+
+<Callout type="info">
+  **One overlay serves both grids.** Its render-prop fires for a tile dragged from *either* grid — but
+  `<GridDragOverlay>` resolves the dragged `item` for you (it rides along on the drag source), so the
+  preview shows the right content (label, size) no matter which grid it came from, with no cross-layout
+  lookup. (With a raw `<DragOverlay>` you'd key off `source.id` and look it up across both layouts.) See
+  the [overlay section](/docs/guides/headless#dragoverlay).
 </Callout>
 
 ## Callbacks

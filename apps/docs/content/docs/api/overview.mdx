@@ -16,8 +16,8 @@ types. Headless grids render inside a dnd-kit `DragDropProvider`; `<GridLayout>`
 
 | Export | Returns |
 | --- | --- |
-| [`useGridContainer`](/docs/api/hooks#usegridcontainer) | `{ containerProps, group, controller }` — the grid host |
-| [`useGridItem`](/docs/api/hooks#usegriditem) | `{ ref, style, isDragging, item }` |
+| [`useGridContainer`](/docs/api/hooks#usegridcontainer) | `{ containerProps, group, isDropTarget, controller }` — the grid host |
+| [`useGridItem`](/docs/api/hooks#usegriditem) | `{ ref, handleRef, style, isDragging, item }` |
 | [`useGridResizeHandle`](/docs/api/hooks#usegridresizehandle) | `{ ref, handleProps, isResizing }` |
 | [`useGridPlaceholder`](/docs/api/hooks#usegridplaceholder) | `{ item, style } \| null` |
 | [`useContainerWidth`](/docs/api/hooks#usecontainerwidth) | `{ width, mounted, containerRef }` |
@@ -33,8 +33,18 @@ types. Headless grids render inside a dnd-kit `DragDropProvider`; `<GridLayout>`
 | [`GridPlaceholder`](/docs/api/components#gridplaceholder) | Default landing-cell marker. |
 | [`SnapGridGroup`](/docs/api/components#snapgridgroup) | Shares one provider across sibling grids (cross-grid). |
 
-The floating drag preview is dnd-kit's [`DragOverlay`](https://next.dndkit.com), re-exported for
-convenience.
+### Re-exported dnd-kit primitives
+
+For convenience (one import source), `@snapgridjs/react` re-exports the dnd-kit pieces you commonly
+reach for with a grid: `DragOverlay` (the floating drag preview), `useDraggable` / `useDroppable`
+(e.g. an external-drop palette), and `Feedback` / `PointerSensor` / `KeyboardSensor`. `DragDropProvider`
+is *not* re-exported — import it from `@dnd-kit/react`.
+
+For the floating preview, prefer **`GridDragOverlay`** — snapgrid's grid-aware wrapper over dnd-kit's
+`DragOverlay`. It resolves the dragged item (render-prop receives `{ item, source }`) and bakes in the
+out-of-flow style so the overlay can't flash full-width at the bottom of the grid before dnd-kit
+positions it (see [Headless usage](/docs/guides/headless#dragoverlay)). The raw `DragOverlay` and the
+bare `dragOverlayStyle` are exported too, for full control; `<GridLayout>` applies the style for you.
 
 ### Utilities & compactors
 
@@ -57,4 +67,4 @@ session state machine. Most apps never import it directly. See
 
 Optional packers: `masonryCompactor`, `gravityCompactor`, `shelfCompactor`, plus `wrapCompactor`
 and the fast O(n log n) compactors re-exported from react-grid-layout. See
-[Core engine & extras](/docs/api/core#snapgrid-extras).
+[Core engine & extras](/docs/api/core#snapgridjsextras).

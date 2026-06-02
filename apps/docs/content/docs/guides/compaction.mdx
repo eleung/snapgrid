@@ -9,12 +9,13 @@ import { CompactorDemo } from "@/components/demos";
 # Compaction & packing
 
 After every move, resize, insert, or remove, the layout is re-packed by a **`Compactor`**. Pass one
-to the `compactor` prop; swap it any time. It's just a value.
+as the `compactor` option to `useGridContainer` (or, identically, as a prop on
+[`<GridLayout>`](/docs/guides/component-layer)); swap it any time. It's just a value.
 
 ```tsx
-import { GridLayout, verticalCompactor, horizontalCompactor, noCompactor } from "@snapgridjs/react";
+import { useGridContainer, verticalCompactor, horizontalCompactor, noCompactor } from "@snapgridjs/react";
 
-<GridLayout compactor={horizontalCompactor} /* … */ />;
+const { containerProps, group } = useGridContainer({ compactor: horizontalCompactor, /* … */ });
 ```
 
 <CompactorDemo />
@@ -45,6 +46,7 @@ import { masonryCompactor, gravityCompactor, shelfCompactor } from "@snapgridjs/
 | `masonryCompactor` | Minimizes height by dropping each item into its shortest column span. |
 | `gravityCompactor` | Top-left gravity: each item falls into the earliest free hole (row-major). |
 | `shelfCompactor` | Packs left-to-right into rows, wrapping to a new shelf when full. |
+| `wrapCompactor` | react-grid-layout's wrap packer — fills a row, then wraps to the next. |
 
 <Callout type="warning">
   The extra packers repack everything and do **not** preserve `static` placement or enforce
@@ -61,13 +63,17 @@ packing** on clean (non-overlapping) layouts but pack far faster at scale.
 ```tsx
 import { fastVerticalCompactor, fastHorizontalCompactor } from "@snapgridjs/extras";
 
-<GridLayout compactor={fastVerticalCompactor} /* … */ />;
+const { containerProps, group } = useGridContainer({ compactor: fastVerticalCompactor, /* … */ });
 ```
 
 They only help with **bulk** compaction: building a large layout from scratch, a responsive
 reflow, or compacting imported data. Dragging is already cheap (each move re-packs an already-tidy
 layout), so the fast variants don't change how a drag feels; reach for them when you pack hundreds
 to thousands of items at once.
+
+Each also has an **`…OverlapCompactor`** variant (`fastVerticalOverlapCompactor`,
+`fastHorizontalOverlapCompactor`, `wrapOverlapCompactor`) that permits overlapping items rather than
+cascading them apart.
 
 react-grid-layout's published benchmarks, the standard `O(n²)` cascade vs. the fast `O(n log n)`
 "rising tide":

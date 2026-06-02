@@ -1,0 +1,156 @@
+---
+title: Component layer
+description: The turnkey <GridLayout> shell — a controlled component in the react-grid-layout style, over the same headless hooks, for when the hooks are more than you need.
+---
+
+import { Callout } from "nextra/components";
+import { ComponentLayerDemo } from "@/components/demos";
+
+# Component layer
+
+snapgrid is [headless-first](/docs/guides/headless), but you don't have to wire the hooks yourself.
+The **component layer** is a thin shell in the react-grid-layout style over those exact hooks: `<GridLayout>`
+bundles the dnd-kit `DragDropProvider`, the container, the items, the placeholder, and the
+[`DragOverlay`](https://next.dndkit.com), so you never touch dnd-kit directly.
+
+<Callout type="info">
+  **This is the escape hatch.** If the headless provider/host/tile/overlay wiring is more than you
+  want, reach for `<GridLayout>` — it mirrors react-grid-layout v2, so it's the gentlest on-ramp.
+  When one grid later needs custom markup, drop just that grid down to the [hooks](/docs/guides/headless).
+  Same engine; the two layers mix freely.
+</Callout>
+
+## `<GridLayout>`
+
+A controlled grid. Children are **keyed by their layout item's `i`**; snapgrid positions each one and
+renders the resize handles, placeholder, and overlay for you.
+
+```tsx
+import { GridLayout, useContainerWidth, type Layout } from "@snapgridjs/react";
+import { useState } from "react";
+
+function Board() {
+  const { width, containerRef } = useContainerWidth();
+  const [layout, setLayout] = useState<Layout>([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 3 },
+  ]);
+
+  return (
+    <div ref={containerRef}>
+      <GridLayout
+        layout={layout}
+        width={width}
+        onLayoutChange={setLayout}
+        gridConfig={{ cols: 12, rowHeight: 60, margin: [12, 12] }}
+        resizeConfig={{ handles: ["se", "e", "s"] }}
+      >
+        {layout.map((item) => (
+          <div key={item.i} className="tile">
+            {item.i}
+          </div>
+        ))}
+      </GridLayout>
+    </div>
+  );
+}
+```
+
+It supplies its own `DragDropProvider`; nest several (or wrap them in
+[`<SnapGridGroup>`](#cross-grid-with-components)) and they share one.
+
+<ComponentLayerDemo />
+
+## Config props map 1:1 to the hook options
+
+Every behaviour prop on `<GridLayout>` is the same option you'd pass to
+[`useGridContainer`](/docs/guides/headless) — only the spelling differs (a JSX prop vs. an object
+key). So each feature guide applies to both layers:
+
+| Prop | What it does | Guide |
+| --- | --- | --- |
+| `gridConfig` | Columns, row height, margins, padding, maxRows. | [Concepts](/docs/concepts) |
+| `dragConfig` | Handle, cancel, threshold, bounds, snap. | [Dragging](/docs/guides/dragging) |
+| `resizeConfig` | Which handles to show. | [Resizing](/docs/guides/resizing) |
+| `compactor` | Packing algorithm. | [Compaction](/docs/guides/compaction) |
+| `dropConfig` / `onDrop` | Accept external draggables. | [External drop](/docs/guides/external-drop) |
+| `isDraggable` / `isResizable` / `autoSize` | Grid-level toggles. | — |
+| `onDragStart` … `onResizeStop` | Lifecycle callbacks. | [Events](/docs/guides/events) |
+
+See [Components → GridLayout](/docs/api/components#gridlayout) for the complete prop table.
+
+## `<ResponsiveGridLayout>`
+
+The turnkey wrapper over [`useResponsiveLayout`](/docs/guides/responsive). Give it a per-breakpoint `layouts`
+map instead of a single `layout`; it switches column count and layout as `width` crosses breakpoints.
+
+```tsx
+import { ResponsiveGridLayout, useContainerWidth, type ResponsiveLayouts } from "@snapgridjs/react";
+
+const { width, containerRef } = useContainerWidth();
+const [layouts, setLayouts] = useState<ResponsiveLayouts>({ lg: [/* … */] });
+
+<div ref={containerRef}>
+  <ResponsiveGridLayout
+    width={width}
+    layouts={layouts}
+    onLayoutChange={(_active, all) => setLayouts(all)}
+  >
+    {["a", "b", "c"].map((id) => (
+      <div key={id} className="tile">{id}</div>
+    ))}
+  </ResponsiveGridLayout>
+</div>;
+```
+
+## Cross-grid with components
+
+Wrap sibling grids in [`<SnapGridGroup>`](/docs/guides/cross-grid) — the shared provider — and tiles
+drag between them. (Nested `<GridLayout>`s share a provider automatically.)
+
+```tsx
+<SnapGridGroup>
+  <GridLayout layout={left} width={w} onLayoutChange={setLeft}>
+    {left.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
+  </GridLayout>
+  <GridLayout layout={right} width={w} onLayoutChange={setRight}>
+    {right.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
+  </GridLayout>
+</SnapGridGroup>;
+```
+
+<Callout type="warning">
+  Item ids must be unique across all grids that share a provider — they share one drag manager.
+</Callout>
+
+## Composing the pieces
+
+The layer isn't all-or-nothing. `<GridItem>` and `<GridPlaceholder>` are the same tiles `<GridLayout>`
+renders, exposed so you can drop them into a surface you host with `useGridContainer` — handy when you
+want the styled, memoized tile but control of the container:
+
+```tsx
+const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange });
+
+<div {...containerProps}>
+  {layout.map((it) => (
+    <GridItem key={it.i} id={it.i} group={group}>
+      {it.i}
+    </GridItem>
+  ))}
+  <GridPlaceholder group={group} />
+</div>;
+```
+
+`<GridItem>` applies the stable `.snapgrid-item` class and `data-grid-id` / `data-dragging` attributes
+(see [Styling](/docs/guides/styling)) and is memoized, so re-rendering the surface doesn't re-render
+every tile.
+
+<Callout type="info">
+  `<GridLayout>` renders the drag overlay for you — you never manage one. If you instead host your own
+  surface with the hooks, render snapgrid's [`<GridDragOverlay>`](/docs/guides/headless#dragoverlay): it
+  bakes in the out-of-flow style and hands your render-prop the dragged item. See
+  [Components](/docs/api/components) for the full prop tables and [Headless usage](/docs/guides/headless)
+  for the hooks.
+</Callout>

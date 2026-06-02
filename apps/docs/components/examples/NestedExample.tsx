@@ -1,69 +1,102 @@
 "use client";
 
-import { GridLayout, type Layout, useContainerWidth } from "@snapgridjs/react";
+import { DragDropProvider } from "@dnd-kit/react";
+import {
+  GridDragOverlay,
+  type Layout,
+  useContainerWidth,
+  useGridContainer,
+  useGridItem,
+} from "@snapgridjs/react";
 import { useState } from "react";
 
-// The inner grid is an ordinary, self-contained <GridLayout>; its drags stay
-// isolated from the outer one.
-function InnerGrid() {
-  const { width, containerRef } = useContainerWidth();
-  const [layout, setLayout] = useState<Layout>([
-    { i: "1", x: 0, y: 0, w: 1, h: 1 },
-    { i: "2", x: 1, y: 0, w: 1, h: 1 },
-    { i: "3", x: 2, y: 0, w: 1, h: 1 },
-  ]);
+export function NestedExample() {
   return (
-    <div ref={containerRef}>
-      <GridLayout
-        layout={layout}
-        width={width}
-        onLayoutChange={setLayout}
-        gridConfig={{ cols: 4, rowHeight: 36 }}
-        isResizable={false}
-      >
-        {layout.map((item) => (
-          <div key={item.i} className="tile">
-            {item.i}
-          </div>
-        ))}
-      </GridLayout>
-    </div>
+    <DragDropProvider>
+      <OuterBoard />
+    </DragDropProvider>
   );
 }
 
-export function NestedExample() {
+function OuterBoard() {
   const { width, containerRef } = useContainerWidth();
   const [layout, setLayout] = useState<Layout>([
     { i: "panel", x: 0, y: 0, w: 7, h: 4 },
     { i: "a", x: 7, y: 0, w: 5, h: 2 },
     { i: "b", x: 7, y: 2, w: 5, h: 2 },
   ]);
-
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange: setLayout,
+    // The panel drags only from its header, which sits outside the inner grid.
+    dragConfig: { handle: ".panel-header" },
+    isResizable: false,
+  });
   return (
     <div ref={containerRef}>
-      <GridLayout
-        layout={layout}
-        width={width}
-        onLayoutChange={setLayout}
-        gridConfig={{ cols: 12, rowHeight: 52 }}
-        // The outer panel drags only from its header, which sits OUTSIDE the
-        // inner grid — so a pointer-down on an inner tile never moves the panel.
-        dragConfig={{ handle: ".panel-header" }}
-        isResizable={false}
-      >
-        {layout.map((item) =>
-          item.i === "panel" ? (
-            <div key={item.i} className="panel">
-              <div className="panel-header">⠿ Nested board</div>
-              <InnerGrid />
-            </div>
-          ) : (
-            <div key={item.i} className="tile">
-              {item.i}
-            </div>
-          ),
-        )}
-      </GridLayout>
+      <div {...containerProps}>
+        {layout.map((it) => (
+          <Tile key={it.i} id={it.i} group={group} />
+        ))}
+      </div>
+      <GridDragOverlay>
+        {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
+      </GridDragOverlay>
+    </div>
+  );
+}
+
+function Tile({ id, group }: { id: string; group: string }) {
+  const { ref, style } = useGridItem(id, group);
+  if (id === "panel") {
+    return (
+      <div ref={ref} style={style} className="panel">
+        <div className="panel-header">⠿ Nested board</div>
+        <InnerGrid />
+      </div>
+    );
+  }
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+    </div>
+  );
+}
+
+// The inner grid is its OWN provider, so its drags stay isolated from the outer.
+function InnerGrid() {
+  return (
+    <DragDropProvider>
+      <InnerBoard />
+    </DragDropProvider>
+  );
+}
+
+function InnerBoard() {
+  const { width, containerRef } = useContainerWidth();
+  const [layout, setLayout] = useState<Layout>([
+    { i: "1", x: 0, y: 0, w: 1, h: 1 },
+    { i: "2", x: 1, y: 0, w: 1, h: 1 },
+    { i: "3", x: 2, y: 0, w: 1, h: 1 },
+  ]);
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange: setLayout,
+    gridConfig: { cols: 4, rowHeight: 40 },
+    isResizable: false,
+  });
+  return (
+    <div ref={containerRef}>
+      <div {...containerProps}>
+        {layout.map((it) => (
+          <Tile key={it.i} id={it.i} group={group} />
+        ))}
+      </div>
+      <GridDragOverlay>
+        {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
+      </GridDragOverlay>
     </div>
   );
 }
