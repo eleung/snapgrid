@@ -144,28 +144,14 @@ const { breakpoint, cols, layout, onLayoutChange } = useResponsiveLayout({
 Returns the active `breakpoint`, its `cols`, the resolved `layout`, and an `onLayoutChange` to pass
 to the grid (it updates the active breakpoint's entry).
 
-## No useGridDragOverlay
+## No overlay hook (tiles float themselves)
 
-Every hook above hands you values — a `ref`, a `style`, some state — to spread onto an element **you**
-render. The floating drag preview doesn't fit that shape, so there's no `useGridDragOverlay` hook.
-It's a **component**: [`<GridDragOverlay>`](/docs/api/components#griddragoverlay).
+There's no `useGridDragOverlay` — and no overlay component either. While you drag with a pointer,
+dnd-kit lifts the active tile into the browser's top layer, so the tile you already rendered
+**floats itself** above everything and crosses between grids unclipped; on drop it settles into its
+new cell. Nothing extra to wire. Style the floating state through the tile's own `isDragging`. See
+[The dragged tile floats itself](/docs/guides/headless#floating).
 
-That mirrors dnd-kit. Its overlay is [`DragOverlay`](https://next.dndkit.com) — a component, not a
-hook — because the overlay **owns and renders its own element**, portaling it to the top layer so the
-dragged tile floats above everything and crosses between grids unclipped (while the in-grid tile
-hides). There's no element of yours to attach a `ref` to, so there's nothing for a hook to return.
-`<GridDragOverlay>` is snapgrid's thin wrapper over it: it resolves the dragged item for the
-render-prop and bakes in the out-of-flow style so the overlay can't flash full-width on drop.
-
-```tsx
-import { GridDragOverlay } from "@snapgridjs/react";
-
-// One overlay, rendered under your DragDropProvider as a sibling of the grid host.
-<GridDragOverlay>
-  {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
-</GridDragOverlay>
-```
-
-`<GridLayout>` renders one for you; in the headless layer you render it yourself. See the
-[`GridDragOverlay` reference](/docs/api/components#griddragoverlay) and
-[Headless usage](/docs/guides/headless#dragoverlay).
+If you need a *separate* floating element — a clone, a ghost, different markup — dnd-kit's
+[`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/react`. It's a component,
+not a hook, because it owns and renders its own element, so there's nothing for a hook to return.

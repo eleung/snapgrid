@@ -85,7 +85,6 @@ body {
   user-select: none;
 }
 .cell--accent { background: var(--accent); border-color: var(--accent); color: #fff; }
-.snapgrid-overlay .cell { border-color: var(--accent); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22); }
 /* Static "button" tiles */
 .btn {
   height: 100%;
@@ -213,17 +212,6 @@ body {
 }
 .tile:hover .snapgrid-resize-handle--se::after {
   border-color: var(--accent);
-}
-
-/* dnd-kit's <DragOverlay> is an in-flow <div data-dnd-overlay> until dnd-kit's
-   own stylesheet pins it (while dragging). Pin it out of flow so it can't flash
-   full-width at the bottom of the grid in the frame around drop. (@snapgridjs/react
-   exports this as \`dragOverlayStyle\` to spread onto the overlay directly.) */
-[data-dnd-overlay] {
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
 }
 `;
 

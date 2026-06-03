@@ -1,6 +1,6 @@
 ---
 title: Headless usage
-description: The primary API — compose snapgrid's hooks with dnd-kit's DragDropProvider and render your own markup. The grid host, tiles, the drag overlay, resize handles, and the placeholder.
+description: The primary API — compose snapgrid's hooks with dnd-kit's DragDropProvider and render your own markup. The grid host, tiles, resize handles, and the placeholder.
 ---
 
 import { Callout } from "nextra/components";
@@ -17,23 +17,22 @@ hooks — see [Component layer](/docs/guides/component-layer) when you'd rather 
 
 ## The shape of a headless grid
 
-Three pieces, all under a dnd-kit `DragDropProvider` that **you** supply:
+Two pieces, both under a dnd-kit `DragDropProvider` that **you** supply:
 
 1. **`useGridContainer(options)`** — the grid *host*. Returns `containerProps` for your surface and
    the grid's **`group`**.
 2. **`useGridItem(id, group)`** — one tile. Returns a `ref` and positioning `style`.
-3. **`<GridDragOverlay>`** — the floating drag preview (snapgrid's grid-aware wrapper over dnd-kit's
-   [`DragOverlay`](https://next.dndkit.com)).
+
+There's no third piece for the drag preview: a dragged tile [floats itself](#floating).
 
 ```tsx
 import { DragDropProvider } from "@dnd-kit/react";
-import { GridDragOverlay, useGridContainer, useGridItem } from "@snapgridjs/react";
+import { useGridContainer, useGridItem } from "@snapgridjs/react";
 
 function Board({ layout, width, onLayoutChange }) {
   return (
     <DragDropProvider>
       <Surface layout={layout} width={width} onLayoutChange={onLayoutChange} />
-      <GridDragOverlay>{({ item }) => (item ? <div className="tile">{item.i}</div> : null)}</GridDragOverlay>
     </DragDropProvider>
   );
 }
@@ -96,57 +95,46 @@ function Tile({ id, group }) {
 
 You choose the tag, classes, and content. snapgrid only supplies position + state.
 
-## `<GridDragOverlay>` — the floating preview [#dragoverlay]
+## The dragged tile floats itself [#floating]
 
-**Why it's there:** dnd-kit portals the overlay to the top layer, so the dragged tile floats above
-everything and crosses between grids unclipped, while the in-grid tile hides. `<GridDragOverlay>` is
-snapgrid's thin wrapper over dnd-kit's [`DragOverlay`](https://next.dndkit.com): it **resolves the
-dragged grid item for you** (so the render-prop gets `{ item, source }`, no `source.id` lookup) and
-**bakes in the out-of-flow style** so the overlay can't flash full-width at the bottom of the grid.
+There's no overlay to render. While you drag with a pointer, dnd-kit lifts the active tile into the
+browser's **top layer**, so it floats above everything and crosses between grids **unclipped** — the
+same element you rendered, now floating. The other tiles reflow to open the landing cell, and on drop
+the tile settles into place. This is dnd-kit's default drag feedback; snapgrid only disables the drop
+animation so the tile lands on the cell instead of springing back to where it started.
+
+Because the tile *is* the preview, you style its dragging state right where you render it — branch on
+`isDragging`:
 
 ```tsx
-import { DragDropProvider } from "@dnd-kit/react";
-import { GridDragOverlay } from "@snapgridjs/react";
-
-// Render it inside the provider, as a sibling of your grid host — one overlay
-// serves every grid under that provider.
-<DragDropProvider>
-  <Surface layout={layout} width={width} onLayoutChange={onLayoutChange} />
-  <GridDragOverlay>
-    {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
-  </GridDragOverlay>
-</DragDropProvider>;
+function Tile({ id, group }) {
+  const { ref, style, isDragging } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile" data-dragging={isDragging || undefined}>
+      {id}
+    </div>
+  );
+}
 ```
 
-<Callout type="warning">
-  **Render presentational content — never `useGridItem` — inside the overlay.** The overlay isn't a
-  grid tile; calling `useGridItem` there has no resolvable grid and will throw or mis-position. Render
-  plain markup from the resolved `item` (or look it up by `source.id`).
-</Callout>
-
-<Callout type="warning">
-  **One overlay serves every source under a provider.** If grids and an external palette share a
-  `DragDropProvider` (or `SnapGridGroup`), the render-prop fires for *all* of them. `item` is `null`
-  for external (non-grid) draggables, so branch on it (or on `source`) and render the right preview —
-  otherwise external/cross-grid drags show the wrong content. See
-  [External drop](/docs/guides/external-drop).
+<Callout type="info">
+  **Keyboard drags don't float.** With the keyboard sensor the tile stays in place and steps
+  cell-by-cell (Enter/Space to pick up and drop, arrows to move, Escape to cancel) — so the floating
+  behaviour is purely for pointer drags.
 </Callout>
 
 <Callout type="info">
-  Prefer dnd-kit's exact API? Use the raw [`DragOverlay`](https://next.dndkit.com) with the
-  `(source) => …` render-prop — just spread the exported **`dragOverlayStyle`** onto it (or the
-  equivalent CSS) so it stays out of flow. `<GridDragOverlay>` and `<GridLayout>` apply it for you.
-  See [Styling](/docs/guides/styling#custom-placeholder--overlay).
+  **Need a *separate* floating element?** For a custom preview — a clone, a ghost, different markup —
+  dnd-kit's [`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/react`. You
+  rarely need it, since the tile already floats itself; reach for it only when the floating preview
+  must differ from the tile. See [Styling](/docs/guides/styling#custom-placeholder).
 </Callout>
-
-Keyboard drags don't use the overlay — the tile stays visible and steps in place — so an idle/missing
-overlay is fine; it's purely the pointer-drag preview.
 
 ## Optional affordances
 
 Headless tiles carry nothing extra — no class names, no resize handles, no placeholder, just a `ref`
-and a `style`. The host, tile, and overlay above are already a complete, working grid; everything
-else is yours to render. Two affordances are common enough that snapgrid gives you a hook for each:
+and a `style`. The host and tile above are already a complete, working grid; everything else is yours
+to render. Two affordances are common enough that snapgrid gives you a hook for each:
 
 1. **`useGridResizeHandle(id, axis, group)`** — render resize handles on a tile.
 2. **`useGridPlaceholder(group)`** — mark the cell a dragged tile will land in.

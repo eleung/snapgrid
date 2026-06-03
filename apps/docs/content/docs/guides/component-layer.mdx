@@ -10,11 +10,11 @@ import { ComponentLayerDemo } from "@/components/demos";
 
 snapgrid is [headless-first](/docs/guides/headless), but you don't have to wire the hooks yourself.
 The **component layer** is a thin shell in the react-grid-layout style over those exact hooks: `<GridLayout>`
-bundles the dnd-kit `DragDropProvider`, the container, the items, the placeholder, and the
-[`DragOverlay`](https://next.dndkit.com), so you never touch dnd-kit directly.
+bundles the dnd-kit `DragDropProvider`, the container, the items, and the placeholder, so you never
+touch dnd-kit directly.
 
 <Callout type="info">
-  **This is the escape hatch.** If the headless provider/host/tile/overlay wiring is more than you
+  **This is the escape hatch.** If the headless provider/host/tile wiring is more than you
   want, reach for `<GridLayout>` — it mirrors react-grid-layout v2, so it's the gentlest on-ramp.
   When one grid later needs custom markup, drop just that grid down to the [hooks](/docs/guides/headless).
   Same engine; the two layers mix freely.
@@ -23,7 +23,7 @@ bundles the dnd-kit `DragDropProvider`, the container, the items, the placeholde
 ## `<GridLayout>`
 
 A controlled grid. Children are **keyed by their layout item's `i`**; snapgrid positions each one and
-renders the resize handles, placeholder, and overlay for you.
+renders the resize handles and placeholder for you.
 
 ```tsx
 import { GridLayout, useContainerWidth, type Layout } from "@snapgridjs/react";
@@ -148,9 +148,7 @@ const { containerProps, group } = useGridContainer({ layout, width, onLayoutChan
 every tile.
 
 <Callout type="info">
-  `<GridLayout>` renders the drag overlay for you — you never manage one. If you instead host your own
-  surface with the hooks, render snapgrid's [`<GridDragOverlay>`](/docs/guides/headless#dragoverlay): it
-  bakes in the out-of-flow style and hands your render-prop the dragged item. See
-  [Components](/docs/api/components) for the full prop tables and [Headless usage](/docs/guides/headless)
-  for the hooks.
+  There's no drag overlay to manage at either layer — a dragged tile
+  [floats itself](/docs/guides/headless#floating). See [Components](/docs/api/components) for the full
+  prop tables and [Headless usage](/docs/guides/headless) for the hooks.
 </Callout>

@@ -65,8 +65,8 @@ line). The grid is just another participant in *your* dnd-kit tree:
 | `useDraggable` | every tile (wrapped by `useGridItem`) |
 | `useDroppable` | the grid surface (created by `useGridContainer`) |
 | collision detection | resolves which grid the pointer is over — the drop target |
-| `<DragOverlay>` | the floating drag preview — snapgrid wraps it as [`GridDragOverlay`](/docs/guides/headless#dragoverlay) |
-| `Feedback` plugin | floats that preview on the pointer; set to `none` for keyboard, so the tile steps in place |
+| `Feedback` plugin | floats the dragged tile itself in the top layer (default feedback); set to `none` for keyboard, so the tile steps in place |
+| `<DragOverlay>` | optional — a *separate* floating preview; snapgrid doesn't need one (the tile [floats itself](/docs/guides/headless#floating)), but it's re-exported as an escape hatch |
 
 snapgrid's own job is the **grid** part on top: the coordinate space, the packing, and the controlled
 layout. The brains of *that* (geometry, the collision cascade, compaction) come from
@@ -91,8 +91,6 @@ function Board({ layout, width, onLayoutChange }) {
   return (
     <DragDropProvider>                              {/* dnd-kit's provider — you supply it */}
       <Surface layout={layout} width={width} onLayoutChange={onLayoutChange} />
-      {/* presentational preview — never useGridItem here */}
-      <GridDragOverlay>{({ item }) => (item ? <div>{item.i}</div> : null)}</GridDragOverlay>
     </DragDropProvider>
   );
 }
@@ -115,7 +113,7 @@ function Tile({ id, group }) {
 
 ```tsx
 // Turnkey — the same thing, wired for you. <GridLayout> bundles the provider,
-// the container, the items, the placeholder, and the overlay.
+// the container, the items, and the placeholder.
 <GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
   {layout.map((item) => <div key={item.i}>{item.i}</div>)}
 </GridLayout>
@@ -141,8 +139,8 @@ items straight — so **ids must be unique across grids that share a provider.**
 
 While you drag (with a pointer):
 
-- the dragged tile floats in a dnd-kit `<DragOverlay>` (the preview you render) — so it can cross
-  grids unclipped — and the in-grid tile hides in place;
+- the dragged tile floats itself above everything — dnd-kit lifts it into the browser's top layer —
+  so it can cross grids unclipped;
 - dnd-kit's **collision** system resolves which grid the pointer is over (the drop target);
 - snapgrid maps the pointer to a **cell** and re-packs, so a **placeholder** marks where the tile
   will land while the other tiles animate to their reflowed positions.
@@ -175,8 +173,7 @@ The handful of things that trip people up. Each is spelled out in its guide; thi
 | Gotcha | In short | More |
 | --- | --- | --- |
 | **Provider wraps the host** | `useGridContainer` must run *inside* `<DragDropProvider>` (in a child), or you get `no grid found for group`. | [Headless](/docs/guides/headless) |
-| **Use `GridDragOverlay` for the preview** | Render presentational markup, never `useGridItem`. It bakes in the out-of-flow style too — a raw `<DragOverlay>` needs `dragOverlayStyle` or it can flash full-width on drop. | [Headless](/docs/guides/headless) · [Styling](/docs/guides/styling) |
-| **A shared overlay fires for every source** | Under one provider, branch the overlay on the source so cross-grid / external drags render correctly — not one hardcoded tile. | [External drop](/docs/guides/external-drop) |
+| **The tile floats itself** | No overlay to render — a dragged tile lifts into the top layer on its own. Style its drag look via the tile's `[data-dragging]`. | [Headless](/docs/guides/headless#floating) · [Styling](/docs/guides/styling) |
 | **Headless tiles have no affordances** | No resize handles, placeholder, or classes — render them with `useGridResizeHandle` / `useGridPlaceholder` and bring your own classes. | [Headless](/docs/guides/headless) · [Styling](/docs/guides/styling) |
 | **Always controlled** | Apply every `onLayoutChange` or nothing moves; never mutate the layout. | above |
 | **Feed a clean initial layout** | snapgrid renders your layout verbatim and only re-packs *during* a drag — pre-compact gaps/overlaps. | [Migrating](/docs/guides/migrating-from-rgl) |

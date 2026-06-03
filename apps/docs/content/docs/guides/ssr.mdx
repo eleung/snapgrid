@@ -54,7 +54,7 @@ import { useContainerWidth, useGridContainer } from "@snapgridjs/react";
 ```
 
 <Callout type="info">
-  The drag overlay is purely client-side: there's no active drag during SSR, so `<GridDragOverlay>`
-  renders nothing on the server and the floating preview appears only once a drag begins in the
-  browser. Nothing to guard.
+  Dragging is purely client-side: there's no active drag during SSR, so a tile renders in its normal
+  in-grid position on the server and only [floats itself](/docs/guides/headless#floating) once a drag
+  begins in the browser. Nothing to guard.
 </Callout>

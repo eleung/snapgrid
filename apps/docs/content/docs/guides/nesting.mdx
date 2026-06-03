@@ -23,7 +23,7 @@ host *inside* that provider:
 
 ```tsx
 import { DragDropProvider } from "@dnd-kit/react";
-import { GridDragOverlay, useGridContainer, useGridItem } from "@snapgridjs/react";
+import { useGridContainer, useGridItem } from "@snapgridjs/react";
 
 // The outer grid: its own provider wrapping the host.
 function OuterGrid({ outer, width, setOuter }) {
@@ -42,25 +42,22 @@ function OuterBoard({ outer, width, setOuter }) {
     dragConfig: { handle: ".panel-head" }, // handle sits OUTSIDE the inner grid
   });
   return (
-    <>
-      <div {...containerProps}>
-        {outer.map((it) => (
-          <Tile key={it.i} id={it.i} group={group}>
-            {it.i === "panel" ? (
-              <div className="panel">
-                <div className="panel-head">Nested board</div> {/* outer drag handle */}
-                <div className="panel-body">
-                  <InnerGrid /> {/* its OWN provider — see below */}
-                </div>
+    <div {...containerProps}>
+      {outer.map((it) => (
+        <Tile key={it.i} id={it.i} group={group}>
+          {it.i === "panel" ? (
+            <div className="panel">
+              <div className="panel-head">Nested board</div> {/* outer drag handle */}
+              <div className="panel-body">
+                <InnerGrid /> {/* its OWN provider — see below */}
               </div>
-            ) : (
-              it.i
-            )}
-          </Tile>
-        ))}
-      </div>
-      <GridDragOverlay>{({ item }) => (item ? <div className="tile">{item.i}</div> : null)}</GridDragOverlay>
-    </>
+            </div>
+          ) : (
+            it.i
+          )}
+        </Tile>
+      ))}
+    </div>
   );
 }
 

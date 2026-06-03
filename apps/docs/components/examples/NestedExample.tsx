@@ -1,13 +1,7 @@
 "use client";
 
 import { DragDropProvider } from "@dnd-kit/react";
-import {
-  GridDragOverlay,
-  type Layout,
-  useContainerWidth,
-  useGridContainer,
-  useGridItem,
-} from "@snapgridjs/react";
+import { type Layout, useContainerWidth, useGridContainer, useGridItem } from "@snapgridjs/react";
 import { useState } from "react";
 
 export function NestedExample() {
@@ -40,9 +34,6 @@ function OuterBoard() {
           <Tile key={it.i} id={it.i} group={group} />
         ))}
       </div>
-      <GridDragOverlay>
-        {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
-      </GridDragOverlay>
     </div>
   );
 }
@@ -94,9 +85,6 @@ function InnerBoard() {
           <Tile key={it.i} id={it.i} group={group} />
         ))}
       </div>
-      <GridDragOverlay>
-        {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
-      </GridDragOverlay>
     </div>
   );
 }

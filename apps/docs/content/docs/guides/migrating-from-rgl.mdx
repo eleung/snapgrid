@@ -86,8 +86,9 @@ snapgrid's hooks are its **own headless API**, not a re-implementation of v2's. 
 (`useContainerWidth`, `useResponsiveLayout`) but the contracts differ, and snapgrid's grid *host* is
 **`useGridContainer`**, not v2's `useGridLayout`. So there's **no hook-for-hook swap**: if you built
 directly on v2's hooks, migrate that grid to snapgrid's [headless usage](/docs/guides/headless)
-outright (provider → `useGridContainer` → `useGridItem` → `<GridDragOverlay>`). If you only used the
-`<GridLayout>` / `<ResponsiveGridLayout>` components, you can skip this.
+outright (provider → `useGridContainer` → `useGridItem`; a dragged tile floats itself, so there's no
+overlay to wire). If you only used the `<GridLayout>` / `<ResponsiveGridLayout>` components, you can
+skip this.
 
 The [behaviours that differ](#4-the-three-behaviours-that-differ) below — compaction runs on drag (not
 on every render) and the grid is always controlled — apply to v2 as well.

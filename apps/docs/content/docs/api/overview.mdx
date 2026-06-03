@@ -36,15 +36,14 @@ types. Headless grids render inside a dnd-kit `DragDropProvider`; `<GridLayout>`
 ### Re-exported dnd-kit primitives
 
 For convenience (one import source), `@snapgridjs/react` re-exports the dnd-kit pieces you commonly
-reach for with a grid: `DragOverlay` (the floating drag preview), `useDraggable` / `useDroppable`
-(e.g. an external-drop palette), and `Feedback` / `PointerSensor` / `KeyboardSensor`. `DragDropProvider`
-is *not* re-exported — import it from `@dnd-kit/react`.
+reach for with a grid: `DragOverlay` (an optional separate floating preview), `useDraggable` /
+`useDroppable` (e.g. an external-drop palette), and `Feedback` / `PointerSensor` / `KeyboardSensor`.
+`DragDropProvider` is *not* re-exported — import it from `@dnd-kit/react`.
 
-For the floating preview, prefer **`GridDragOverlay`** — snapgrid's grid-aware wrapper over dnd-kit's
-`DragOverlay`. It resolves the dragged item (render-prop receives `{ item, source }`) and bakes in the
-out-of-flow style so the overlay can't flash full-width at the bottom of the grid before dnd-kit
-positions it (see [Headless usage](/docs/guides/headless#dragoverlay)). The raw `DragOverlay` and the
-bare `dragOverlayStyle` are exported too, for full control; `<GridLayout>` applies the style for you.
+There's no overlay component to reach for: a dragged tile
+[floats itself](/docs/guides/headless#floating) (dnd-kit lifts it into the top layer), so the common
+case needs nothing extra. The re-exported `DragOverlay` is the escape hatch for when the floating
+preview must differ from the tile — a clone, a ghost, or wholly custom markup.
 
 ### Utilities & compactors
 

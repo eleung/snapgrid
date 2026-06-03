@@ -3,7 +3,6 @@
 import { Feedback } from "@dnd-kit/dom";
 import { useDraggable } from "@dnd-kit/react";
 import {
-  GridDragOverlay,
   type Layout,
   SnapGridGroup,
   useContainerWidth,
@@ -28,17 +27,6 @@ export function ExternalDropExample() {
         </div>
         <DropGrid layout={layout} onLayoutChange={setLayout} />
       </div>
-      {/* `item` resolves for grid tiles; palette chips are external (item null),
-          so branch on `source` to preview them. */}
-      <GridDragOverlay>
-        {({ item, source }) =>
-          item ? (
-            <div className="tile">{item.i}</div>
-          ) : (
-            <div className="chip">{String(source.id)}</div>
-          )
-        }
-      </GridDragOverlay>
     </SnapGridGroup>
   );
 }

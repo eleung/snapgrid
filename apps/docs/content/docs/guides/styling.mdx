@@ -34,8 +34,10 @@ function Tile({ id, group }) {
   background: var(--card);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 }
+/* The tile floats itself, so [data-dragging] styles the element you're dragging
+   around — give it a "lifted" cue. (Don't touch transform; it positions the tile.) */
 .tile[data-dragging] {
-  opacity: 0.9;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
 }
 ```
 
@@ -81,7 +83,7 @@ When you use the turnkey [`<GridLayout>`](/docs/guides/component-layer), it (and
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 }
 .snapgrid-item[data-dragging] {
-  opacity: 0.9;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
 }
 .snapgrid-placeholder {
   background: rgb(99 102 241 / 0.15);
@@ -95,7 +97,7 @@ When you use the turnkey [`<GridLayout>`](/docs/guides/component-layer), it (and
 - `data-drop-target`: present on the container while a compatible draggable is over it (this one is
   on the headless surface too — it comes from `containerProps`).
 
-## Custom placeholder & overlay
+## Custom placeholder
 
 Render your own placeholder with the headless hook's returned `style` (`group` is the grid's id
 from `useGridContainer`):
@@ -105,36 +107,49 @@ const placeholder = useGridPlaceholder(group);
 {placeholder && <div className="my-ghost" style={placeholder.style} />}
 ```
 
-For a custom drag preview, render [`<GridDragOverlay>`](/docs/guides/headless#dragoverlay) under your
-provider — it resolves the dragged `item` for you and is styled correctly out of the box:
-
-```tsx
-import { GridDragOverlay } from "@snapgridjs/react";
-
-<GridDragOverlay>{({ item }) => item && <div className="tile">{item.i}</div>}</GridDragOverlay>;
-```
-
-<Callout type="warning">
-  **If you use dnd-kit's raw `<DragOverlay>` instead, pin it out of flow.** It's a plain
-  `<div data-dnd-overlay>` that only gets `position: fixed` from a stylesheet dnd-kit injects *while
-  dragging*. In the frame around drop, before that applies, an overlay rendered inside (or next to)
-  your grid can reflow as a full-width block at the bottom of the grid — a one-frame flash. Give it a
-  fixed base so it can't. `<GridDragOverlay>` and `<GridLayout>` do this for you; for the raw overlay,
-  spread the exported `dragOverlayStyle`:
-
-  ```tsx
-  import { DragOverlay, dragOverlayStyle } from "@snapgridjs/react";
-
-  <DragOverlay style={dragOverlayStyle}>{(source) => /* … */}</DragOverlay>;
-  ```
-
-  Or do it in CSS — `[data-dnd-overlay] { position: fixed; top: 0; left: 0; pointer-events: none; }`.
-  dnd-kit's own `!important` rules still drive the live position during a real drag.
-</Callout>
-
 <Callout type="info">
   The convenience `<GridPlaceholder group={group}>` ships a subtle default look you can override with
-  `className` or `style`. For anything more, call `useGridPlaceholder(group)` directly. The floating
-  drag preview is always dnd-kit's [`DragOverlay`](https://next.dndkit.com) — style the content you
-  render inside it (and target its `[data-dnd-overlay]` wrapper if needed).
+  `className` or `style`. For anything more, call `useGridPlaceholder(group)` directly.
+</Callout>
+
+## Styling the floating tile
+
+While you drag with a pointer, the tile [floats itself](/docs/guides/headless#floating) in the
+browser's top layer — there's **no separate overlay element**. So `[data-dragging]` styles the tile
+you're dragging *around*, not a ghost left behind in the grid. Use it for a **lift cue** — a deeper
+shadow, a ring, a touch of brightness:
+
+```css
+.tile[data-dragging] {
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
+}
+```
+
+Two properties are off-limits on the floating tile:
+
+- **`transform` / `translate` / `scale`** — these position the tile, and dnd-kit drives them while it
+  floats, so a `transform: scale(...)` in `[data-dragging]` is overridden mid-drag. To scale or
+  rotate the float, use a dnd-kit [modifier](https://next.dndkit.com) instead.
+- **`cursor`** — the floating tile is `pointer-events: none` while dragging, so set the grab cursor on
+  the tile (or its `handleRef`) at rest / `:active`, not via `[data-dragging]`.
+
+For the "where it'll land" affordance, render the [landing-cell placeholder](#custom-placeholder) —
+that marker tracks the *target* cell as you drag. (dnd-kit separately drops an invisible
+`[data-dnd-placeholder]` clone at the drag *origin* to hold space; it's `visibility: hidden`, and
+since tiles are absolutely positioned there's nothing there for you to style.)
+
+For a *separate* floating preview — a clone, a ghost, or different markup — use dnd-kit's raw
+`<DragOverlay>` (re-exported from `@snapgridjs/react`) and pin it out of flow yourself:
+
+<Callout type="warning">
+  **The raw `<DragOverlay>` needs a fixed base.** It's a plain `<div data-dnd-overlay>` that only gets
+  `position: fixed` from a stylesheet dnd-kit injects *while dragging*. In the frame around drop,
+  before that applies, an overlay rendered inside (or next to) your grid can reflow as a full-width
+  block at the bottom of the grid — a one-frame flash. Pin it in CSS so it can't:
+
+  ```css
+  [data-dnd-overlay] { position: fixed; top: 0; left: 0; pointer-events: none; }
+  ```
+
+  dnd-kit's own `!important` rules still drive the live position during a real drag.
 </Callout>

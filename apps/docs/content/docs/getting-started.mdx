@@ -154,19 +154,12 @@ const placeholder = useGridPlaceholder(group);
 {placeholder && <div className="placeholder" style={placeholder.style} />}
 ```
 
-### Add the drag preview
+### That's it — drag it
 
-While you drag, the tile floats above everything — so it can cross grids unclipped — and the in-grid
-tile hides. **`<GridDragOverlay>`** (from `@snapgridjs/react`) wraps dnd-kit's
-[`DragOverlay`](https://next.dndkit.com): it hands your render-prop the resolved `item` and is
-positioned correctly out of the box. Render plain content from it.
-
-```tsx
-<GridDragOverlay>{({ item }) => (item ? <div className="tile">{item.i}</div> : null)}</GridDragOverlay>
-```
-
-That's it — tiles drag, the rest compact upward, and every committed change flows back through
-`onLayoutChange`.
+There's nothing more to wire. While you drag with a pointer, the tile **floats itself** above
+everything — dnd-kit lifts it into the browser's top layer, so it can cross grids unclipped — and on
+drop it settles into its new cell. Keyboard drags step the tile cell-by-cell in place. Tiles drag,
+the rest compact upward, and every committed change flows back through `onLayoutChange`.
 
 </Steps>
 
@@ -175,7 +168,6 @@ That's it — tiles drag, the rest compact upward, and every committed change fl
 ```tsx filename="Board.tsx"
 import { DragDropProvider } from "@dnd-kit/react";
 import {
-  GridDragOverlay,
   type Layout,
   useContainerWidth,
   useGridContainer,
@@ -193,12 +185,11 @@ export function Board() {
   ]);
 
   // DragDropProvider is the outermost element; Surface (which calls
-  // useGridContainer) lives inside it, and the overlay sits beside it.
+  // useGridContainer) lives inside it.
   return (
     <div ref={containerRef}>
       <DragDropProvider>
         <Surface layout={layout} width={width} onLayoutChange={setLayout} />
-        <GridDragOverlay>{({ item }) => (item ? <div className="tile">{item.i}</div> : null)}</GridDragOverlay>
       </DragDropProvider>
     </div>
   );
@@ -242,9 +233,9 @@ function Tile({ id, group }: { id: string; group: string }) {
 
 <Callout type="info">
   The turnkey [`<GridLayout>`](/docs/guides/component-layer) bundles the provider, the host, the
-  tiles, the placeholder, and the overlay. Pass it `layout` / `width` / `onLayoutChange` and keyed
-  children — done. It's the gentlest on-ramp; drop to the hooks for any grid that needs custom
-  markup. Same engine either way.
+  tiles, and the placeholder. Pass it `layout` / `width` / `onLayoutChange` and keyed children —
+  done. It's the gentlest on-ramp; drop to the hooks for any grid that needs custom markup. Same
+  engine either way.
 </Callout>
 
 ```tsx
@@ -267,7 +258,7 @@ moves to headless). See [Migrating from RGL](/docs/guides/migrating-from-rgl).
 ## Where to next
 
 - [Core Concepts](/docs/concepts) — the mental model (controlled state, the dnd-kit DNA, the `group` key) plus a gotchas cheat-sheet.
-- [Headless usage](/docs/guides/headless) — the hooks in depth: resize handles, the placeholder, the drag overlay.
+- [Headless usage](/docs/guides/headless) — the hooks in depth: resize handles, the placeholder, and how a dragged tile floats itself.
 - [Component layer](/docs/guides/component-layer) — the turnkey `<GridLayout>` when you don't need custom markup.
 - [Dragging](/docs/guides/dragging) · [Resizing](/docs/guides/resizing) · [Compaction](/docs/guides/compaction) · [Cross-grid](/docs/guides/cross-grid) · [Responsive](/docs/guides/responsive).
 - [API Reference](/docs/api/overview) — every hook, component, and type.

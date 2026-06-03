@@ -4,7 +4,6 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { gravityCompactor, masonryCompactor, shelfCompactor } from "@snapgridjs/extras";
 import {
   type Compactor,
-  GridDragOverlay,
   type Layout,
   horizontalCompactor,
   noCompactor,
@@ -52,9 +51,6 @@ export function CompactorExample() {
       </div>
       <DragDropProvider>
         <Board layout={layout} onLayoutChange={setLayout} compactor={PACKERS[packer]} />
-        <GridDragOverlay>
-          {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
-        </GridDragOverlay>
       </DragDropProvider>
     </div>
   );

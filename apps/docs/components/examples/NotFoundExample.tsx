@@ -1,13 +1,7 @@
 "use client";
 
 import { DragDropProvider } from "@dnd-kit/react";
-import {
-  GridDragOverlay,
-  type Layout,
-  useContainerWidth,
-  useGridContainer,
-  useGridItem,
-} from "@snapgridjs/react";
+import { type Layout, useContainerWidth, useGridContainer, useGridItem } from "@snapgridjs/react";
 import { useState } from "react";
 
 // The "404" is a snapgrid: the digits drag; the nav tiles are `static` (pinned),
@@ -87,21 +81,11 @@ function Board() {
   return (
     <div ref={containerRef}>
       {mounted && (
-        <>
-          <div {...containerProps}>
-            {layout.map((it) => (
-              <Tile key={it.i} id={it.i} group={group} />
-            ))}
-          </div>
-          <GridDragOverlay className="snapgrid-overlay">
-            {({ item }) => {
-              const cell = item && BY_ID.get(item.i);
-              return cell ? (
-                <div className={cell.accent ? "cell cell--accent" : "cell"}>{cell.label}</div>
-              ) : null;
-            }}
-          </GridDragOverlay>
-        </>
+        <div {...containerProps}>
+          {layout.map((it) => (
+            <Tile key={it.i} id={it.i} group={group} />
+          ))}
+        </div>
       )}
     </div>
   );

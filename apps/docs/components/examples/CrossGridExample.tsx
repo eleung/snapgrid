@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  GridDragOverlay,
   type Layout,
   SnapGridGroup,
   useContainerWidth,
@@ -24,9 +23,6 @@ export function CrossGridExample() {
         <SubGrid label="A" layout={left} onLayoutChange={setLeft} />
         <SubGrid label="B" layout={right} onLayoutChange={setRight} />
       </div>
-      <GridDragOverlay>
-        {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
-      </GridDragOverlay>
     </SnapGridGroup>
   );
 }

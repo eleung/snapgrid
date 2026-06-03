@@ -2,7 +2,6 @@
 
 import { DragDropProvider } from "@dnd-kit/react";
 import {
-  GridDragOverlay,
   type Layout,
   useContainerWidth,
   useGridContainer,
@@ -41,9 +40,6 @@ function Board() {
           <Tile key={it.i} id={it.i} group={group} />
         ))}
       </div>
-      <GridDragOverlay>
-        {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
-      </GridDragOverlay>
     </div>
   );
 }

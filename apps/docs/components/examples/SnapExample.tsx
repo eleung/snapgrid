@@ -1,13 +1,7 @@
 "use client";
 
 import { DragDropProvider } from "@dnd-kit/react";
-import {
-  GridDragOverlay,
-  type Layout,
-  useContainerWidth,
-  useGridContainer,
-  useGridItem,
-} from "@snapgridjs/react";
+import { type Layout, useContainerWidth, useGridContainer, useGridItem } from "@snapgridjs/react";
 import { useState } from "react";
 
 export function SnapExample() {
@@ -37,9 +31,6 @@ export function SnapExample() {
       </div>
       <DragDropProvider>
         <Board layout={layout} onLayoutChange={setLayout} snapToGrid={snapToGrid} />
-        <GridDragOverlay>
-          {({ item }) => (item ? <div className="tile">{item.i}</div> : null)}
-        </GridDragOverlay>
       </DragDropProvider>
     </div>
   );

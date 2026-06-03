@@ -16,7 +16,6 @@ measured `width`, and it resolves the active breakpoint's `cols` and `layout` pl
 ```tsx
 import { DragDropProvider } from "@dnd-kit/react";
 import {
-  GridDragOverlay,
   type ResponsiveLayouts,
   useContainerWidth,
   useGridContainer,
@@ -46,7 +45,6 @@ function ResponsiveBoard() {
     <div ref={containerRef}>
       <DragDropProvider>
         <Grid layout={layout} width={width} cols={cols} onLayoutChange={onLayoutChange} />
-        <GridDragOverlay>{({ item }) => (item ? <div className="tile">{item.i}</div> : null)}</GridDragOverlay>
       </DragDropProvider>
     </div>
   );
@@ -110,6 +108,6 @@ each committed change into the active breakpoint's entry before calling your opt
 <Callout type="info">
   Prefer the turnkey component? [`<ResponsiveGridLayout>`](/docs/guides/component-layer#responsivegridlayout) is
   the component that wraps this hook — pass it `layouts`, `width`, and keyed children and it handles
-  the provider, the grid, and the overlay. See
+  the provider and the grid. See
   [Components](/docs/api/components#responsivegridlayout) for its full prop table.
 </Callout>
