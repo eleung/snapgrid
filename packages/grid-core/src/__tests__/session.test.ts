@@ -14,7 +14,7 @@ import {
   nudge,
   toPositionParams,
   verticalCompactor,
-} from "./index.js";
+} from "../index.js";
 
 const grid = {
   cols: 12,

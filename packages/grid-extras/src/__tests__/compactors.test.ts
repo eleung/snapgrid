@@ -1,6 +1,6 @@
 import type { Layout, LayoutItem } from "@snapgridjs/core";
 import { describe, expect, it } from "vitest";
-import { gravityCompact, masonryCompact, shelfCompact } from "./compactors.js";
+import { gravityCompact, masonryCompact, shelfCompact } from "../compactors.js";
 
 /** True if no two items in the layout overlap. */
 function noOverlaps(layout: readonly LayoutItem[]): boolean {

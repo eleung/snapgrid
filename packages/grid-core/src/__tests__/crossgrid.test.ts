@@ -5,7 +5,7 @@ import {
   insertItemWithCompactor,
   removeItemWithCompactor,
   verticalCompactor,
-} from "./index.js";
+} from "../index.js";
 
 const opts = { compactor: verticalCompactor, cols: 12 };
 

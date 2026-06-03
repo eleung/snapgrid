@@ -8,7 +8,7 @@ import {
   dragResize,
   toPositionParams,
   verticalCompactor,
-} from "./index.js";
+} from "../index.js";
 
 const grid = {
   cols: 12,
