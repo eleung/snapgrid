@@ -5,6 +5,7 @@ import { type LayoutItem, calcGridItemPosition } from "@snapgridjs/core";
 import {
   type CSSProperties,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useRef,
   useSyncExternalStore,
@@ -152,6 +153,10 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
       { duration: REFLOW_MS, easing: REFLOW_EASING },
     );
   }, [posLeft, posTop, active, justDropped, dragging]);
+
+  // Cancel any in-flight reflow animation when the tile unmounts (e.g. removed
+  // mid-drag during a cross-grid move) so a running Animation can't outlive its node.
+  useEffect(() => () => reflowAnim.current?.cancel(), []);
 
   const style: CSSProperties = pos
     ? {
