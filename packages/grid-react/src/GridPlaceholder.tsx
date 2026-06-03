@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { useGridPlaceholder } from "./hooks/useGridPlaceholder.js";
+import { REFLOW_TRANSITION } from "./reflow.js";
 
 export interface GridPlaceholderProps {
   /** The owning grid's id (from its useGridContainer). */
@@ -16,7 +17,7 @@ const DEFAULT_LOOK: CSSProperties = {
   borderRadius: 4,
   boxSizing: "border-box",
   zIndex: 2,
-  transition: "transform 150ms ease, width 150ms ease, height 150ms ease",
+  transition: REFLOW_TRANSITION,
 };
 
 /**

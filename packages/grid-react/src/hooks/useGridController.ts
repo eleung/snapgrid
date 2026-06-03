@@ -138,6 +138,16 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
     [controller],
   );
 
+  // Write the keyboard-drag flag to both the synchronous ref (read in the event
+  // handlers) and the controller (drives the reactive `hidden` snapshot).
+  const setKeyboard = useCallback(
+    (value: boolean) => {
+      keyboardRef.current = value;
+      controller.setKeyboard(value);
+    },
+    [controller],
+  );
+
   const setContainerElement = useCallback((element: Element | null) => {
     containerElRef.current = element;
   }, []);
@@ -173,8 +183,7 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
     (event: DragStartEvent) => {
       // Reset on every start (incl. the external/resize early-returns below) so a
       // keyboard flag can never leak from a prior drag into an unrelated one.
-      keyboardRef.current = false;
-      controller.setKeyboard(false);
+      setKeyboard(false);
       const data = dragData(event);
       if (!data) {
         // An external (non-grid) draggable: if we accept it, reserve a stable
@@ -216,8 +225,7 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
       if (item) {
         // We own the item — this is the source grid.
         const isKeyboard = event.operation.activatorEvent instanceof KeyboardEvent;
-        keyboardRef.current = isKeyboard;
-        controller.setKeyboard(isKeyboard);
+        setKeyboard(isKeyboard);
         const rect = calcGridItemPosition(ppRef.current, item.x, item.y, item.w, item.h);
         setSessionBoth(beginDrag(layout, { item, left: rect.left, top: rect.top, pointer }));
         // Share the grab offset (pointer position within the tile) so a receiving
@@ -239,7 +247,7 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
       }
       // Otherwise the item belongs to another grid; we may receive it on move.
     },
-    [setSessionBoth, controller],
+    [setSessionBoth, setKeyboard],
   );
 
   const handleDragMove = useCallback(
@@ -407,11 +415,10 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
         // "noop" → nothing to do.
       }
       dropSpecRef.current = null;
-      keyboardRef.current = false;
-      controller.setKeyboard(false);
+      setKeyboard(false);
       setSessionBoth(null);
     },
-    [setSessionBoth, controller, ctx],
+    [setSessionBoth, setKeyboard, ctx],
   );
 
   // Keyboard dragging: while a keyboard-initiated move is active, arrow keys step

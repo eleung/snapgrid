@@ -7,14 +7,12 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useSyncExternalStore,
 } from "react";
+import { REFLOW_EASING, REFLOW_MS, REFLOW_TRANSITION } from "../reflow.js";
 import { useResolveController } from "./useResolveController.js";
-
-const REFLOW_MS = 150;
-const REFLOW_EASING = "ease";
-const REFLOW_TRANSITION = `transform ${REFLOW_MS}ms ${REFLOW_EASING}, width ${REFLOW_MS}ms ${REFLOW_EASING}, height ${REFLOW_MS}ms ${REFLOW_EASING}`;
 
 // A pointer drag floats the tile via dnd-kit's default feedback; a keyboard drag gets
 // `none` (no pointer — the tile steps in place via the session). The drop tween is
@@ -81,6 +79,10 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
   const justDropped = wasActive.current && !active;
   wasActive.current = active;
 
+  // Stable identity for the drag payload so dnd-kit doesn't churn on it every
+  // render; it changes only when this tile's resolved entry does (a reflow).
+  const data = useMemo(() => ({ snapGrid: { kind: "move", itemId: id, item } }), [id, item]);
+
   const {
     ref: sortableRef,
     handleRef,
@@ -98,7 +100,7 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
     // append the feedback config.
     plugins: (defaults) => [...defaults, ...ITEM_FEEDBACK],
     // Carry the full item so a receiving grid can render/insert it on a cross-grid drop.
-    data: { snapGrid: { kind: "move", itemId: id, item } },
+    data,
   });
 
   // Capture the element to drive the WAAPI reflow, while still feeding the sortable's ref.
