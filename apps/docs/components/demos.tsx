@@ -45,7 +45,7 @@ const GRID = {
 // The DemoFrame stage's measured width. Full-stage demos seed `initialWidth` with
 // it so their first paint matches the measured size — no reflow when the
 // ResizeObserver fires.
-const STAGE_WIDTH = 638;
+const STAGE_WIDTH = 798;
 
 // Default tile content (label + size) shared by most demos.
 function tileContent(item: LayoutItem, accentId?: string): ReactNode {
@@ -645,7 +645,7 @@ function CrossSubGrid({
   layout: Layout;
   onLayoutChange: (next: Layout) => void;
 }) {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 291 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: 371 });
   const { containerProps, group } = useGridContainer({
     layout,
     width,
@@ -737,7 +737,7 @@ function DropTargetGrid({
   layout: Layout;
   onLayoutChange: (next: Layout) => void;
 }) {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 524 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: 684 });
   const dropCount = useRef(0);
   const { containerProps, group } = useGridContainer({
     layout,
@@ -928,7 +928,7 @@ function NestedInner({
   layout: Layout;
   onLayoutChange: (next: Layout) => void;
 }) {
-  const { width, containerRef } = useContainerWidth({ initialWidth: 347 });
+  const { width, containerRef } = useContainerWidth({ initialWidth: 440 });
   return (
     <div ref={containerRef}>
       <HeadlessGrid
