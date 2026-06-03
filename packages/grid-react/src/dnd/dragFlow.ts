@@ -58,6 +58,40 @@ export function receiveCell(
   );
 }
 
+/**
+ * Map a keyboard event key to a one-cell grid step while a keyboard drag is
+ * active, or null for keys snapgrid doesn't own — Enter/Space (drop) and Escape
+ * (cancel) fall through to dnd-kit's KeyboardSensor.
+ */
+export function arrowStep(key: string): [number, number] | null {
+  switch (key) {
+    case "ArrowLeft":
+      return [-1, 0];
+    case "ArrowRight":
+      return [1, 0];
+    case "ArrowUp":
+      return [0, -1];
+    case "ArrowDown":
+      return [0, 1];
+    default:
+      return null;
+  }
+}
+
+/**
+ * Which grid a drop commits to, as fed to {@link classifyDrop} as `dest`. A
+ * keyboard drag has no pointer, so it can only ever land in its own grid; a
+ * pointer drag lands in whichever grid the collision observer resolved (or none).
+ */
+export function dropDestination(opts: {
+  keyboard: boolean;
+  targetId: string | number | null | undefined;
+  myId: string;
+}): string | null {
+  if (opts.keyboard) return opts.myId;
+  return opts.targetId != null ? String(opts.targetId) : null;
+}
+
 /** State gathered by the drag-end handler, fed to {@link classifyDrop}. */
 export interface DropState {
   /** Kind of the in-progress session, or null if there is none. */

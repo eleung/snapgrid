@@ -1,6 +1,12 @@
 import { toPositionParams } from "@snapgridjs/core";
 import { describe, expect, it } from "vitest";
-import { type DropState, classifyDrop, receiveCell } from "../dragFlow.js";
+import {
+  type DropState,
+  arrowStep,
+  classifyDrop,
+  dropDestination,
+  receiveCell,
+} from "../dragFlow.js";
 
 const pp = toPositionParams(
   {
@@ -91,5 +97,47 @@ describe("classifyDrop (#7 cross-grid lifecycle, #9 destination resolution)", ()
     expect(classifyDrop({ ...base, ownsItem: false, dest: "A", myId: "B" })).toBe("noop");
     // A canceled drag we don't own is also a no-op.
     expect(classifyDrop({ ...base, ownsItem: false, canceled: true })).toBe("noop");
+  });
+});
+
+describe("arrowStep (keyboard drag)", () => {
+  it("maps the four arrows to one-cell deltas", () => {
+    expect(arrowStep("ArrowLeft")).toEqual([-1, 0]);
+    expect(arrowStep("ArrowRight")).toEqual([1, 0]);
+    expect(arrowStep("ArrowUp")).toEqual([0, -1]);
+    expect(arrowStep("ArrowDown")).toEqual([0, 1]);
+  });
+
+  it("returns null for keys snapgrid doesn't own (drop/cancel/anything else)", () => {
+    // Enter/Space drop and Escape cancel fall through to dnd-kit's KeyboardSensor.
+    for (const key of ["Enter", " ", "Escape", "Tab", "a", "ArrowupTypo"]) {
+      expect(arrowStep(key)).toBeNull();
+    }
+  });
+});
+
+describe("dropDestination (#7 keyboard is in-grid only)", () => {
+  it("a keyboard drop always commits in-grid, ignoring any pointer target", () => {
+    expect(dropDestination({ keyboard: true, targetId: "other", myId: "me" })).toBe("me");
+    expect(dropDestination({ keyboard: true, targetId: null, myId: "me" })).toBe("me");
+    // Pairs with classifyDrop: a keyboard drop resolves dest === myId, so even
+    // while the pointer-target says "B" the owner commits in-grid, not cross-grid.
+    expect(
+      classifyDrop({
+        kind: "move",
+        canceled: false,
+        ownsItem: true,
+        hasData: true,
+        dest: dropDestination({ keyboard: true, targetId: "B", myId: "A" }),
+        myId: "A",
+      }),
+    ).toBe("commit-in-grid");
+  });
+
+  it("a pointer drop uses the collision target id (stringified), or null", () => {
+    expect(dropDestination({ keyboard: false, targetId: "g2", myId: "me" })).toBe("g2");
+    expect(dropDestination({ keyboard: false, targetId: 42, myId: "me" })).toBe("42");
+    expect(dropDestination({ keyboard: false, targetId: null, myId: "me" })).toBeNull();
+    expect(dropDestination({ keyboard: false, targetId: undefined, myId: "me" })).toBeNull();
   });
 });

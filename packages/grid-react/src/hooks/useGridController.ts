@@ -23,7 +23,14 @@ import {
 import { useCallback, useEffect, useId, useMemo, useRef } from "react";
 import { GridController } from "../controller/GridController.js";
 import { getGrabOffset, registerController, setGrabOffset } from "../controller/registry.js";
-import { classifyDrop, dragData, externalDropSpec, receiveCell } from "../dnd/dragFlow.js";
+import {
+  arrowStep,
+  classifyDrop,
+  dragData,
+  dropDestination,
+  externalDropSpec,
+  receiveCell,
+} from "../dnd/dragFlow.js";
 import { SnapToGrid } from "../dnd/snapToGrid.js";
 import type { DragConfig, DropConfig, GridEventCallback, ResizeConfig } from "../types.js";
 import { buildItemSensors } from "./dndShared.js";
@@ -338,11 +345,13 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
       const current = sessionRef.current;
       const data = dragData(event);
       const myId = containerIdRef.current;
-      // Keyboard drags are in-grid only (there is no pointer to land in another
-      // grid), so a keyboard drop always commits to this grid; otherwise the drop
-      // target is whichever grid the collision observer resolved.
-      const targetId = event.operation.target?.id;
-      const dest = keyboardRef.current ? myId : targetId != null ? String(targetId) : null;
+      // A keyboard drop always commits in-grid; a pointer drop uses the collision
+      // target (see dropDestination).
+      const dest = dropDestination({
+        keyboard: keyboardRef.current,
+        targetId: event.operation.target?.id,
+        myId,
+      });
       const ownsItem = data ? committedByIdRef.current.has(data.itemId) : false;
       setGrabOffset(managerRef.current, null);
 
@@ -426,17 +435,11 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
   // overlay). Enter / Space (drop) and Escape (cancel) fall through to dnd-kit's
   // KeyboardSensor.
   useEffect(() => {
-    const STEP: Record<string, [number, number]> = {
-      ArrowLeft: [-1, 0],
-      ArrowRight: [1, 0],
-      ArrowUp: [0, -1],
-      ArrowDown: [0, 1],
-    };
     const onKeyDown = (e: KeyboardEvent) => {
       if (!keyboardRef.current) return;
       const session = sessionRef.current;
       if (!session || session.kind !== "move") return;
-      const step = STEP[e.key];
+      const step = arrowStep(e.key);
       if (!step) return; // Enter/Space/Escape → dnd-kit handles drop/cancel
       e.preventDefault();
       // Own the arrow: stop dnd-kit's KeyboardSensor (a document capture-phase
