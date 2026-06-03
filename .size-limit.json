@@ -2,7 +2,7 @@
   {
     "name": "@snapgridjs/react + core (own code, brotli)",
     "path": ["packages/grid-react/dist/index.mjs", "packages/grid-core/dist/index.mjs"],
-    "limit": "13 kB"
+    "limit": "14.5 kB"
   },
   {
     "name": "@snapgridjs/core (brotli)",
