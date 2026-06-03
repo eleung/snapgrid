@@ -79,6 +79,12 @@ export class GridController {
   #renderedMap: Map<string, LayoutItem> | null = null;
   #renderedMapSource: Layout | null = null;
 
+  // Stable per-id index for the sortable contract (usePackable). Assigned on first
+  // sight and never reassigned, so a tile's index never changes — the sortable FLIP
+  // it would otherwise drive is never triggered (RGL owns motion).
+  #indexById = new Map<string, number>();
+  #nextIndex = 0;
+
   /** The dnd-kit manager this grid is registered with (set by useInstance). */
   manager: DragDropManager | undefined;
 
@@ -188,4 +194,14 @@ export class GridController {
   };
 
   renderedSnapshot = (): Layout => this.#rendered();
+
+  /** A stable index for `id` (see {@link GridController.#indexById}). */
+  itemIndex(id: string): number {
+    let i = this.#indexById.get(id);
+    if (i === undefined) {
+      i = this.#nextIndex++;
+      this.#indexById.set(id, i);
+    }
+    return i;
+  }
 }

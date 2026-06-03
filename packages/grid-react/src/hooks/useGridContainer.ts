@@ -24,6 +24,12 @@ export interface UseGridContainerResult {
   controller: GridController;
 }
 
+// Outranks a dragged tile/card's own sortable droppable, so collision inside the
+// grid resolves to the container (not a tile). That keeps dnd-kit's sortable
+// reorder out of the grid (RGL drives the move) and lets a foreign sortable
+// resolve the grid as its drop target for cell mapping.
+const GRID_COLLISION_PRIORITY = 10;
+
 /** Total container height in pixels for the given number of occupied rows. */
 function containerHeight(rows: number, grid: GridConfig): number {
   const padY = (grid.containerPadding ?? grid.margin)[1];
@@ -54,6 +60,7 @@ export function useGridContainer(opts: UseGridControllerOptions): UseGridContain
       const data = source.data as { snapGridDrop?: unknown } | undefined;
       return data?.snapGridDrop != null;
     },
+    collisionPriority: GRID_COLLISION_PRIORITY,
   });
 
   // Merge dnd-kit's droppable ref with reporting the element to the controller

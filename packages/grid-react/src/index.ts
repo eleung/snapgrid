@@ -45,18 +45,10 @@ export {
   GridPlaceholder,
   type GridPlaceholderProps,
 } from "./GridPlaceholder.js";
-// The floating drag preview. `GridDragOverlay` is the grid-aware wrapper — it
-// bakes in the out-of-flow style and resolves the dragged item for you; reach
-// for it in the headless layer. The raw dnd-kit `DragOverlay` (and the bare
-// `dragOverlayStyle`) are re-exported for full control. `<GridLayout>` renders
-// its own overlay.
-export {
-  GridDragOverlay,
-  type GridDragOverlayContext,
-  type GridDragOverlayProps,
-} from "./GridDragOverlay.js";
+// Tiles float themselves (dnd-kit's default feedback) — snapgrid doesn't use a
+// drag overlay. The raw dnd-kit `<DragOverlay>` is re-exported for consumers who
+// want one anyway (e.g. a custom cross-ecosystem preview).
 export { DragOverlay } from "@dnd-kit/react";
-export { dragOverlayStyle } from "./dragOverlayStyle.js";
 
 // Utilities
 export {

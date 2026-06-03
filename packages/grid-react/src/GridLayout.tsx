@@ -1,8 +1,7 @@
-import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
+import { DragDropProvider } from "@dnd-kit/react";
 import {
   type CSSProperties,
   Children,
-  type ReactElement,
   type ReactNode,
   createContext,
   isValidElement,
@@ -10,7 +9,6 @@ import {
 } from "react";
 import { GridItem } from "./GridItem.js";
 import { GridPlaceholder } from "./GridPlaceholder.js";
-import { dragOverlayStyle } from "./dragOverlayStyle.js";
 import { useGridContainer } from "./hooks/useGridContainer.js";
 import type { UseGridControllerOptions } from "./hooks/useGridController.js";
 
@@ -31,16 +29,9 @@ function keyToId(key: string): string {
   return key.startsWith(".$") ? key.slice(2) : key;
 }
 
-/** The default surface: positioned container + mapped items + placeholder + overlay. */
+/** The default surface: positioned container + mapped items + placeholder. */
 function GridSurface({ className, style, children, ...opts }: GridLayoutProps) {
   const { containerProps, group } = useGridContainer(opts);
-  // Map item id -> child so the drag overlay can render the dragged tile's content.
-  const childById = new Map<string, ReactElement>();
-  Children.forEach(children, (child) => {
-    if (isValidElement(child) && child.key != null) {
-      childById.set(keyToId(String(child.key)), child);
-    }
-  });
   return (
     <div
       {...containerProps}
@@ -56,9 +47,6 @@ function GridSurface({ className, style, children, ...opts }: GridLayoutProps) {
         );
       })}
       <GridPlaceholder group={group} />
-      <DragOverlay style={dragOverlayStyle}>
-        {(source) => (source ? (childById.get(String(source.id)) ?? null) : null)}
-      </DragOverlay>
     </div>
   );
 }
@@ -88,7 +76,7 @@ export function GridLayout(props: GridLayoutProps): React.JSX.Element {
  * Share one dnd-kit `DragDropProvider` across several sibling grids so tiles can
  * be dragged between them. (Nested `GridLayout`s already share a provider; this
  * is for siblings.) A thin wrapper over `DragDropProvider` — the cross-grid seam
- * is now the shared manager + collision target, not a geometry registry.
+ * is the shared manager + collision target.
  */
 export function SnapGridGroup({ children }: { children: ReactNode }): React.JSX.Element {
   const inProvider = useContext(InProvider);
