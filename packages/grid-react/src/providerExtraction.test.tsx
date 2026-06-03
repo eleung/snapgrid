@@ -70,6 +70,24 @@ describe("provider extraction", () => {
     expect(managers[0]).toBe(managers[1]);
   });
 
+  it("re-pointing the id prop keeps items resolvable (no frozen-id desync)", () => {
+    function App({ id }: { id: string }) {
+      return (
+        <GridLayout id={id} layout={layout} width={600} gridConfig={gridConfig}>
+          <div key="a">A</div>
+        </GridLayout>
+      );
+    }
+    const { container, rerender } = render(<App id="g1" />);
+    expect(container.querySelectorAll(".snapgrid-item")).toHaveLength(1);
+    // Before the fix the controller's id was frozen to "g1" (useInstance creates
+    // it once), so the returned group, the droppable id, and the registry key
+    // desynced on an id change and the item threw "no grid found for group". The
+    // host now syncs controller.id, so the tile still resolves.
+    expect(() => rerender(<App id="g2" />)).not.toThrow();
+    expect(container.querySelectorAll(".snapgrid-item")).toHaveLength(1);
+  });
+
   it("nested GridLayouts share one provider (cross-grid seam)", () => {
     // Two GridLayouts under a SnapGridGroup resolve the SAME manager, so a tile
     // can be dragged between them.

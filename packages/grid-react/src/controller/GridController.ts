@@ -31,8 +31,10 @@ export interface GridControllerConfig {
 export interface ItemSnapshot {
   item: LayoutItem | undefined;
   isDragging: boolean;
-  // Hide the in-grid tile: true only for a *pointer* drag (its clone floats in
-  // the overlay). Keyboard drags have no overlay, so the tile stays visible.
+  // True only for a *pointer* drag of this tile. There's no overlay — the tile
+  // floats itself — so the host renders it at its committed origin and dnd-kit's
+  // float offset composes on top. A keyboard drag has no float, so the tile steps
+  // in place instead (hence false here).
   hidden: boolean;
 }
 
@@ -58,7 +60,7 @@ function sameItem(a: LayoutItem | undefined, b: LayoutItem | undefined): boolean
  * context-value model re-rendered every tile every frame).
  */
 export class GridController {
-  readonly id: string;
+  id: string;
   #committed: Layout;
   #session: DragSession | null = null;
   // True while the active drag was started by the keyboard (no floating overlay
@@ -79,9 +81,11 @@ export class GridController {
   #renderedMap: Map<string, LayoutItem> | null = null;
   #renderedMapSource: Layout | null = null;
 
-  // Stable per-id index for the sortable contract (usePackable). Assigned on first
-  // sight and never reassigned, so a tile's index never changes — the sortable FLIP
-  // it would otherwise drive is never triggered (RGL owns motion).
+  // Stable per-id index for the sortable contract (useGridItem). Assigned on first
+  // sight; reclaimed when an item leaves the committed layout (see setCommitted), so
+  // the index space stays bounded under item churn. While an item is present its
+  // index is stable — the sortable FLIP it would otherwise drive never fires (RGL
+  // owns motion).
   #indexById = new Map<string, number>();
   #nextIndex = 0;
 
@@ -97,6 +101,15 @@ export class GridController {
   /** Replace the per-grid config (called by the container host during render). */
   setConfig(config: GridControllerConfig): void {
     this.config = config;
+  }
+
+  /**
+   * Re-point this grid's id. The container host syncs it (during render, before
+   * the droppable/group read it) when the controlled `id` prop changes, so the
+   * returned `group`, the droppable id, and the registry key never drift apart.
+   */
+  setId(id: string): void {
+    this.id = id;
   }
 
   // Satisfies dnd-kit's `Instance` interface (useInstance calls this in a layout
@@ -138,7 +151,14 @@ export class GridController {
    * provider subtree, so every GridItem re-reads its snapshot on that pass.
    */
   setCommitted(layout: Layout): void {
+    if (this.#committed === layout) return;
     this.#committed = layout;
+    // Reclaim cached slices/indices for items no longer in the layout, so a
+    // long-lived grid whose items churn doesn't grow these maps without bound.
+    const present = new Set(layout.map((it) => it.i));
+    for (const id of this.#indexById.keys()) if (!present.has(id)) this.#indexById.delete(id);
+    for (const id of this.#itemCache.keys()) if (!present.has(id)) this.#itemCache.delete(id);
+    for (const id of this.#resizeCache.keys()) if (!present.has(id)) this.#resizeCache.delete(id);
   }
 
   setSession(next: DragSession | null): void {

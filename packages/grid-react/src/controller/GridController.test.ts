@@ -88,6 +88,33 @@ describe("GridController snapshots (fine-grained re-render basis)", () => {
     expect(c.placeholderSnapshot()).toBe(p1); // stable across reads
   });
 
+  it("itemIndex is stable while present and reclaimed when an item leaves", () => {
+    const c = new GridController("g", layout);
+    const ia = c.itemIndex("a");
+    const ib = c.itemIndex("b");
+    const ic = c.itemIndex("c");
+    expect(new Set([ia, ib, ic]).size).toBe(3); // distinct indices
+    expect(c.itemIndex("a")).toBe(ia); // stable across reads
+
+    // Drop "b" from the committed layout: surviving items keep their index, and
+    // "b"'s entry is reclaimed rather than leaked.
+    c.setCommitted(layout.filter((it) => it.i !== "b"));
+    expect(c.itemIndex("a")).toBe(ia);
+    expect(c.itemIndex("c")).toBe(ic);
+
+    // Re-adding "b" mints a fresh index — proof the old entry was dropped, so the
+    // index map can't grow without bound under add/remove churn.
+    c.setCommitted(layout);
+    expect(c.itemIndex("b")).not.toBe(ib);
+  });
+
+  it("setId re-points the grid id so group/droppable/registry stay in sync", () => {
+    const c = new GridController("g1", layout);
+    expect(c.id).toBe("g1");
+    c.setId("g2");
+    expect(c.id).toBe("g2");
+  });
+
   it("resize snapshot flips isResizing only for the resized item", () => {
     const c = new GridController("g", layout);
     const a0 = c.resizeSnapshot("a");

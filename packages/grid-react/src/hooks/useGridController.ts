@@ -84,6 +84,11 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
     (m) => new GridController(containerId, opts.layout, m ?? undefined),
   );
   controller.setCommitted(opts.layout);
+  // useInstance creates the controller once, freezing its id to the first render's
+  // value; re-point it if the controlled `id` prop changes so the group, the
+  // droppable id, and the registry key (below) stay in sync. (Read during render,
+  // before useGridContainer's droppable/group read controller.id.)
+  if (controller.id !== containerId) controller.setId(containerId);
 
   // Refs read inside the stable monitor handlers so they never see stale values.
   const optsRef = useRef(opts);
@@ -288,7 +293,7 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
           next = dragTo(source, pointer, ctx());
         } else {
           // Leaving this grid: keep the item in place and hide the placeholder
-          // here; the dnd-kit overlay clone tracks the pointer across grids.
+          // here; the dragged tile floats itself across grids (no overlay).
           next = {
             ...source,
             preview: source.committed as LayoutItem[],
