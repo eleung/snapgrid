@@ -7,10 +7,10 @@ import {
   isValidElement,
   useContext,
 } from "react";
+import { useGridContainer } from "../hooks/useGridContainer.js";
+import type { UseGridControllerOptions } from "../hooks/useGridController.js";
 import { GridItem } from "./GridItem.js";
 import { GridPlaceholder } from "./GridPlaceholder.js";
-import { useGridContainer } from "./hooks/useGridContainer.js";
-import type { UseGridControllerOptions } from "./hooks/useGridController.js";
 
 export interface GridLayoutProps extends UseGridControllerOptions {
   children: ReactNode;

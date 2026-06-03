@@ -23,8 +23,8 @@ import {
 import { useCallback, useEffect, useId, useMemo, useRef } from "react";
 import { GridController } from "../controller/GridController.js";
 import { getGrabOffset, registerController, setGrabOffset } from "../controller/registry.js";
+import { classifyDrop, dragData, externalDropSpec, receiveCell } from "../dnd/dragFlow.js";
 import { SnapToGrid } from "../dnd/snapToGrid.js";
-import { classifyDrop, dragData, externalDropSpec, receiveCell } from "../dragFlow.js";
 import type { DragConfig, DropConfig, GridEventCallback, ResizeConfig } from "../types.js";
 import { buildItemSensors } from "./dndShared.js";
 

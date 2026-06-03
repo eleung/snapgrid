@@ -1,7 +1,7 @@
 import type { Layout } from "@snapgridjs/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { GridLayout } from "./GridLayout.js";
+import { GridLayout } from "../components/GridLayout.js";
 
 const gridConfig = {
   cols: 12,

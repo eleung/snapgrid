@@ -1,6 +1,6 @@
 import type { DragSession, Layout, LayoutItem } from "@snapgridjs/core";
 import { describe, expect, it, vi } from "vitest";
-import { GridController } from "./GridController.js";
+import { GridController } from "../GridController.js";
 
 const layout: Layout = [
   { i: "a", x: 0, y: 0, w: 2, h: 2 },

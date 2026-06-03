@@ -1,7 +1,7 @@
 import type { Layout } from "@snapgridjs/core";
 import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { GridLayout } from "./GridLayout.js";
+import { GridLayout } from "../components/GridLayout.js";
 
 // Regression: GridController.setCommitted runs during the provider's render, so
 // it must NOT notify subscribers — emitting there updates GridItems mid-render

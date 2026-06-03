@@ -1,7 +1,7 @@
 import type { Layout, ResponsiveLayouts } from "@snapgridjs/core";
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { useResponsiveLayout } from "./hooks/useResponsiveLayout.js";
+import { useResponsiveLayout } from "../useResponsiveLayout.js";
 
 const LG: Layout = [
   { i: "a", x: 0, y: 0, w: 6, h: 2 },

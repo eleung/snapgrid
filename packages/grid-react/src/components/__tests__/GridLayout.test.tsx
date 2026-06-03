@@ -1,7 +1,7 @@
 import { type Layout, calcGridItemPosition, toPositionParams } from "@snapgridjs/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { GridLayout } from "./GridLayout.js";
+import { GridLayout } from "../GridLayout.js";
 
 const gridConfig = {
   cols: 12,

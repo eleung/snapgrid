@@ -3,9 +3,9 @@ import type { DragSession, Layout } from "@snapgridjs/core";
 import { act, render } from "@testing-library/react";
 import { memo } from "react";
 import { describe, expect, it } from "vitest";
-import type { GridController } from "./controller/GridController.js";
-import { useGridContainer } from "./hooks/useGridContainer.js";
-import { useGridItem } from "./hooks/useGridItem.js";
+import type { GridController } from "../controller/GridController.js";
+import { useGridContainer } from "../hooks/useGridContainer.js";
+import { useGridItem } from "../hooks/useGridItem.js";
 
 // When one tile's slice changes, only that tile's useGridItem re-renders — not
 // the whole subtree. (The old context-value model re-rendered every tile on

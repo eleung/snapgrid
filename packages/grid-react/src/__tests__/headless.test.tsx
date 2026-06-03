@@ -2,8 +2,8 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { type Layout, calcGridItemPosition, toPositionParams } from "@snapgridjs/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { useGridContainer } from "./hooks/useGridContainer.js";
-import { useGridItem } from "./hooks/useGridItem.js";
+import { useGridContainer } from "../hooks/useGridContainer.js";
+import { useGridItem } from "../hooks/useGridItem.js";
 
 const gridConfig = {
   cols: 12,

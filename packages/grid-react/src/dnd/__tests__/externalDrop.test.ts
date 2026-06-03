@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { externalDropSpec } from "./dragFlow.js";
+import { externalDropSpec } from "../dragFlow.js";
 
 const ext = { id: "palette-x", data: { snapGridDrop: { w: 4, h: 2 } } };
 const gridItem = { id: "a", data: { snapGrid: { kind: "move", itemId: "a" } } };

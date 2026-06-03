@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
-import { useGridPlaceholder } from "./hooks/useGridPlaceholder.js";
-import { REFLOW_TRANSITION } from "./reflow.js";
+import { useGridPlaceholder } from "../hooks/useGridPlaceholder.js";
+import { REFLOW_TRANSITION } from "../reflow.js";
 
 export interface GridPlaceholderProps {
   /** The owning grid's id (from its useGridContainer). */

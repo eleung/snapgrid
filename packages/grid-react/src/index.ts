@@ -35,16 +35,16 @@ export {
 } from "./hooks/useResponsiveLayout.js";
 
 // Component layer
-export { GridLayout, type GridLayoutProps, SnapGridGroup } from "./GridLayout.js";
+export { GridLayout, type GridLayoutProps, SnapGridGroup } from "./components/GridLayout.js";
 export {
   ResponsiveGridLayout,
   type ResponsiveGridLayoutProps,
-} from "./ResponsiveGridLayout.js";
-export { GridItem, type GridItemProps } from "./GridItem.js";
+} from "./components/ResponsiveGridLayout.js";
+export { GridItem, type GridItemProps } from "./components/GridItem.js";
 export {
   GridPlaceholder,
   type GridPlaceholderProps,
-} from "./GridPlaceholder.js";
+} from "./components/GridPlaceholder.js";
 // Tiles float themselves (dnd-kit's default feedback) — snapgrid doesn't use a
 // drag overlay. The raw dnd-kit `<DragOverlay>` is re-exported for consumers who
 // want one anyway (e.g. a custom cross-ecosystem preview).

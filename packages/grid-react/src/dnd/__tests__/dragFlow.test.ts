@@ -1,6 +1,6 @@
 import { toPositionParams } from "@snapgridjs/core";
 import { describe, expect, it } from "vitest";
-import { type DropState, classifyDrop, receiveCell } from "./dragFlow.js";
+import { type DropState, classifyDrop, receiveCell } from "../dragFlow.js";
 
 const pp = toPositionParams(
   {

@@ -1,6 +1,6 @@
 import { type PositionParams, calcXY } from "@snapgridjs/core";
-import type { SnapGridDragData } from "./context.js";
-import type { DropConfig, GridDropData } from "./types.js";
+import type { DropConfig, GridDropData } from "../types.js";
+import type { SnapGridDragData } from "./dragData.js";
 
 /**
  * Pure decision helpers for the drag interaction so the tricky bits — grab-offset

@@ -2,7 +2,7 @@ import { DragDropProvider, useDragDropManager } from "@dnd-kit/react";
 import type { Layout } from "@snapgridjs/core";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { GridLayout, SnapGridGroup } from "./GridLayout.js";
+import { GridLayout, SnapGridGroup } from "../components/GridLayout.js";
 
 // GridLayout supplies the dnd-kit DragDropProvider for the turnkey case; nested
 // GridLayouts (or a SnapGridGroup) share one. A consumer's own provider is

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RESIZE_HANDLE_ATTR, shouldPreventItemDrag } from "./dndShared.js";
+import { RESIZE_HANDLE_ATTR, shouldPreventItemDrag } from "../dndShared.js";
 
 // <div class="item">
 //   <div class="grip" />

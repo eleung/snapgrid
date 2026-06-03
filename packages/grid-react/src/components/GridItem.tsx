@@ -1,8 +1,8 @@
 import type { ResizeHandleAxis } from "@snapgridjs/core";
 import { type CSSProperties, type ReactNode, memo } from "react";
-import { useGridItem } from "./hooks/useGridItem.js";
-import { useGridResizeHandle } from "./hooks/useGridResizeHandle.js";
-import { useResolveController } from "./hooks/useResolveController.js";
+import { useGridItem } from "../hooks/useGridItem.js";
+import { useGridResizeHandle } from "../hooks/useGridResizeHandle.js";
+import { useResolveController } from "../hooks/useResolveController.js";
 
 export interface GridItemProps {
   /** Matches the layout item's `i`. */
