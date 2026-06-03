@@ -4,6 +4,7 @@ import {
   type DropState,
   arrowStep,
   classifyDrop,
+  dragData,
   dropDestination,
   receiveCell,
 } from "../dragFlow.js";
@@ -97,6 +98,15 @@ describe("classifyDrop (#7 cross-grid lifecycle, #9 destination resolution)", ()
     expect(classifyDrop({ ...base, ownsItem: false, dest: "A", myId: "B" })).toBe("noop");
     // A canceled drag we don't own is also a no-op.
     expect(classifyDrop({ ...base, ownsItem: false, canceled: true })).toBe("noop");
+  });
+});
+
+describe("dragData", () => {
+  it("reads snapgrid's payload off a drag source, or undefined when absent", () => {
+    const snapGrid = { kind: "move", itemId: "a", item: { i: "a", x: 0, y: 0, w: 1, h: 1 } };
+    expect(dragData({ operation: { source: { data: { snapGrid } } } })).toBe(snapGrid);
+    expect(dragData({ operation: { source: { data: {} } } })).toBeUndefined();
+    expect(dragData({ operation: { source: null } })).toBeUndefined();
   });
 });
 
