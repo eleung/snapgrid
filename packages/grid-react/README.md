@@ -15,7 +15,7 @@ Draggable, resizable, responsive grid layouts for React — with pluggable packi
 ## Why snapgrid
 
 - **Controlled & predictable** — you own the layout array; every change comes back through `onLayoutChange`. No hidden state.
-- **Headless or drop-in** — `<GridLayout>` for the common case, or `SnapGridProvider` + hooks for full control of the markup. Ships **no CSS**.
+- **Headless or drop-in** — `<GridLayout>` for the common case, or `useGridContainer` + hooks for full control of the markup. Ships **no CSS**.
 - **Pluggable packing** — `vertical` / `horizontal` / `none`, plus `masonry` / `gravity` / `shelf` from [`@snapgridjs/extras`](https://www.npmjs.com/package/@snapgridjs/extras), or your own `Compactor`.
 - **Cross-grid dragging** — wrap grids in a `<SnapGridGroup>` and drag tiles between them.
 - **Nested grids** — drop a grid inside a tile of another grid; each level keeps its own isolated drag session.

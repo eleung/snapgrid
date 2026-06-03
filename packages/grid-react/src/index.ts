@@ -4,9 +4,9 @@
  * A react-grid-layout v2 alternative built on dnd-kit.
  *
  * Two layers:
- *  - Headless: `SnapGridProvider` + `useGridContainer` / `useGridItem` /
- *    `useGridPlaceholder`. You render your own markup; we supply refs,
- *    positioning styles, and drag state. No imposed DOM or CSS.
+ *  - Headless: `useGridContainer` + `useGridItem` / `useGridPlaceholder`,
+ *    composed under a dnd-kit `DragDropProvider` you supply. You render your own
+ *    markup; we supply refs, positioning styles, and drag state. No imposed DOM or CSS.
  *  - Components: `GridLayout` / `GridItem` / `GridPlaceholder` — a thin,
  *    drop-in shell over the hooks for the common case.
  */

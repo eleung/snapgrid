@@ -54,7 +54,7 @@ export function ResponsiveGridLayout(props: ResponsiveGridLayoutProps): React.JS
     onBreakpointChange: props.onBreakpointChange,
   });
 
-  // Stable object identity so SnapGridProvider's gridConfig/positionParams memos
+  // Stable object identity so the grid host's gridConfig/positionParams memos
   // aren't busted on every render (e.g. each width tick).
   const gridConfig = useMemo(
     () => ({
@@ -67,8 +67,8 @@ export function ResponsiveGridLayout(props: ResponsiveGridLayoutProps): React.JS
   );
 
   return (
-    // No explicit `id`: a stable per-instance id (useId, inside SnapGridProvider)
-    // avoids droppable/registry identity churn when the breakpoint changes and
+    // No explicit `id`: useGridContainer mints a stable per-instance id (useId),
+    // which avoids droppable/registry identity churn when the breakpoint changes and
     // keeps two responsive grids in a group from colliding on the same id.
     <GridLayout
       layout={layout}
