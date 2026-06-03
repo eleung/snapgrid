@@ -12,21 +12,25 @@ import { codeToHtml } from "shiki";
 
 // The home page's "30-second example": the headless (provider + hooks)
 // composition snapgrid leads with.
-const HEADLESS_SNIPPET = `import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
+const HEADLESS_SNIPPET = `import { DragDropProvider } from "@dnd-kit/react";
 import { useContainerWidth, useGridContainer, useGridItem } from "@snapgridjs/react";
 import { useState } from "react";
 
 function Board() {
   const { width, containerRef } = useContainerWidth();
-  const [layout, setLayout] = useState(initial);
+  const [layout, setLayout] = useState([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 2 },
+  ]);
 
   // DragDropProvider is the outermost element; the grid host (Surface) sits
-  // inside it, so useGridContainer resolves the provider's dnd-kit manager.
+  // inside it, so useGridContainer resolves the provider's dnd-kit manager. A
+  // dragged tile floats itself, so there's no overlay to render.
   return (
     <div ref={containerRef}>
       <DragDropProvider>
         <Surface layout={layout} width={width} onLayoutChange={setLayout} />
-        <DragOverlay>{(src) => (src ? <div className="tile">{String(src.id)}</div> : null)}</DragOverlay>
       </DragDropProvider>
     </div>
   );

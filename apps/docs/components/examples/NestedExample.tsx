@@ -23,6 +23,7 @@ function OuterBoard() {
     layout,
     width,
     onLayoutChange: setLayout,
+    gridConfig: { cols: 12, rowHeight: 52 },
     // The panel drags only from its header, which sits outside the inner grid.
     dragConfig: { handle: ".panel-header" },
     isResizable: false,

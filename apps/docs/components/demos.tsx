@@ -938,8 +938,3 @@ function NestedInner({
     </div>
   );
 }
-
-/** A static, non-interactive snapshot of the inner board for the drag overlay:
- * a plain CSS grid placing each tile at its current x/y/w/h. Width-independent
- * (column tracks are `1fr`), so it fills the cloned panel without re-measuring
- * or spinning up a second dnd-kit provider. */

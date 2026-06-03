@@ -180,24 +180,12 @@ body {
   cursor: nwse-resize;
   touch-action: none;
 }
-.resize-handle::after {
-  content: "";
-  position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 7px;
-  height: 7px;
-  border-right: 2px solid var(--muted);
-  border-bottom: 2px solid var(--muted);
-  border-bottom-right-radius: 2px;
-  transition: border-color 0.12s ease;
-}
-.tile:hover .resize-handle::after {
-  border-color: var(--accent);
-}
-
-/* <GridLayout> renders its own SE handle (.snapgrid-resize-handle--se) — it sets
-   the box position inline but no visible grip; draw the same corner bracket. */
+/* The headless example renders a <span className="resize-handle">; <GridLayout>
+   renders its own SE grip (.snapgrid-resize-handle--se) inside .snapgrid-item, with
+   no visible glyph. Draw the same corner bracket for both, lit on hover of the tile.
+   (The component-layer handle is a sibling of the content under .snapgrid-item, so
+   its hover rule keys off .snapgrid-item, not .tile.) */
+.resize-handle::after,
 .snapgrid-resize-handle--se::after {
   content: "";
   position: absolute;
@@ -210,7 +198,8 @@ body {
   border-bottom-right-radius: 2px;
   transition: border-color 0.12s ease;
 }
-.tile:hover .snapgrid-resize-handle--se::after {
+.tile:hover .resize-handle::after,
+.snapgrid-item:hover .snapgrid-resize-handle--se::after {
   border-color: var(--accent);
 }
 `;
