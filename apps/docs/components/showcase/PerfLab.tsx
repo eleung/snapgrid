@@ -1,12 +1,15 @@
 "use client";
 
+import { DragDropProvider } from "@dnd-kit/react";
 import {
   type Compactor,
-  GridLayout,
   type Layout,
   type LayoutItem,
   horizontalCompactor,
   useContainerWidth,
+  useGridContainer,
+  useGridItem,
+  useGridPlaceholder,
   verticalCompactor,
 } from "@snapgridjs/react";
 import { useEffect, useState } from "react";
@@ -24,7 +27,6 @@ const ORIENTS: Record<Orient, { label: string; compactor: Compactor }> = {
 };
 const ORIENT_ORDER: Orient[] = ["v", "h"];
 const COUNTS = [100, 300, 600];
-const COLS = 24;
 const MARGIN = 8;
 const POOL = 30; // unique avatars; reused across all tiles so the browser decodes only POOL images
 const SEEDS = Array.from({ length: POOL }, (_, i) => `perf-${i * 53 + 7}`);
@@ -32,6 +34,22 @@ const SEEDS = Array.from({ length: POOL }, (_, i) => `perf-${i * 53 + 7}`);
 // the layout array — the array re-sorts on drop/compaction, so an index-based
 // seed would reshuffle every avatar from the moved tile onward.
 const seedFor = (id: string) => SEEDS[(Number.parseInt(id.slice(1), 10) || 0) % POOL];
+
+// Columns adapt to the available width (responsive): fewer, larger cells on a
+// phone, up to 24 on a wide screen. Discrete steps (not a continuous formula) so
+// the layout only re-generates when the width crosses a breakpoint, not on every
+// resize pixel — and tiles stay ~square at a comfortable size across the range.
+const COL_STEPS: ReadonlyArray<readonly [number, number]> = [
+  [1000, 24],
+  [760, 18],
+  [520, 12],
+  [0, 8],
+];
+function colsForWidth(w: number): number {
+  for (const [min, cols] of COL_STEPS) if (w >= min) return cols;
+  return 8;
+}
+const INITIAL_COLS = colsForWidth(1100); // matches useContainerWidth's initialWidth below
 
 // Deterministic PRNG so a given tile count always yields the same layout — no
 // hydration mismatch, and orientation switches re-pack the same set of tiles.
@@ -50,7 +68,7 @@ function mulberry32(seed: number): () => number {
 // orientation visibly re-packs (uniform 1×1 tiles look identical however packed).
 const SIZE_WEIGHTS = [1, 1, 1, 1, 1, 1, 1, 2, 2, 3];
 
-function genLayout(n: number): Layout {
+function genLayout(n: number, cols: number): Layout {
   const rand = mulberry32(n * 0x9e3779b1);
   const out: LayoutItem[] = [];
   // Row (shelf) placement: fill a row left-to-right, wrap when the next tile
@@ -61,8 +79,8 @@ function genLayout(n: number): Layout {
   let shelfY = 0;
   let shelfH = 0;
   for (let i = 0; i < n; i++) {
-    const s = Math.min(SIZE_WEIGHTS[Math.floor(rand() * SIZE_WEIGHTS.length)], COLS);
-    if (x + s > COLS) {
+    const s = Math.min(SIZE_WEIGHTS[Math.floor(rand() * SIZE_WEIGHTS.length)], cols);
+    if (x + s > cols) {
       x = 0;
       shelfY += shelfH;
       shelfH = 0;
@@ -76,10 +94,11 @@ function genLayout(n: number): Layout {
 
 export function PerfLab() {
   const { width, mounted, containerRef } = useContainerWidth({ initialWidth: 1100 });
+  const cols = colsForWidth(width);
   const [count, setCount] = useState(300);
   const [orient, setOrient] = useState<Orient>("v");
   const [layout, setLayout] = useState<Layout>(() =>
-    verticalCompactor.compact(genLayout(300), COLS),
+    verticalCompactor.compact(genLayout(300, INITIAL_COLS), INITIAL_COLS),
   );
   const [fps, setFps] = useState(60);
   // Pre-rasterize the avatar pool to PNG bitmaps once. Inline SVGs get
@@ -96,11 +115,12 @@ export function PerfLab() {
     };
   }, []);
 
-  // Regenerate + compact when the tile count or orientation changes, so switching
-  // direction re-packs the same set of tiles in the new orientation.
+  // Regenerate + compact when the tile count, orientation, OR the responsive
+  // column count changes, so switching direction (or crossing a width breakpoint)
+  // re-packs the same set of tiles for the new orientation/width.
   useEffect(() => {
-    setLayout(ORIENTS[orient].compactor.compact(genLayout(count), COLS));
-  }, [count, orient]);
+    setLayout(ORIENTS[orient].compactor.compact(genLayout(count, cols), cols));
+  }, [count, orient, cols]);
 
   // Live fps meter — the page's one honest, per-machine signal that it stays smooth.
   useEffect(() => {
@@ -123,7 +143,7 @@ export function PerfLab() {
   // Square tiles: derive rowHeight from the same column-width formula the grid
   // uses (containerPadding is [0,0] here), so circular avatars never get cropped
   // to a wide aspect — they're 1×1 cells that read as people, not squished ovals.
-  const rowHeight = Math.max(12, Math.round((width - MARGIN * (COLS - 1)) / COLS));
+  const rowHeight = Math.max(12, Math.round((width - MARGIN * (cols - 1)) / cols));
 
   return (
     <div className="sg-perf">
@@ -178,32 +198,23 @@ export function PerfLab() {
             and the rightmost column would overflow (clipping avatars on the right). */}
         <div ref={containerRef} className="sg-perf__canvas">
           {mounted ? (
-            <GridLayout
-              layout={layout}
-              width={width}
-              onLayoutChange={setLayout}
-              compactor={ORIENTS[orient].compactor}
-              gridConfig={{
-                cols: COLS,
-                rowHeight,
-                margin: [MARGIN, MARGIN],
-                containerPadding: [0, 0],
-              }}
-              isResizable={false}
-            >
-              {layout.map((it) => {
-                const seed = seedFor(it.i);
-                return (
-                  <div key={it.i} className="sg-perf__tile">
-                    <img src={pngs[seed] ?? avatarUri(seed)} alt="" loading="lazy" />
-                  </div>
-                );
-              })}
-            </GridLayout>
+            // Headless: a dnd-kit DragDropProvider wrapping the grid host (PerfGrid),
+            // exactly the pattern the docs teach — no turnkey <GridLayout>.
+            <DragDropProvider>
+              <PerfGrid
+                layout={layout}
+                width={width}
+                cols={cols}
+                rowHeight={rowHeight}
+                compactor={ORIENTS[orient].compactor}
+                onLayoutChange={setLayout}
+                pngs={pngs}
+              />
+            </DragDropProvider>
           ) : (
             <GridSkeleton
               items={layout.slice(0, 150)}
-              cols={COLS}
+              cols={cols}
               gap={MARGIN}
               rowHeight={rowHeight}
               circle
@@ -233,6 +244,69 @@ export function PerfLab() {
         </a>
         .
       </p>
+    </div>
+  );
+}
+
+// The grid host — rendered inside PerfLab's DragDropProvider so useGridContainer
+// resolves the right manager. Owns the surface, the avatar tiles, and the landing
+// placeholder. Re-renders each drag frame (its auto-height tracks the preview),
+// which re-renders the tiles — exactly what the turnkey <GridLayout> does, so the
+// headless port carries the same per-frame cost this demo is built to stress.
+function PerfGrid({
+  layout,
+  width,
+  cols,
+  rowHeight,
+  compactor,
+  onLayoutChange,
+  pngs,
+}: {
+  layout: Layout;
+  width: number;
+  cols: number;
+  rowHeight: number;
+  compactor: Compactor;
+  onLayoutChange: (next: Layout) => void;
+  pngs: Record<string, string>;
+}) {
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange,
+    compactor,
+    gridConfig: { cols, rowHeight, margin: [MARGIN, MARGIN], containerPadding: [0, 0] },
+    isResizable: false,
+  });
+  const placeholder = useGridPlaceholder(group);
+  return (
+    <div {...containerProps}>
+      {layout.map((it) => {
+        const seed = seedFor(it.i);
+        return <PerfTile key={it.i} id={it.i} group={group} src={pngs[seed] ?? avatarUri(seed)} />;
+      })}
+      {placeholder && (
+        <div
+          style={{
+            ...placeholder.style,
+            // Circular to echo the avatars it marks the landing cell for.
+            borderRadius: "50%",
+            background: "var(--dg-accent-soft)",
+            border: "1px dashed var(--dg-accent)",
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// One positioned avatar tile: useGridItem supplies the ref + transform style; the
+// `.sg-perf__tile` content fills it and floats itself while dragging.
+function PerfTile({ id, group, src }: { id: string; group: string; src: string }) {
+  const { ref, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="sg-perf__tile">
+      <img src={src} alt="" loading="lazy" />
     </div>
   );
 }
