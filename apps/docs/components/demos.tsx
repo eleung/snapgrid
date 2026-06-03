@@ -8,7 +8,6 @@ import {
   GridLayout,
   type Layout,
   type LayoutItem,
-  ResponsiveGridLayout,
   type ResponsiveLayouts,
   SnapGridGroup,
   horizontalCompactor,
@@ -18,6 +17,7 @@ import {
   useGridItem,
   useGridPlaceholder,
   useGridResizeHandle,
+  useResponsiveLayout,
   verticalCompactor,
 } from "@snapgridjs/react";
 import { Heart } from "lucide-react";
@@ -474,7 +474,6 @@ const RESP: ResponsiveLayouts = {
     { i: "r5", x: 6, y: 2, w: 6, h: 1 },
   ],
 };
-const RESP_IDS = ["r1", "r2", "r3", "r4", "r5"];
 const RESP_MIN = 240;
 
 export function ResponsiveDemo() {
@@ -485,11 +484,21 @@ export function ResponsiveDemo() {
   // opens truly Large/full-width instead of a fixed 520px that looks small in a
   // wider stage. Dragging or Small/Medium replaces it with a concrete width.
   const [requested, setRequested] = useState(Number.POSITIVE_INFINITY);
-  const [info, setInfo] = useState({ breakpoint: "full", cols: 12 });
   const drag = useRef<{ x: number; w: number } | null>(null);
 
   const max = Math.max(RESP_MIN, Math.round(avail));
   const previewW = Math.min(Math.max(requested, RESP_MIN), max);
+
+  // Headless responsive: resolve the active breakpoint's columns + layout from the
+  // preview width (the same hook the turnkey ResponsiveGridLayout uses internally),
+  // then feed them into the shared HeadlessGrid below — like every other demo here.
+  const { layout, cols, onLayoutChange } = useResponsiveLayout({
+    width: previewW,
+    layouts,
+    breakpoints: RESP_BREAKPOINTS,
+    cols: RESP_COLS,
+    onLayoutChange: (_active, all) => setLayouts(all),
+  });
 
   // A preset is hidden when its target width can't fit the stage (it would just
   // clamp to full and duplicate Large). The active preset is derived once so the
@@ -535,7 +544,7 @@ export function ResponsiveDemo() {
   return (
     <DemoFrame
       title="Responsive"
-      hint={`${info.cols} columns · ${Math.round(previewW)}px — drag the right edge to resize`}
+      hint={`${cols} columns · ${Math.round(previewW)}px — drag the right edge to resize`}
       stageMinHeight={260}
       code={EXAMPLE_CODE.responsive}
     >
@@ -556,24 +565,18 @@ export function ResponsiveDemo() {
       </div>
       <div ref={containerRef}>
         <div className="dg-resize" style={{ width: previewW }}>
-          <ResponsiveGridLayout
+          <HeadlessGrid
+            layout={layout}
             width={previewW}
-            layouts={layouts}
-            breakpoints={RESP_BREAKPOINTS}
-            cols={RESP_COLS}
-            onLayoutChange={(_l, all) => setLayouts(all)}
-            onBreakpointChange={(breakpoint, cols) => setInfo({ breakpoint, cols })}
-            rowHeight={48}
-            margin={[10, 10]}
+            onLayoutChange={onLayoutChange}
             // Unlike the other demos, this grid sits in a padding-less framed box
             // (.dg-resize), so it keeps inner containerPadding to keep tiles off
             // the frame border. The pills align to the box edge as the anchor.
-            containerPadding={[10, 10]}
-          >
-            {RESP_IDS.map((id) => (
-              <Tile key={id} label={id.toUpperCase()} />
-            ))}
-          </ResponsiveGridLayout>
+            options={{
+              gridConfig: { cols, rowHeight: 48, margin: [10, 10], containerPadding: [10, 10] },
+            }}
+            renderContent={(it) => <Tile label={it.i.toUpperCase()} />}
+          />
           <div
             className="dg-resize__handle"
             onPointerDown={onDown}
@@ -771,8 +774,8 @@ function DropTargetGrid({
 /* ── Component layer (turnkey <GridLayout>) ─────────────────────────────── */
 // The rest of the examples are headless (hooks + your own markup); this one
 // shows the turnkey layer. <GridLayout> mints its own DragDropProvider and
-// renders the tiles, resize handles, placeholder, and overlay — no dnd-kit
-// wiring. Children are keyed by their layout item's `i`.
+// renders the tiles, resize handles, and placeholder — no dnd-kit wiring.
+// Children are keyed by their layout item's `i`.
 export function ComponentLayerDemo() {
   const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [layout, setLayout] = useState<Layout>(BASIC.slice(0, 4));
