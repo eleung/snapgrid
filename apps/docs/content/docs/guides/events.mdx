@@ -8,7 +8,8 @@ import { Callout } from "nextra/components";
 # Events & lifecycle
 
 Beyond `onLayoutChange`, snapgrid fires react-grid-layout-compatible lifecycle callbacks so you can
-react to a gesture as it happens: analytics, autosave, side effects.
+react to a gesture as it happens: analytics, autosave, side effects. They're all options on
+`useGridContainer` (and, identically, props on [`<GridLayout>`](/docs/guides/component-layer)).
 
 ## `onLayoutChange`
 
@@ -16,7 +17,7 @@ The one you'll use most. Fires once when an interaction **commits** (drop or res
 next layout. This is where you persist state.
 
 ```tsx
-<GridLayout onLayoutChange={(next) => setLayout(next)} /* … */ />
+const { containerProps, group } = useGridContainer({ onLayoutChange: (next) => setLayout(next), /* … */ });
 ```
 
 ## Drag & resize callbacks
@@ -44,12 +45,12 @@ type GridEventCallback = (
 | `onResizeStop` | When the resize ends. |
 
 ```tsx
-<GridLayout
-  onDragStart={(layout, oldItem) => console.log("picked up", oldItem?.i)}
-  onDrag={(layout, _o, newItem) => console.log("over", newItem?.x, newItem?.y)}
-  onDragStop={(layout, _o, newItem) => console.log("dropped at", newItem?.x, newItem?.y)}
+const { containerProps, group } = useGridContainer({
+  onDragStart: (layout, oldItem) => console.log("picked up", oldItem?.i),
+  onDrag: (layout, _o, newItem) => console.log("over", newItem?.x, newItem?.y),
+  onDragStop: (layout, _o, newItem) => console.log("dropped at", newItem?.x, newItem?.y),
   /* … */
-/>
+});
 ```
 
 ## External drop: `onDrop`

@@ -1,6 +1,6 @@
 ---
 title: Cross-grid dragging
-description: Wrap grids in a SnapGridGroup to drag tiles between them.
+description: Share one dnd-kit provider across grids to drag tiles between them.
 ---
 
 import { Callout } from "nextra/components";
@@ -8,19 +8,40 @@ import { CrossGridDemo } from "@/components/demos";
 
 # Cross-grid dragging
 
-Wrap two or more grids in a `<SnapGridGroup>` and tiles can be dragged **between** them. The source
-grid loses the tile; the destination gains it. Each grid keeps its own controlled layout.
+Put two or more grids on **one dnd-kit provider** and tiles can be dragged **between** them. The
+source grid loses the tile; the destination gains it. Each grid keeps its own controlled layout.
+`<SnapGridGroup>` is that shared provider — it's just dnd-kit's `DragDropProvider`, named for intent
+— so each grid hosts itself with `useGridContainer`, and a dragged tile floats itself across the seam
+(no overlay to wire).
 
 ```tsx
-import { SnapGridGroup, GridLayout } from "@snapgridjs/react";
+import { SnapGridGroup, useGridContainer, useGridItem } from "@snapgridjs/react";
+
+function Grid({ layout, width, onLayoutChange }) {
+  // Each grid hosts itself and returns its own `group`; the shared provider
+  // comes from the enclosing SnapGridGroup.
+  const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange, gridConfig: cfg });
+  return (
+    <div {...containerProps}>
+      {layout.map((it) => (
+        <Tile key={it.i} id={it.i} group={group} />
+      ))}
+    </div>
+  );
+}
+
+function Tile({ id, group }) {
+  const { ref, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+    </div>
+  );
+}
 
 <SnapGridGroup>
-  <GridLayout layout={left} width={w} onLayoutChange={setLeft} gridConfig={cfg}>
-    {left.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
-  </GridLayout>
-  <GridLayout layout={right} width={w} onLayoutChange={setRight} gridConfig={cfg}>
-    {right.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
-  </GridLayout>
+  <Grid layout={left} width={w} onLayoutChange={setLeft} />
+  <Grid layout={right} width={w} onLayoutChange={setRight} />
 </SnapGridGroup>;
 ```
 
@@ -28,8 +49,9 @@ import { SnapGridGroup, GridLayout } from "@snapgridjs/react";
 
 ## How it works
 
-A standalone grid provides its own dnd-kit context. Inside a `<SnapGridGroup>`, all grids share one
-provider and a registry, so a drag that starts in one grid can be received by another. On drop:
+Cross-grid dragging is just two grids on **one dnd-kit `DragDropProvider`**. `<SnapGridGroup>`
+supplies that shared provider; a drag that starts in one grid is received by whichever grid
+dnd-kit's collision system resolves under the pointer. On drop:
 
 - the **source** grid removes the tile and fires its `onLayoutChange` with the tile gone;
 - the **destination** grid inserts the tile at the drop cell and fires its `onLayoutChange` with the
@@ -40,6 +62,19 @@ Both updates happen in the same gesture, each against its own layout state.
 <Callout type="warning">
   **Item ids must be unique across every grid in a group.** They share one drag manager. If two
   grids can hold an item with the same `i`, a cross-grid drop can't tell them apart.
+</Callout>
+
+<Callout type="info">
+  `<SnapGridGroup>` is exactly dnd-kit's `<DragDropProvider>` — use whichever you like; grids under
+  one provider exchange tiles either way. Prefer the turnkey shell? Swap each `<Grid>` for a
+  [`<GridLayout>`](/docs/guides/component-layer) with keyed children inside the same group; it
+  bundles the container and items for you.
+</Callout>
+
+<Callout type="info">
+  **No overlay to wire.** A dragged tile [floats itself](/docs/guides/headless#floating) — it lifts
+  into the top layer and crosses the gap between grids unclipped, carrying its own content with it. So
+  the preview always shows the right tile, from whichever grid it came, with nothing extra to render.
 </Callout>
 
 ## Callbacks

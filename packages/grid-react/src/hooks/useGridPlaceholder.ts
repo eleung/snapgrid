@@ -1,6 +1,6 @@
 import { type LayoutItem, calcGridItemPosition } from "@snapgridjs/core";
-import type { CSSProperties } from "react";
-import { useGridRuntime } from "../context.js";
+import { type CSSProperties, useSyncExternalStore } from "react";
+import { useResolveController } from "./useResolveController.js";
 
 export interface GridPlaceholderInfo {
   /** The layout entry marking where the dragged item will land. */
@@ -11,14 +11,19 @@ export interface GridPlaceholderInfo {
 
 /**
  * Headless hook returning where the drag placeholder should be rendered, or
- * `null` when no drag is in progress. You render the element however you like.
+ * `null` when no drag is in progress. `group` is the owning grid's id (from its
+ * {@link useGridContainer}). You render the element however you like.
  */
-export function useGridPlaceholder(): GridPlaceholderInfo | null {
-  const rt = useGridRuntime();
-  const placeholder = rt.session?.placeholder;
+export function useGridPlaceholder(group: string): GridPlaceholderInfo | null {
+  const controller = useResolveController(group);
+  const placeholder = useSyncExternalStore(
+    controller.subscribe,
+    controller.placeholderSnapshot,
+    controller.placeholderSnapshot,
+  );
   if (!placeholder) return null;
   const pos = calcGridItemPosition(
-    rt.positionParams,
+    controller.config!.positionParams,
     placeholder.x,
     placeholder.y,
     placeholder.w,

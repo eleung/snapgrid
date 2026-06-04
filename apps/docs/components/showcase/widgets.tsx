@@ -1,5 +1,6 @@
 "use client";
 
+import { DragDropProvider } from "@dnd-kit/react";
 import {
   GridLayout,
   type Layout,
@@ -241,18 +242,27 @@ function TeamGrid() {
   return (
     <div ref={ref} className="sg-teamgrid">
       <div className="sg-teamgrid__scroll">
-        <GridLayout
-          layout={layout}
-          width={width}
-          onLayoutChange={onLayoutChange}
-          gridConfig={{ ...TEAM_GRID, cols, rowHeight }}
-          resizeConfig={{ handles: ["se"] }}
-        >
-          {layout.map((it) => {
-            const m = TEAM_BY_ID.get(it.i);
-            return m ? <TeamMember key={it.i} member={m} w={it.w} h={it.h} /> : <div key={it.i} />;
-          })}
-        </GridLayout>
+        {/* Its OWN provider — a nested grid must not share the dashboard's, or the
+            two collide on one collision pass and their overlays conflict. See the
+            Nesting guide. */}
+        <DragDropProvider>
+          <GridLayout
+            layout={layout}
+            width={width}
+            onLayoutChange={onLayoutChange}
+            gridConfig={{ ...TEAM_GRID, cols, rowHeight }}
+            resizeConfig={{ handles: ["se"] }}
+          >
+            {layout.map((it) => {
+              const m = TEAM_BY_ID.get(it.i);
+              return m ? (
+                <TeamMember key={it.i} member={m} w={it.w} h={it.h} />
+              ) : (
+                <div key={it.i} />
+              );
+            })}
+          </GridLayout>
+        </DragDropProvider>
       </div>
     </div>
   );

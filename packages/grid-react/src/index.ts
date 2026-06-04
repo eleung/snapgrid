@@ -4,33 +4,27 @@
  * A react-grid-layout v2 alternative built on dnd-kit.
  *
  * Two layers:
- *  - Headless: `SnapGridProvider` + `useGridContainer` / `useGridItem` /
- *    `useGridPlaceholder`. You render your own markup; we supply refs,
- *    positioning styles, and drag state. No imposed DOM or CSS.
+ *  - Headless: `useGridContainer` + `useGridItem` / `useGridPlaceholder`,
+ *    composed under a dnd-kit `DragDropProvider` you supply. You render your own
+ *    markup; we supply refs, positioning styles, and drag state. No imposed DOM or CSS.
  *  - Components: `GridLayout` / `GridItem` / `GridPlaceholder` — a thin,
  *    drop-in shell over the hooks for the common case.
  */
 
-// Headless layer
-export {
-  SnapGridProvider,
-  type SnapGridProviderProps,
-} from "./SnapGridProvider.js";
-// Wrap multiple grids in a group to drag tiles between them (shared provider).
-export { SnapGridGroup, type SnapGridGroupProps } from "./SnapGridGroup.js";
+// Headless layer. `useGridContainer` is the grid host (creates the controller +
+// drag monitor); items resolve it by `group` (= the grid's id).
 export { useGridContainer } from "./hooks/useGridContainer.js";
 export type {
   GridContainerProps,
   UseGridContainerResult,
 } from "./hooks/useGridContainer.js";
+export type { UseGridControllerOptions } from "./hooks/useGridController.js";
 export { useGridItem } from "./hooks/useGridItem.js";
 export type { UseGridItemResult } from "./hooks/useGridItem.js";
 export { useGridPlaceholder } from "./hooks/useGridPlaceholder.js";
 export type { GridPlaceholderInfo } from "./hooks/useGridPlaceholder.js";
 export { useGridResizeHandle } from "./hooks/useGridResizeHandle.js";
 export type { UseGridResizeHandleResult } from "./hooks/useGridResizeHandle.js";
-export { useGridDragOverlay } from "./hooks/useGridDragOverlay.js";
-export type { GridDragOverlay as GridDragOverlayInfo } from "./hooks/useGridDragOverlay.js";
 
 export {
   DEFAULT_BREAKPOINTS,
@@ -41,20 +35,20 @@ export {
 } from "./hooks/useResponsiveLayout.js";
 
 // Component layer
-export { GridLayout, type GridLayoutProps } from "./GridLayout.js";
+export { GridLayout, type GridLayoutProps, SnapGridGroup } from "./components/GridLayout.js";
 export {
   ResponsiveGridLayout,
   type ResponsiveGridLayoutProps,
-} from "./ResponsiveGridLayout.js";
-export { GridItem, type GridItemProps } from "./GridItem.js";
+} from "./components/ResponsiveGridLayout.js";
+export { GridItem, type GridItemProps } from "./components/GridItem.js";
 export {
   GridPlaceholder,
   type GridPlaceholderProps,
-} from "./GridPlaceholder.js";
-export {
-  GridDragOverlay,
-  type GridDragOverlayProps,
-} from "./GridDragOverlay.js";
+} from "./components/GridPlaceholder.js";
+// Tiles float themselves (dnd-kit's default feedback) — snapgrid doesn't use a
+// drag overlay. The raw dnd-kit `<DragOverlay>` is re-exported for consumers who
+// want one anyway (e.g. a custom cross-ecosystem preview).
+export { DragOverlay } from "@dnd-kit/react";
 
 // Utilities
 export {

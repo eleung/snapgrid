@@ -10,81 +10,78 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { codeToHtml } from "shiki";
 
-// Two snippets for the home page's "30-second example" tabs: the drop-in
-// <GridLayout> and the equivalent headless (provider + hooks) composition.
-const DROPIN_SNIPPET = `import { GridLayout, useContainerWidth, type Layout } from "@snapgridjs/react";
+// The home page's "30-second example": the headless (provider + hooks)
+// composition snapgrid leads with.
+const HEADLESS_SNIPPET = `import { DragDropProvider } from "@dnd-kit/react";
+import { useContainerWidth, useGridContainer, useGridItem } from "@snapgridjs/react";
 import { useState } from "react";
 
-export function Board() {
+function Board() {
   const { width, containerRef } = useContainerWidth();
-  const [layout, setLayout] = useState<Layout>([
+  const [layout, setLayout] = useState([
     { i: "a", x: 0, y: 0, w: 4, h: 2 },
     { i: "b", x: 4, y: 0, w: 4, h: 2 },
     { i: "c", x: 8, y: 0, w: 4, h: 2 },
   ]);
 
+  // DragDropProvider is the outermost element; the grid host (Surface) sits
+  // inside it, so useGridContainer resolves the provider's dnd-kit manager. A
+  // dragged tile floats itself, so there's no overlay to render.
   return (
     <div ref={containerRef}>
-      <GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
-        {layout.map((item) => (
-          <div key={item.i} className="tile">{item.i}</div>
-        ))}
-      </GridLayout>
-    </div>
-  );
-}`;
-
-const HEADLESS_SNIPPET = `import {
-  SnapGridProvider,
-  useGridContainer,
-  useGridItem,
-  useGridPlaceholder,
-  GridDragOverlay,
-  useContainerWidth,
-  type Layout,
-} from "@snapgridjs/react";
-import { useState } from "react";
-
-export function Board() {
-  const { width, containerRef } = useContainerWidth();
-  const [layout, setLayout] = useState<Layout>([
-    { i: "a", x: 0, y: 0, w: 4, h: 2 },
-    { i: "b", x: 4, y: 0, w: 4, h: 2 },
-    { i: "c", x: 8, y: 0, w: 4, h: 2 },
-  ]);
-
-  return (
-    <div ref={containerRef}>
-      <SnapGridProvider layout={layout} width={width} onLayoutChange={setLayout}>
-        <Surface items={layout} />
-      </SnapGridProvider>
+      <DragDropProvider>
+        <Surface layout={layout} width={width} onLayoutChange={setLayout} />
+      </DragDropProvider>
     </div>
   );
 }
 
-function Surface({ items }: { items: Layout }) {
-  const { containerProps } = useGridContainer();
-  const placeholder = useGridPlaceholder();
-
+function Surface({ layout, width, onLayoutChange }) {
+  // useGridContainer is the grid host; it returns the grid's \`group\`.
+  const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange });
   return (
     <div {...containerProps}>
-      {items.map((item) => (
-        <Tile key={item.i} id={item.i} />
-      ))}
-      {placeholder && <div className="placeholder" style={placeholder.style} />}
-      <GridDragOverlay>{(item) => <div className="tile">{item.i}</div>}</GridDragOverlay>
+      {layout.map((it) => <Tile key={it.i} id={it.i} group={group} />)}
     </div>
   );
 }
 
-function Tile({ id }: { id: string }) {
-  const { ref, style } = useGridItem(id);
-  return (
-    <div ref={ref} style={style} className="tile">
-      {id}
-    </div>
-  );
+function Tile({ id, group }) {
+  // each tile resolves its grid by \`group\` — like a dnd-kit sortable
+  const { ref, style } = useGridItem(id, group);
+  return <div ref={ref} style={style} className="tile">{id}</div>;
 }`;
+
+// The "Coming from react-grid-layout?" comparison, as a unified diff: RGL v2 and
+// snapgrid are near-identical on purpose (snapgrid mirrors RGL v2's
+// gridConfig/dragConfig/compactor surface), so the diff is essentially the
+// import line + the component name. Lines start with "+", "-", or " " (context);
+// the diff highlighter colors them and strips the marker.
+const RGL_DIFF_SNIPPET = `-import ReactGridLayout, { useContainerWidth, verticalCompactor } from "react-grid-layout";
+-import "react-grid-layout/css/styles.css";
++import { GridLayout, useContainerWidth, verticalCompactor } from "@snapgridjs/react";
+
+ function Board() {
+   const { width, containerRef, mounted } = useContainerWidth();
+
+   return (
+     <div ref={containerRef}>
+       {mounted && (
+-        <ReactGridLayout
++        <GridLayout
+           width={width}
+           layout={layout}
+           gridConfig={{ cols: 12, rowHeight: 30 }}
+           dragConfig={{ enabled: true, handle: ".handle" }}
+           compactor={verticalCompactor}
+         >
+           {children}
+-        </ReactGridLayout>
++        </GridLayout>
+       )}
+     </div>
+   );
+ }`;
 
 const highlight = (code) =>
   codeToHtml(code, {
@@ -95,19 +92,45 @@ const highlight = (code) =>
     defaultColor: false,
   });
 
-const dropinHtml = await highlight(DROPIN_SNIPPET);
+// Highlight a unified-diff string as TSX (so code keeps its colors), then tag
+// each line add/remove/context from its leading marker and strip that marker so
+// only the gutter sign (CSS ::before) shows it. Zero extra deps.
+const highlightDiff = (code) => {
+  // The marker column would skew TSX tokenization, so highlight the marker-free
+  // code, and carry the per-line markers in parallel to tag the output rows.
+  const markers = code.split("\n").map((l) => l[0]);
+  const stripped = code
+    .split("\n")
+    .map((l) => l.slice(1))
+    .join("\n");
+  return codeToHtml(stripped, {
+    lang: "tsx",
+    themes: { light: "vitesse-light", dark: "vitesse-dark" },
+    defaultColor: false,
+    transformers: [
+      {
+        line(node, line) {
+          const m = markers[line - 1];
+          if (m === "+") this.addClassToHast(node, "diff-add");
+          else if (m === "-") this.addClassToHast(node, "diff-remove");
+          return node;
+        },
+      },
+    ],
+  });
+};
+
 const headlessHtml = await highlight(HEADLESS_SNIPPET);
+const rglDiffHtml = await highlightDiff(RGL_DIFF_SNIPPET);
 
 const outPath = fileURLToPath(new URL("../components/generated/hero-code.ts", import.meta.url));
 mkdirSync(fileURLToPath(new URL("../components/generated/", import.meta.url)), { recursive: true });
 writeFileSync(
   outPath,
-  `// AUTO-GENERATED by scripts/highlight-snippets.mjs — do not edit by hand.\n// Regenerate with: pnpm --filter @snapgridjs/docs highlight\nexport const HERO_DROPIN_HTML = ${JSON.stringify(dropinHtml)};\nexport const HERO_HEADLESS_HTML = ${JSON.stringify(headlessHtml)};\n`,
+  `// AUTO-GENERATED by scripts/highlight-snippets.mjs — do not edit by hand.\n// Regenerate with: pnpm --filter @snapgridjs/docs highlight\nexport const HERO_HEADLESS_HTML = ${JSON.stringify(headlessHtml)};\nexport const RGL_DIFF_HTML = ${JSON.stringify(rglDiffHtml)};\n`,
 );
 
-console.log(
-  `highlighted hero snippets → ${outPath} (${dropinHtml.length}+${headlessHtml.length} bytes)`,
-);
+console.log(`highlighted hero snippets → ${outPath} (${headlessHtml.length} bytes)`);
 
 // Live-example sources: highlight each example component's *real file* so the
 // /examples "Code" toggle shows exactly what runs — no hand-kept snippet to
@@ -123,7 +146,7 @@ const EXAMPLES = [
   { id: "crossGrid", file: "../components/examples/CrossGridExample.tsx" },
   { id: "nested", file: "../components/examples/NestedExample.tsx" },
   { id: "externalDrop", file: "../components/examples/ExternalDropExample.tsx" },
-  { id: "headless", file: "../components/examples/HeadlessExample.tsx" },
+  { id: "componentLayer", file: "../components/examples/ComponentLayerExample.tsx" },
   { id: "notFound", file: "../components/examples/NotFoundExample.tsx" },
 ];
 const exampleEntries = await Promise.all(

@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Install snapgrid and render your first draggable, resizable grid in a few minutes.
+description: Install snapgrid and build your first draggable, repacking grid with the headless hooks — in about five minutes.
 ---
 
 import { Callout, Steps, Tabs } from "nextra/components";
@@ -8,20 +8,26 @@ import { BasicGridDemo } from "@/components/demos";
 
 # Getting Started
 
-**snapgrid** is a [react-grid-layout](https://github.com/react-grid-layout/react-grid-layout) v2
-alternative built on [dnd-kit](https://github.com/clauderic/dnd-kit). It gives you draggable,
-resizable, responsive grid layouts, plus things RGL can't do, like dragging tiles **between**
-grids and swapping the packing algorithm at runtime.
+**snapgrid** is a draggable, resizable, repacking grid layout for React — a
+[react-grid-layout](https://github.com/react-grid-layout/react-grid-layout) v2 alternative built on
+[dnd-kit](https://next.dndkit.com). It keeps the controlled `{ i, x, y, w, h }` model RGL users know,
+and adds things RGL can't do: dragging tiles **between** grids, nested grids, keyboard accessibility,
+and pluggable packing — masonry, gravity, shelf, or your own compactor.
 
-It's **controlled** (you own the layout array) and **headless-first** (it ships behaviour, not
-markup), with a thin drop-in component layer for the common case.
+It's **headless-first** — you wire hooks to your own markup — with a turnkey `<GridLayout>` for when
+you just want a grid that works.
 
 <BasicGridDemo />
 
-## Install
+<Callout type="info">
+  **Know dnd-kit? You already know most of this.** snapgrid *is* dnd-kit plus grid math — a grid
+  lives in dnd-kit's `<DragDropProvider>`, tiles are draggables, the surface is a droppable. If
+  you've touched `useDraggable` / `useSortable`, the headless API will feel familiar. New to dnd-kit?
+  A five-minute skim of [its overview](https://next.dndkit.com) is the single easiest win before you
+  read on.
+</Callout>
 
-snapgrid is split into three packages. Most apps only need `@snapgridjs/react`, which pulls in
-`@snapgridjs/core`. Add the dnd-kit peers alongside it.
+## Install
 
 <Tabs items={["pnpm", "npm", "yarn", "bun"]}>
 <Tabs.Tab>
@@ -54,10 +60,8 @@ bun add @snapgridjs/react @dnd-kit/react @dnd-kit/dom
 </Tabs.Tab>
 </Tabs>
 
-<Callout type="info">
-  `@snapgridjs/extras` adds optional packing algorithms (masonry, gravity, shelf). Install it only if
-  you need them: `pnpm add @snapgridjs/extras`.
-</Callout>
+`@dnd-kit/react` and `@dnd-kit/dom` are peer dependencies — snapgrid uses your copy, so there's
+nothing to dedupe. See [Installation](/docs/installation) for the full breakdown.
 
 ## Your first grid
 
@@ -65,8 +69,8 @@ bun add @snapgridjs/react @dnd-kit/react @dnd-kit/dom
 
 ### Hold the layout in state
 
-A layout is an array of items, each with an id (`i`), a position (`x`, `y`), and a size (`w`, `h`)
-in grid units. snapgrid never mutates it. You keep it in state and apply every change yourself.
+snapgrid is **controlled**: you own the array, it never mutates it. Each item has an id (`i`), a
+position (`x`, `y`), and a size (`w`, `h`) in **grid units** — columns and rows, not pixels.
 
 ```tsx
 import { useState } from "react";
@@ -81,8 +85,8 @@ const [layout, setLayout] = useState<Layout>([
 
 ### Measure the container width
 
-The grid needs a pixel width to map columns to positions. `useContainerWidth` measures it with a
-`ResizeObserver`. Attach its `containerRef` to the element whose width should drive the grid.
+The grid turns columns into pixels using the container's width. `useContainerWidth` measures it with
+a `ResizeObserver`; attach its `containerRef` to the element whose width should drive the grid.
 
 ```tsx
 import { useContainerWidth } from "@snapgridjs/react";
@@ -90,35 +94,86 @@ import { useContainerWidth } from "@snapgridjs/react";
 const { width, containerRef } = useContainerWidth();
 ```
 
-### Render `<GridLayout>` with keyed children
+### Host the grid inside a dnd-kit provider
 
-Each child is keyed by its item's `i`. snapgrid positions it; you render whatever's inside.
+Render inside dnd-kit's `<DragDropProvider>`, and let `useGridContainer` host the grid. It returns
+`containerProps` for your surface element and the grid's **`group`** — its id, which ties tiles to it.
 
 ```tsx
-import { GridLayout } from "@snapgridjs/react";
+import { DragDropProvider } from "@dnd-kit/react";
+import { useGridContainer } from "@snapgridjs/react";
 
-<div ref={containerRef}>
-  <GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
-    {layout.map((item) => (
-      <div key={item.i} className="tile">
-        {item.i}
-      </div>
-    ))}
-  </GridLayout>
-</div>;
+function Surface({ layout, width, onLayoutChange }) {
+  const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange });
+  return (
+    <div {...containerProps}>
+      {layout.map((item) => (
+        <Tile key={item.i} id={item.i} group={group} />
+      ))}
+    </div>
+  );
+}
 ```
 
-### Drag and resize
+<Callout type="warning">
+  **`useGridContainer` must run *inside* the `<DragDropProvider>`.** It registers the grid on
+  dnd-kit's manager, so the host has to be a child of the provider — like `Surface` above — not the
+  component that renders the provider. Call it outside and you'll get `no grid found for group`.
+</Callout>
 
-That's it: tiles drag, the rest compact upward, and a resize handle sits in the bottom-right
-corner by default. Every committed change flows back through `onLayoutChange`.
+### Render a tile with `useGridItem`
+
+Each tile calls `useGridItem(id, group)` for its `ref` and positioning `style` — the way a dnd-kit
+sortable item declares its list. You bring the element, classes, and content.
+
+```tsx
+import { useGridItem } from "@snapgridjs/react";
+
+function Tile({ id, group }) {
+  const { ref, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+    </div>
+  );
+}
+```
+
+### Mark the landing spot
+
+`useGridPlaceholder(group)` tells you where the dragged tile will land (or `null` when idle). Render a
+marker with its `style` inside the surface, alongside the tiles, so the target cell shows as you drag.
+
+```tsx
+import { useGridPlaceholder } from "@snapgridjs/react";
+
+// inside Surface — after useGridContainer:
+const placeholder = useGridPlaceholder(group);
+
+// inside the container — after the tiles:
+{placeholder && <div className="placeholder" style={placeholder.style} />}
+```
+
+### That's it — drag it
+
+There's nothing more to wire. While you drag with a pointer, the tile **floats itself** above
+everything — dnd-kit lifts it into the browser's top layer, so it can cross grids unclipped — and on
+drop it settles into its new cell. Keyboard drags step the tile cell-by-cell in place. Tiles drag,
+the rest compact upward, and every committed change flows back through `onLayoutChange`.
 
 </Steps>
 
 ## Putting it together
 
 ```tsx filename="Board.tsx"
-import { GridLayout, useContainerWidth, type Layout } from "@snapgridjs/react";
+import { DragDropProvider } from "@dnd-kit/react";
+import {
+  type Layout,
+  useContainerWidth,
+  useGridContainer,
+  useGridItem,
+  useGridPlaceholder,
+} from "@snapgridjs/react";
 import { useState } from "react";
 
 export function Board() {
@@ -126,38 +181,84 @@ export function Board() {
   const [layout, setLayout] = useState<Layout>([
     { i: "a", x: 0, y: 0, w: 4, h: 2 },
     { i: "b", x: 4, y: 0, w: 4, h: 2 },
-    { i: "c", x: 8, y: 0, w: 4, h: 3 },
-    { i: "d", x: 0, y: 2, w: 6, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 2 },
   ]);
 
+  // DragDropProvider is the outermost element; Surface (which calls
+  // useGridContainer) lives inside it.
   return (
     <div ref={containerRef}>
-      <GridLayout
-        layout={layout}
-        width={width}
-        onLayoutChange={setLayout}
-        gridConfig={{ cols: 12, rowHeight: 60, margin: [12, 12] }}
-        resizeConfig={{ handles: ["se", "e", "s"] }}
-      >
-        {layout.map((item) => (
-          <div key={item.i} className="tile">
-            {item.i}
-          </div>
-        ))}
-      </GridLayout>
+      <DragDropProvider>
+        <Surface layout={layout} width={width} onLayoutChange={setLayout} />
+      </DragDropProvider>
+    </div>
+  );
+}
+
+function Surface({ layout, width, onLayoutChange }) {
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange,
+    gridConfig: { cols: 12, rowHeight: 80, margin: [12, 12] },
+  });
+  const placeholder = useGridPlaceholder(group);
+  return (
+    <div {...containerProps}>
+      {layout.map((item) => (
+        <Tile key={item.i} id={item.i} group={group} />
+      ))}
+      {placeholder && <div className="placeholder" style={placeholder.style} />}
+    </div>
+  );
+}
+
+function Tile({ id, group }: { id: string; group: string }) {
+  const { ref, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
     </div>
   );
 }
 ```
 
 <Callout type="default">
-  snapgrid ships **no CSS** of its own. The tiles above are styled by your own `.tile` class. See
-  [Styling](/docs/guides/styling) for the classes and data attributes snapgrid exposes.
+  snapgrid ships **no CSS**. The tiles and the `.placeholder` marker are styled by your own classes —
+  see [Styling](/docs/guides/styling) for the hooks it exposes. Want resize handles? Tiles are
+  drag-only until you render them — see [Resizing](/docs/guides/resizing).
 </Callout>
+
+## Don't want to wire all that?
+
+<Callout type="info">
+  The turnkey [`<GridLayout>`](/docs/guides/component-layer) bundles the provider, the host, the
+  tiles, and the placeholder. Pass it `layout` / `width` / `onLayoutChange` and keyed children —
+  done. It's the gentlest on-ramp; drop to the hooks for any grid that needs custom markup. Same
+  engine either way.
+</Callout>
+
+```tsx
+<GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
+  {layout.map((item) => (
+    <div key={item.i} className="tile">
+      {item.i}
+    </div>
+  ))}
+</GridLayout>
+```
+
+## Coming from react-grid-layout?
+
+You'll feel at home — same controlled `layout` / `onLayoutChange`, same `{ i, x, y, w, h }` items,
+same breakpoints. The `<GridLayout>` component layer mirrors RGL v2's model, so migrating is a quick
+first step, not a rewrite — though not a literal drop-in (you re-author styling, and any hook usage
+moves to headless). See [Migrating from RGL](/docs/guides/migrating-from-rgl).
 
 ## Where to next
 
-- [Core Concepts](/docs/concepts): controlled state, the two layers, and how compaction works.
-- [Dragging](/docs/guides/dragging) and [Resizing](/docs/guides/resizing): fine-tune the interaction.
-- [Cross-grid dragging](/docs/guides/cross-grid): drag tiles between grids.
-- [API Reference](/docs/api/overview): every component, hook, and type.
+- [Core Concepts](/docs/concepts) — the mental model (controlled state, the dnd-kit DNA, the `group` key) plus a gotchas cheat-sheet.
+- [Headless usage](/docs/guides/headless) — the hooks in depth: resize handles, the placeholder, and how a dragged tile floats itself.
+- [Component layer](/docs/guides/component-layer) — the turnkey `<GridLayout>` when you don't need custom markup.
+- [Dragging](/docs/guides/dragging) · [Resizing](/docs/guides/resizing) · [Compaction](/docs/guides/compaction) · [Cross-grid](/docs/guides/cross-grid) · [Responsive](/docs/guides/responsive).
+- [API Reference](/docs/api/overview) — every hook, component, and type.

@@ -1,7 +1,7 @@
 export default {
   overview: "Overview",
-  components: "Components",
   hooks: "Hooks",
+  components: "Components",
   types: "Types & config",
   core: "Core engine & extras",
 };

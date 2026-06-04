@@ -1,7 +1,8 @@
 import { useDraggable } from "@dnd-kit/react";
 import type { ResizeHandleAxis } from "@snapgridjs/core";
-import { useGridRuntime } from "../context.js";
+import { useSyncExternalStore } from "react";
 import { NO_FEEDBACK, RESIZE_HANDLE_ATTR } from "./dndShared.js";
+import { useResolveController } from "./useResolveController.js";
 
 export interface UseGridResizeHandleResult {
   /** Attach to your resize-handle element. */
@@ -14,20 +15,26 @@ export interface UseGridResizeHandleResult {
 
 /**
  * Headless hook for a single resize handle. Model a handle as its own draggable;
- * dragging it resizes the item from the given edge/corner. Position and style
- * the handle however you like — spread `ref` and `handleProps` onto it.
+ * dragging it resizes the item from the given edge/corner. `group` is the owning
+ * grid's id (from its {@link useGridContainer}). Spread `ref` and `handleProps`
+ * onto the handle element you position/style.
  */
 export function useGridResizeHandle(
   itemId: string,
   handle: ResizeHandleAxis,
+  group: string,
 ): UseGridResizeHandleResult {
-  const rt = useGridRuntime();
+  const controller = useResolveController(group);
   const { ref } = useDraggable({
     id: `${itemId}::resize::${handle}`,
-    disabled: !rt.isItemResizable(itemId),
+    disabled: !controller.config?.isItemResizable(itemId),
     plugins: NO_FEEDBACK,
     data: { snapGrid: { kind: "resize", itemId, handle } },
   });
-  const isResizing = rt.session?.kind === "resize" && rt.session.activeId === itemId;
+  const { isResizing } = useSyncExternalStore(
+    controller.subscribe,
+    () => controller.resizeSnapshot(itemId),
+    () => controller.resizeSnapshot(itemId),
+  );
   return { ref, handleProps: { [RESIZE_HANDLE_ATTR]: true }, isResizing };
 }

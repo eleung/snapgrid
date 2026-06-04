@@ -1,6 +1,6 @@
 ---
 title: Responsive layouts
-description: Per-breakpoint layouts with ResponsiveGridLayout and the useResponsiveLayout hook.
+description: Per-breakpoint layouts with the useResponsiveLayout hook (and the turnkey ResponsiveGridLayout component).
 ---
 
 import { Callout } from "nextra/components";
@@ -8,36 +8,62 @@ import { ResponsiveDemo } from "@/components/demos";
 
 # Responsive layouts
 
-`<ResponsiveGridLayout>` switches column count **and** layout as the container width crosses
-breakpoints. Give it a map of per-breakpoint layouts; missing breakpoints are generated from the
-nearest provided one.
+A responsive grid switches **column count and layout** as the container width crosses breakpoints.
+The headless engine is `useResponsiveLayout`: give it a map of per-breakpoint layouts and the
+measured `width`, and it resolves the active breakpoint's `cols` and `layout` plus an
+`onLayoutChange` that writes back to the right breakpoint. Feed those into `useGridContainer`.
 
 ```tsx
-import { ResponsiveGridLayout, useContainerWidth, type ResponsiveLayouts } from "@snapgridjs/react";
+import { DragDropProvider } from "@dnd-kit/react";
+import {
+  type ResponsiveLayouts,
+  useContainerWidth,
+  useGridContainer,
+  useGridItem,
+  useResponsiveLayout,
+} from "@snapgridjs/react";
 
-const [layouts, setLayouts] = useState<ResponsiveLayouts>({
-  lg: [
-    { i: "a", x: 0, y: 0, w: 4, h: 2 },
-    { i: "b", x: 4, y: 0, w: 4, h: 2 },
-    { i: "c", x: 8, y: 0, w: 4, h: 2 },
-  ],
-});
+function ResponsiveBoard() {
+  const { width, containerRef } = useContainerWidth();
+  const [layouts, setLayouts] = useState<ResponsiveLayouts>({
+    lg: [
+      { i: "a", x: 0, y: 0, w: 4, h: 2 },
+      { i: "b", x: 4, y: 0, w: 4, h: 2 },
+      { i: "c", x: 8, y: 0, w: 4, h: 2 },
+    ],
+  });
 
-const { width, containerRef } = useContainerWidth();
+  // Resolve the active breakpoint's column count + layout from the width.
+  const { layout, cols, onLayoutChange } = useResponsiveLayout({
+    width,
+    layouts,
+    onLayoutChange: (_active, all) => setLayouts(all),
+    onBreakpointChange: (bp, cols) => console.log("now at", bp, cols),
+  });
 
-<div ref={containerRef}>
-  <ResponsiveGridLayout
-    width={width}
-    layouts={layouts}
-    onLayoutChange={(_layout, allLayouts) => setLayouts(allLayouts)}
-    onBreakpointChange={(bp, cols) => console.log("now at", bp, cols)}
-  >
-    {["a", "b", "c"].map((id) => (
-      <div key={id} className="tile">{id}</div>
-    ))}
-  </ResponsiveGridLayout>
-</div>;
+  return (
+    <div ref={containerRef}>
+      <DragDropProvider>
+        <Grid layout={layout} width={width} cols={cols} onLayoutChange={onLayoutChange} />
+      </DragDropProvider>
+    </div>
+  );
+}
+
+function Grid({ layout, width, cols, onLayoutChange }) {
+  // The column count tracks the active breakpoint, so the grid reflows with it.
+  const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange, gridConfig: { cols } });
+  return (
+    <div {...containerProps}>
+      {layout.map((it) => (
+        <Tile key={it.i} id={it.i} group={group} />
+      ))}
+    </div>
+  );
+}
 ```
+
+Missing breakpoints are generated from the nearest provided one.
 
 <ResponsiveDemo />
 
@@ -53,28 +79,35 @@ Defaults mirror react-grid-layout:
 | `xs` | 480 | 4 |
 | `xxs` | 0 | 2 |
 
-Override either with the `breakpoints` and `cols` props (exported as `DEFAULT_BREAKPOINTS` and
-`DEFAULT_BREAKPOINT_COLS` if you want to extend them).
+Override either with the `breakpoints` and `cols` options (exported as `DEFAULT_BREAKPOINTS` and
+`DEFAULT_BREAKPOINT_COLS` if you want to extend them):
 
 ```tsx
-<ResponsiveGridLayout
-  breakpoints={{ lg: 1280, md: 900, sm: 0 }}
-  cols={{ lg: 16, md: 8, sm: 4 }}
-  /* … */
-/>
+const { layout, cols, onLayoutChange } = useResponsiveLayout({
+  width,
+  layouts,
+  breakpoints: { lg: 1280, md: 900, sm: 0 },
+  cols: { lg: 16, md: 8, sm: 4 },
+  onLayoutChange: (_active, all) => setLayouts(all),
+});
 ```
 
 ## `onLayoutChange` gives you both
 
-The callback is `(activeLayout, allLayouts)`: the layout for the current breakpoint **and** the
-full updated map. Store the map so edits at one breakpoint don't clobber the others:
+The hook's `onLayoutChange` option is `(activeLayout, allLayouts)`: the layout for the current
+breakpoint **and** the full updated map. Store the map so edits at one breakpoint don't clobber the
+others:
 
 ```tsx
-onLayoutChange={(_active, all) => setLayouts(all)}
+onLayoutChange: (_active, all) => setLayouts(all),
 ```
 
+The `onLayoutChange` the hook *returns* (which you pass to `useGridContainer`) takes care of routing
+each committed change into the active breakpoint's entry before calling your option above.
+
 <Callout type="info">
-  Prefer the hook? `useResponsiveLayout(...)` is the headless engine behind the component. It
-  resolves the active breakpoint, column count, and layout, and returns an `onLayoutChange` that
-  updates the right breakpoint. See [Hooks](/docs/api/hooks#useresponsivelayout).
+  Prefer the turnkey component? [`<ResponsiveGridLayout>`](/docs/guides/component-layer#responsivegridlayout) is
+  the component that wraps this hook — pass it `layouts`, `width`, and keyed children and it handles
+  the provider and the grid. See
+  [Components](/docs/api/components#responsivegridlayout) for its full prop table.
 </Callout>

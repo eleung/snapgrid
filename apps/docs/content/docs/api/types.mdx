@@ -1,6 +1,6 @@
 ---
 title: Types & config
-description: LayoutItem, GridConfig, DragConfig, ResizeConfig, DropConfig, Compactor, and the responsive types.
+description: LayoutItem, GridConfig, DragConfig, ResizeConfig, DropConfig, Compactor, PositionParams, and the responsive types.
 ---
 
 # Types & config
@@ -25,9 +25,15 @@ interface LayoutItem {
   static?: boolean;     // pinned: never moves/resizes; others flow around it
   isDraggable?: boolean; // per-item override of the grid default
   isResizable?: boolean;
+  isBounded?: boolean;   // per-item override of dragConfig.bounded
   resizeHandles?: ResizeHandleAxis[]; // per-item handle set
 }
 ```
+
+Two more fields are inherited from the layout engine and rarely needed: `constraints?` (an
+array of advanced per-item position constraints — the `LayoutConstraint` type isn't part of
+snapgrid's public surface) and an `@internal` `moved?` flag the engine sets during a drag. Don't
+set either by hand.
 
 ## GridConfig
 
@@ -49,7 +55,7 @@ Pass a `Partial<GridConfig>` to `<GridLayout gridConfig={…}>`; unset fields us
 interface DragConfig {
   enabled?: boolean;    // default true
   bounded?: boolean;    // default false — keep within the container
-  handle?: string;      // CSS selector for a drag handle
+  handle?: string;      // CSS selector for a drag handle — headless: prefer useGridItem's handleRef
   cancel?: string;      // CSS selector for regions that cancel a drag
   threshold?: number;   // default 3 — px before a drag starts
   snapToGrid?: boolean; // default false — snap the dragged tile itself
@@ -81,20 +87,30 @@ interface GridDropData {  // carried on the external draggable's data.snapGridDr
   w?: number;
   h?: number;
 }
-```
 
-## Compactor
-
-```ts
-interface Compactor {
-  type: "vertical" | "horizontal" | "wrap" | null;
-  compact(layout: Layout, cols: number): Layout;
-  allowOverlap?: boolean;
-  preventCollision?: boolean;
+interface DragSourceInfo {  // passed to DropConfig.accept
+  id: string | number;
+  type?: unknown;
+  data?: unknown;
 }
 ```
 
-See [Compaction & packing](/docs/guides/compaction#writing-a-custom-compactor) for writing your own.
+## Compactor & CompactType
+
+```ts
+type CompactType = "vertical" | "horizontal" | "wrap" | null;
+
+interface Compactor {
+  type: CompactType;                          // compaction-mode identifier
+  allowOverlap: boolean;                      // items may stack; compaction is skipped
+  preventCollision?: boolean;                 // block colliding moves (ignored when allowOverlap)
+  compact(layout: Layout, cols: number): Layout;
+}
+```
+
+Built-in compactors `verticalCompactor`, `horizontalCompactor`, and `noCompactor` are exported
+from `@snapgridjs/react`, along with `getCompactor(type)` to resolve one by its `CompactType`. See
+[Compaction & packing](/docs/guides/compaction#writing-a-custom-compactor) for writing your own.
 
 ## Responsive types
 
@@ -118,4 +134,21 @@ type GridEventCallback = (
   event: Event | null,
   node: HTMLElement | null,
 ) => void;
+```
+
+## PositionParams
+
+The resolved grid geometry, re-exported from the layout engine for the px↔grid-unit helpers
+(`calcXY`, `calcGridItemPosition`, …). You rarely build one by hand — it's the shape those
+functions consume.
+
+```ts
+interface PositionParams {
+  margin: [number, number];
+  containerPadding: [number, number];
+  containerWidth: number;
+  cols: number;
+  rowHeight: number;
+  maxRows: number;
+}
 ```

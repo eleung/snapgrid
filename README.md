@@ -31,7 +31,7 @@ Draggable, resizable, responsive grid layouts for React, with pluggable packing 
 ## Why snapgrid
 
 - **Controlled & predictable**: you own the layout array; every change comes back through `onLayoutChange`. No hidden state.
-- **Headless or drop-in**: `<GridLayout>` for the common case, or `SnapGridProvider` + hooks for full control of the markup. Ships **no CSS**.
+- **Headless-first**: compose `useGridContainer` + hooks under a dnd-kit `DragDropProvider` for full control of your markup — or drop in the turnkey [`<GridLayout>`](https://snapgrid.dev/docs/guides/component-layer) (react-grid-layout-style) when you don't need that. Ships **no CSS**.
 - **Pluggable packing**: `vertical` / `horizontal` / `none`, plus `masonry` / `gravity` / `shelf` from `@snapgridjs/extras`, or your own `Compactor`.
 - **Cross-grid dragging**: wrap grids in a `<SnapGridGroup>` and drag tiles between them.
 - **Nested grids**: drop a grid inside a tile of another grid; each level keeps its own isolated drag session.
@@ -65,10 +65,10 @@ snapgrid keeps the parts of [react-grid-layout](https://github.com/react-grid-la
 
 <!-- Figures from apps/docs/components/generated/bundle-size.ts (run `pnpm --filter @snapgridjs/docs measure`). The docs site reads them live; this README mirror is updated by hand. -->
 
-snapgrid itself is ~6 kB brotli, but it's built on [dnd-kit](https://dndkit.com/) (~27 kB), so a fresh install is **~33 kB brotli**, roughly **2× react-grid-layout v2's ~15 kB** (minified, React excluded). That weight _is_ dnd-kit, and it's a deliberate trade:
+snapgrid itself is ~7 kB brotli, but it's built on [dnd-kit](https://dndkit.com/) (~31 kB), so a fresh install is **~38 kB brotli**, roughly **2.5× react-grid-layout v2's ~15 kB** (minified, React excluded). That weight _is_ dnd-kit, and it's a deliberate trade:
 
 - **dnd-kit is the de-facto standard for drag-and-drop in React.** Its accessible, multi-sensor engine is what gives snapgrid keyboard dragging, touch support, and cross-grid out of the box (things RGL's older react-draggable/react-resizable stack doesn't).
-- **If your app already uses dnd-kit, snapgrid adds only ~6 kB.**
+- **If your app already uses dnd-kit, snapgrid adds only ~7 kB.**
 - snapgrid tracks dnd-kit's **latest framework-agnostic line** (`@dnd-kit/react`), the line dnd-kit recommends over the legacy `@dnd-kit/core`.
 
 ## Install
@@ -81,8 +81,11 @@ pnpm add @snapgridjs/react @dnd-kit/react @dnd-kit/dom
 
 ## Quick start
 
+snapgrid is **headless-first**: you compose hooks with a dnd-kit `DragDropProvider` and render your own markup.
+
 ```tsx
-import { GridLayout, useContainerWidth, type Layout } from "@snapgridjs/react";
+import { DragDropProvider } from "@dnd-kit/react";
+import { type Layout, useContainerWidth, useGridContainer, useGridItem } from "@snapgridjs/react";
 import { useState } from "react";
 
 export function Board() {
@@ -93,16 +96,49 @@ export function Board() {
     { i: "c", x: 8, y: 0, w: 4, h: 2 },
   ]);
 
+  // You supply the dnd-kit provider; useGridContainer runs inside it (in Surface).
   return (
     <div ref={containerRef}>
-      <GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
-        {layout.map((item) => (
-          <div key={item.i} className="tile">{item.i}</div>
-        ))}
-      </GridLayout>
+      <DragDropProvider>
+        <Surface layout={layout} width={width} onLayoutChange={setLayout} />
+      </DragDropProvider>
     </div>
   );
 }
+
+function Surface({
+  layout,
+  width,
+  onLayoutChange,
+}: { layout: Layout; width: number; onLayoutChange: (next: Layout) => void }) {
+  const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange });
+  return (
+    <div {...containerProps}>
+      {layout.map((it) => (
+        <Tile key={it.i} id={it.i} group={group} />
+      ))}
+    </div>
+  );
+}
+
+function Tile({ id, group }: { id: string; group: string }) {
+  const { ref, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+    </div>
+  );
+}
+```
+
+**Prefer a ready-made component?** The turnkey [`<GridLayout>`](https://snapgrid.dev/docs/guides/component-layer) wraps these same hooks (and supplies the provider) in a react-grid-layout-style API — drop in keyed children and you're done:
+
+```tsx
+<GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
+  {layout.map((item) => (
+    <div key={item.i} className="tile">{item.i}</div>
+  ))}
+</GridLayout>
 ```
 
 → Full walkthrough in [**Getting Started**](https://snapgrid.dev/docs/getting-started).

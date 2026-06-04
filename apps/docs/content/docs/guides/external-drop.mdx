@@ -17,13 +17,14 @@ turn a drop into a new layout item. Enable it with `dropConfig` and handle the r
 ## Set it up
 
 The grid and the external draggable must share one dnd-kit provider, so wrap both in a
-`<SnapGridGroup>`. The draggable is a plain `useDraggable` from `@dnd-kit/react` that carries a
-`snapGridDrop` payload describing the item to create.
+`<SnapGridGroup>` (dnd-kit's `DragDropProvider`). The grid hosts itself with `useGridContainer`,
+opting in via `dropConfig`. The draggable is a plain `useDraggable` from `@dnd-kit/react` that
+carries a `snapGridDrop` payload describing the item to create.
 
 ```tsx
-import { SnapGridGroup, GridLayout } from "@snapgridjs/react";
-import { useDraggable } from "@dnd-kit/react";
 import { Feedback } from "@dnd-kit/dom";
+import { useDraggable } from "@dnd-kit/react";
+import { SnapGridGroup, useGridContainer, useGridItem } from "@snapgridjs/react";
 
 const CLONE = [Feedback.configure({ feedback: "clone" })];
 
@@ -32,24 +33,54 @@ function PaletteItem({ id, w, h }: { id: string; w: number; h: number }) {
   return <button ref={ref}>{`${w}×${h}`}</button>;
 }
 
+function DropGrid({ layout, width, onLayoutChange }) {
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width,
+    onLayoutChange,
+    onDrop: (next) => onLayoutChange(next),
+    dropConfig: { enabled: true, defaultItem: { w: 2, h: 2 } },
+  });
+  return (
+    <div {...containerProps}>
+      {layout.map((it) => (
+        <Tile key={it.i} id={it.i} group={group} />
+      ))}
+    </div>
+  );
+}
+
+function Tile({ id, group }) {
+  const { ref, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+    </div>
+  );
+}
+
 function Board() {
   const [layout, setLayout] = useState<Layout>([]);
   return (
     <SnapGridGroup>
       <PaletteItem id="pal-wide" w={4} h={1} />
-      <GridLayout
-        layout={layout}
-        width={width}
-        onLayoutChange={setLayout}
-        onDrop={(next) => setLayout(next)}
-        dropConfig={{ enabled: true, defaultItem: { w: 2, h: 2 } }}
-      >
-        {layout.map((it) => <div key={it.i} className="tile">{it.i}</div>)}
-      </GridLayout>
+      <DropGrid layout={layout} width={width} onLayoutChange={setLayout} />
     </SnapGridGroup>
   );
 }
 ```
+
+## The drag preview
+
+Each draggable is its **own** floating preview — there's no shared overlay to wire up:
+
+- A **grid tile** being relocated (within or across grids) [floats itself](/docs/guides/headless#floating).
+- A **palette item** floats a **clone** of itself — that's the `CLONE` plugin
+  (`Feedback.configure({ feedback: "clone" })`) on its `useDraggable` above.
+
+Why a clone? dnd-kit's *default* feedback floats the element itself — right for a grid tile, but it
+would yank the palette item out of its tray. `"clone"` leaves the original in place and floats a copy
+instead. The copy is just your palette markup; it becomes a grid tile only once `onDrop` fires.
 
 ## The `snapGridDrop` payload
 

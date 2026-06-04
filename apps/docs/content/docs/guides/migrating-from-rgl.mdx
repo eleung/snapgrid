@@ -1,6 +1,6 @@
 ---
 title: Migrating from react-grid-layout
-description: A prop-by-prop map from react-grid-layout to snapgrid, plus the three behaviours that differ.
+description: Migrating from react-grid-layout to snapgrid. v1's WidthProvider + flat props map prop-by-prop; v2 already shares the config-object API, but you still re-author styling and move any hook usage to snapgrid's headless API.
 ---
 
 import { Callout } from "nextra/components";
@@ -9,11 +9,21 @@ import { BUNDLE_SIZE } from "@/components/generated/bundle-size";
 # Migrating from react-grid-layout
 
 snapgrid deliberately keeps react-grid-layout's mental model: a controlled array of
-`{ i, x, y, w, h }` items, a `cols` grid, `rowHeight`, and `onLayoutChange`. Most of the
-migration is moving a handful of top-level props into config objects, and deleting two CSS
-imports.
+`{ i, x, y, w, h }` items, a `cols` grid, `rowHeight`, and `onLayoutChange`.
 
-This guide assumes you're coming from `react-grid-layout` (RGL) and know its API.
+<Callout type="info">
+  **On react-grid-layout v2?** The component API is genuinely close: v2 already uses the same
+  composable `gridConfig` / `dragConfig` / `resizeConfig` / `compactor` objects and a `useContainerWidth`
+  hook, so your `<GridLayout>` *markup* barely changes — see the side-by-side diff on the
+  [home page](/). But it's **not a literal drop-in**. Two things still need real work, both covered
+  below: you **re-author styling** (snapgrid ships no CSS and uses its own class names), and any code
+  built on v2's **hooks** (`useGridLayout` / `useResponsiveLayout`) moves to snapgrid's
+  [headless API](/docs/guides/headless) — there's no hook-for-hook swap. Skip to
+  [Coming from v2](#coming-from-v2). The rest of the guide is the **v1** prop-mapping.
+</Callout>
+
+This guide assumes you're coming from `react-grid-layout` **v1** (RGL) and know its API. Most of the
+migration is moving a handful of top-level props into config objects, and deleting two CSS imports.
 
 ## What you keep, what you gain
 
@@ -53,6 +63,35 @@ excluded). That weight _is_ dnd-kit, and it's a deliberate trade:
 - **If your app already uses dnd-kit, snapgrid adds only \~{BUNDLE_SIZE.snapgrid} kB.**
 - snapgrid tracks dnd-kit's **latest framework-agnostic line** (`@dnd-kit/react`), the line dnd-kit
   recommends over the legacy `@dnd-kit/core`.
+
+## Coming from v2 [#coming-from-v2]
+
+react-grid-layout v2 and snapgrid share the same component model — a controlled `layout`,
+`onLayoutChange`, and the composable `gridConfig` / `dragConfig` / `resizeConfig` / `compactor`
+objects — so `<GridLayout>` and `<ResponsiveGridLayout>` map almost prop-for-prop (the
+[prop tables](#2-map-the-props) below double as your v2 reference, and the
+[home-page diff](/) shows how little the markup moves). Two things still take real work:
+
+### Re-author your styling
+
+snapgrid ships **no CSS**. v2's stylesheet and class names (`react-grid-item`,
+`react-grid-placeholder`, the resize-handle classes) don't carry over: delete the stylesheet import
+and restyle against snapgrid's own hooks — `.snapgrid-item`, `.snapgrid-placeholder`,
+`.snapgrid-resize-handle--{axis}` (or your own classes in the headless layer). See
+[Styling](/docs/guides/styling). For most apps this is the bulk of the migration.
+
+### Hooks → headless usage
+
+snapgrid's hooks are its **own headless API**, not a re-implementation of v2's. Some names overlap
+(`useContainerWidth`, `useResponsiveLayout`) but the contracts differ, and snapgrid's grid *host* is
+**`useGridContainer`**, not v2's `useGridLayout`. So there's **no hook-for-hook swap**: if you built
+directly on v2's hooks, migrate that grid to snapgrid's [headless usage](/docs/guides/headless)
+outright (provider → `useGridContainer` → `useGridItem`; a dragged tile floats itself, so there's no
+overlay to wire). If you only used the `<GridLayout>` / `<ResponsiveGridLayout>` components, you can
+skip this.
+
+The [behaviours that differ](#4-the-three-behaviours-that-differ) below — compaction runs on drag (not
+on every render) and the grid is always controlled — apply to v2 as well.
 
 ## 1. Swap the imports
 

@@ -14,11 +14,11 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
-import { type KeyboardEvent as ReactKeyboardEvent, useRef, useState } from "react";
+import { useState } from "react";
 import { HeroGrid } from "./demos";
 // Build-time generated (see scripts/measure-bundle.mjs + highlight-snippets.mjs).
 import { BUNDLE_SIZE } from "./generated/bundle-size";
-import { HERO_DROPIN_HTML, HERO_HEADLESS_HTML } from "./generated/hero-code";
+import { HERO_HEADLESS_HTML, RGL_DIFF_HTML } from "./generated/hero-code";
 
 const INSTALL = "pnpm add @snapgridjs/react @dnd-kit/react @dnd-kit/dom";
 
@@ -56,75 +56,40 @@ function InstallCommand() {
   );
 }
 
-const CODE_TABS = [
-  { key: "dropin", label: "Drop-in", html: HERO_DROPIN_HTML },
-  { key: "headless", label: "Headless", html: HERO_HEADLESS_HTML },
-] as const;
-
-/** The "30-second example" card, toggling between the drop-in and headless APIs. */
+/** The "30-second example" card — the headless API (the turnkey layer lives in the RGL comparison). */
 function CodeExample() {
-  const [tab, setTab] = useState<(typeof CODE_TABS)[number]["key"]>("dropin");
-  const active = CODE_TABS.find((t) => t.key === tab) ?? CODE_TABS[0];
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  // WAI-ARIA tabs: arrow keys move between tabs (roving tabindex) and focus follows.
-  const onTabKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
-    const i = CODE_TABS.findIndex((t) => t.key === tab);
-    const next =
-      e.key === "ArrowRight"
-        ? (i + 1) % CODE_TABS.length
-        : e.key === "ArrowLeft"
-          ? (i - 1 + CODE_TABS.length) % CODE_TABS.length
-          : -1;
-    if (next < 0) return;
-    e.preventDefault();
-    const key = CODE_TABS[next].key;
-    setTab(key);
-    tabRefs.current[key]?.focus();
-  };
-
   return (
     <div className="dg-codecard">
       <div className="dg-codecard__bar">
         <span />
         <span />
         <span />
-        <div
-          className="dg-codetabs"
-          role="tablist"
-          aria-label="Example style"
-          onKeyDown={onTabKeyDown}
-        >
-          {CODE_TABS.map((t) => (
-            <button
-              type="button"
-              key={t.key}
-              id={`code-tab-${t.key}`}
-              role="tab"
-              aria-selected={tab === t.key}
-              aria-controls="code-tabpanel"
-              tabIndex={tab === t.key ? 0 : -1}
-              ref={(el) => {
-                tabRefs.current[t.key] = el;
-              }}
-              className="dg-codetab"
-              data-active={tab === t.key || undefined}
-              onClick={() => setTab(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <span className="dg-codecard__label">Headless</span>
       </div>
       <div
-        id="code-tabpanel"
-        role="tabpanel"
-        aria-labelledby={`code-tab-${active.key}`}
-        // biome-ignore lint/a11y/noNoninteractiveTabindex: a tabpanel must be focusable when its content (a code block) isn't
-        tabIndex={0}
         className="dg-codecard__code"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: build-time Shiki output, fully trusted
-        dangerouslySetInnerHTML={{ __html: active.html }}
+        dangerouslySetInnerHTML={{ __html: HERO_HEADLESS_HTML }}
+      />
+    </div>
+  );
+}
+
+/** RGL v2 → snapgrid as a unified diff — the component markup is near-identical (styling and any
+ * hook usage are the real migration work; see the migration guide). */
+function CompareCode() {
+  return (
+    <div className="dg-codecard dg-diffcard">
+      <div className="dg-codecard__bar">
+        <span />
+        <span />
+        <span />
+        <span className="dg-codecard__label">react-grid-layout v2 → snapgrid</span>
+      </div>
+      <div
+        className="dg-codecard__code"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: build-time Shiki output, fully trusted
+        dangerouslySetInnerHTML={{ __html: RGL_DIFF_HTML }}
       />
     </div>
   );
@@ -139,16 +104,16 @@ interface Feature {
 
 const FEATURES: Feature[] = [
   {
+    icon: Component,
+    href: "/docs/guides/headless",
+    title: "Headless-first, dnd-kit-native",
+    body: "Hooks you wire to your own markup, under your dnd-kit provider — tiles declare a group, like useSortable. <GridLayout> is the turnkey shell on top.",
+  },
+  {
     icon: SlidersHorizontal,
     href: "/docs/concepts",
     title: "Controlled & predictable",
     body: "You own the layout array. Every drag, resize, and cross-grid move comes back through onLayoutChange. No hidden internal state.",
-  },
-  {
-    icon: Component,
-    href: "/docs/guides/headless",
-    title: "Headless or drop-in",
-    body: "Use <GridLayout> for the common case, or compose SnapGridProvider + hooks and render your own markup. No imposed DOM or CSS.",
   },
   {
     icon: Boxes,
@@ -160,19 +125,19 @@ const FEATURES: Feature[] = [
     icon: ArrowLeftRight,
     href: "/docs/guides/cross-grid",
     title: "Cross-grid dragging",
-    body: "Wrap grids in a <SnapGridGroup> and drag tiles between them. The source loses the tile; the destination gains it.",
+    body: "Grids on one dnd-kit provider exchange tiles: the source loses the tile, the destination gains it — each commits its own layout.",
   },
   {
     icon: Layers,
     href: "/docs/guides/nesting",
     title: "Nested grids",
-    body: "Drop a grid inside a tile of another grid. Standalone providers keep each level isolated: drag the panel, or rearrange what's inside it.",
+    body: "Drop a grid inside a tile of another. Each is its own provider, so the levels stay isolated.",
   },
   {
     icon: MonitorSmartphone,
     href: "/docs/guides/responsive",
     title: "Responsive",
-    body: "Per-breakpoint layouts with <ResponsiveGridLayout>; missing breakpoints are generated from the nearest one.",
+    body: "Per-breakpoint layouts via the useResponsiveLayout hook, or the turnkey <ResponsiveGridLayout>.",
   },
   {
     icon: Scaling,
@@ -203,12 +168,12 @@ export function Home() {
       <section className="dg-hero">
         <div className="dg-home__lead">
           <div>
-            <p className="dg-hero__eyebrow">react-grid-layout alternative · dnd-kit powered</p>
+            <p className="dg-hero__eyebrow">a dnd-kit grid · react-grid-layout alternative</p>
             <h1 className="dg-hero__title">Grids that drag, resize, and repack.</h1>
             <p className="dg-hero__sub">
-              A controlled, headless-first grid layout for React: draggable and resizable tiles,
-              pluggable packing, responsive breakpoints, and dragging tiles <em>between</em> grids.
-              Built on dnd-kit.
+              A headless-first grid layout built on <strong>dnd-kit</strong> — draggable, resizable,
+              repacking tiles that compose with the sortables and droppables you already have. A
+              component layer makes react-grid-layout users feel right at home too.
             </p>
             <div className="dg-hero__cta">
               <Link className="dg-cta dg-cta--primary" href="/docs/getting-started">
@@ -239,35 +204,6 @@ export function Home() {
         ))}
       </div>
 
-      <section className="dg-compare">
-        <h2>Coming from react-grid-layout?</h2>
-        <p>
-          snapgrid keeps everything you rely on in RGL — the same controlled layout model,{" "}
-          <code>onLayoutChange</code>, responsive breakpoints, resize limits, and static tiles — and
-          adds cross-grid dragging, nested grids, a headless mode, and keyboard-accessible dragging.
-          The real difference is the engine underneath: snapgrid runs on <strong>dnd-kit</strong>,
-          the de-facto standard for drag-and-drop in React.
-        </p>
-        <ul className="dg-compare__list">
-          <li>
-            <strong>Already using dnd-kit?</strong> snapgrid slots into your existing interaction
-            layer, and adds only its own ~{BUNDLE_SIZE.snapgrid}&nbsp;kB on top of the dnd-kit you
-            already ship.
-          </li>
-          <li>
-            <strong>Accessibility RGL lacks.</strong> dnd-kit gives every tile keyboard dragging and
-            screen-reader support out of the box; react-draggable / react-resizable don't.
-          </li>
-          <li>
-            <strong>Modern, maintained input.</strong> One pointer · touch · keyboard sensor model
-            instead of RGL's older handlers.
-          </li>
-        </ul>
-        <Link className="dg-cta dg-cta--ghost" href="/docs/guides/migrating-from-rgl">
-          Full comparison &amp; migration guide →
-        </Link>
-      </section>
-
       <h2>A 30-second example</h2>
       <CodeExample />
 
@@ -279,6 +215,41 @@ export function Home() {
           API reference
         </Link>
       </div>
+
+      <section className="dg-compare">
+        <h2>Coming from react-grid-layout?</h2>
+        <p>
+          The{" "}
+          <strong>
+            <code>{"<GridLayout>"}</code> component layer
+          </strong>{" "}
+          mirrors react-grid-layout v2&apos;s model — same controlled <code>layout</code>,{" "}
+          <code>onLayoutChange</code>, and config objects — so RGL users adopt it quickly, then drop
+          any grid down to the headless hooks at their own pace. Same engine, no second migration.
+        </p>
+        <CompareCode />
+        <p className="dg-compare__grouplabel">Migration path</p>
+        <ul className="dg-compare__list">
+          <li>
+            <strong>Not a literal drop-in.</strong> Same API shape, but you restyle — snapgrid ships
+            no CSS and uses its own class names.
+          </li>
+          <li>
+            <strong>v2 hooks aren&apos;t mirrored.</strong> <code>useGridLayout</code> /{" "}
+            <code>useResponsiveLayout</code> code moves to the{" "}
+            <Link href="/docs/guides/headless">headless API</Link>.
+          </li>
+          <li>
+            <strong>On v1?</strong> No one-import shim — its <code>WidthProvider</code> / flat-prop
+            API is dated enough that it&apos;s worth modernising. The{" "}
+            <Link href="/docs/guides/migrating-from-rgl">migration guide</Link> maps it prop by
+            prop.
+          </li>
+        </ul>
+        <Link className="dg-cta dg-cta--ghost" href="/docs/guides/migrating-from-rgl">
+          Full comparison &amp; migration guide →
+        </Link>
+      </section>
     </div>
   );
 }

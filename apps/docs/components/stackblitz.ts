@@ -48,8 +48,9 @@ body {
   color: var(--ink);
 }
 
-/* Grid tiles */
+/* Grid tiles (position:relative so resize handles anchor to the tile edges) */
 .tile {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -63,7 +64,6 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   font-size: 0.9rem;
   user-select: none;
-  overflow: hidden;
 }
 .tile__id { font-weight: 600; }
 .tile__dim { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -85,7 +85,6 @@ body {
   user-select: none;
 }
 .cell--accent { background: var(--accent); border-color: var(--accent); color: #fff; }
-.snapgrid-overlay .cell { border-color: var(--accent); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22); }
 /* Static "button" tiles */
 .btn {
   height: 100%;
@@ -164,22 +163,44 @@ body {
 .subgrid { flex: 1; padding: 8px; }
 .subgrid__label { font-size: 0.75rem; color: var(--muted); }
 
-/* snapgrid ships no CSS — give the placeholder + SE resize handle a visible look */
+/* snapgrid ships no CSS — give the placeholder + resize handle a visible look.
+   The example renders a <span className="resize-handle">; this places + styles it. */
 .snapgrid-placeholder,
 .placeholder {
   background: rgba(217, 119, 87, 0.14) !important;
   border: 1px dashed rgba(217, 119, 87, 0.5) !important;
   border-radius: 10px !important;
 }
+.resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+/* The headless example renders a <span className="resize-handle">; <GridLayout>
+   renders its own SE grip (.snapgrid-resize-handle--se) inside .snapgrid-item, with
+   no visible glyph. Draw the same corner bracket for both, lit on hover of the tile.
+   (The component-layer handle is a sibling of the content under .snapgrid-item, so
+   its hover rule keys off .snapgrid-item, not .tile.) */
+.resize-handle::after,
 .snapgrid-resize-handle--se::after {
   content: "";
   position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid #b8b1a4;
-  border-bottom: 2px solid #b8b1a4;
+  right: 4px;
+  bottom: 4px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  border-bottom-right-radius: 2px;
+  transition: border-color 0.12s ease;
+}
+.tile:hover .resize-handle::after,
+.snapgrid-item:hover .snapgrid-resize-handle--se::after {
+  border-color: var(--accent);
 }
 `;
 
