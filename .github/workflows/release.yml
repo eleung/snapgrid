@@ -17,6 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Use a PAT (not the default GITHUB_TOKEN) so the commits the changesets
+          # action pushes to the "Version Packages" PR trigger CI. GitHub suppresses
+          # workflow runs for pushes/PRs made with GITHUB_TOKEN, which is why that
+          # PR's required `validate` check never ran on its own. See RELEASING.md.
+          token: ${{ secrets.CHANGESETS_TOKEN }}
 
       - uses: pnpm/action-setup@v4
 
@@ -51,17 +57,20 @@ jobs:
       # When that PR merges (versions already bumped), it runs `pnpm release`,
       # which builds and publishes the changed packages to npm.
       #
-      # Auth is npm trusted publishing (OIDC): pnpm exchanges the job's id-token
-      # (permissions.id-token: write) for a short-lived credential, so there is
-      # NO NPM_TOKEN. Each @snapgridjs/* package has a trusted publisher set for
-      # this repo + workflow (with "disallow tokens" publishing access). See
-      # RELEASING.md.
+      # Auth is npm trusted publishing (OIDC): npm (≥11.5.1, installed above)
+      # exchanges the job's id-token (permissions.id-token: write) for a
+      # short-lived credential, so there is NO NPM_TOKEN. Each @snapgridjs/*
+      # package has a trusted publisher set for this repo + workflow (with
+      # "disallow tokens" publishing access). See RELEASING.md.
+      #
+      # GITHUB_TOKEN here is the PAT (CHANGESETS_TOKEN) so the Version Packages
+      # PR is opened by the PAT identity and its CI runs — see the checkout note.
       - name: Create Release PR or publish
         uses: changesets/action@v1
         with:
           publish: pnpm release
           version: pnpm version-packages
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CHANGESETS_TOKEN }}
           # No NPM_TOKEN — npm auth is via OIDC trusted publishing (see above).
           NPM_CONFIG_PROVENANCE: "true"

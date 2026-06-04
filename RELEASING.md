@@ -29,6 +29,19 @@ snapgrid publishes three packages from this monorepo, versioned with
 
 That's the whole flow for a version bump of existing packages.
 
+### CI on the Version Packages PR (the `CHANGESETS_TOKEN` PAT)
+
+The changesets action authenticates with a **Personal Access Token** stored as the repo secret
+`CHANGESETS_TOKEN`, not the default `GITHUB_TOKEN`. This is deliberate: GitHub suppresses workflow runs
+for any push or PR made with `GITHUB_TOKEN`, so a Version Packages PR opened that way would never run its
+required `validate` check and could not be merged without a manual nudge. The PAT identity makes that
+PR's CI run normally.
+
+The token is a fine-grained PAT scoped to this repo with **Contents: read/write** and **Pull requests:
+read/write**. It expires — when it does, the release job fails to open/update the PR; regenerate it and
+update the secret (`gh secret set CHANGESETS_TOKEN`). npm publishing itself does **not** use this token
+(that's OIDC, below), so a missing/expired PAT blocks the version PR but never the publish.
+
 ### Brand cards (OG + social)
 
 The "Version Packages" PR also re-renders the social cards so their version pill tracks the bump:
@@ -42,8 +55,8 @@ is a web-UI upload with no API, so on a **minor/major** bump re-upload the fresh
 
 ## How auth works — trusted publishing (OIDC)
 
-The Release workflow publishes with **no token.** `pnpm publish` exchanges the workflow's GitHub
-`id-token` for a short-lived registry credential
+The Release workflow publishes with **no npm token.** `npm` (≥ 11.5.1, installed by the workflow)
+exchanges the workflow's GitHub `id-token` for a short-lived registry credential
 ([trusted publishing](https://docs.npmjs.com/trusted-publishers/)), and provenance ("Built and
 signed on GitHub Actions") is attached automatically.
 
