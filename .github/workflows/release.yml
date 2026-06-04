@@ -18,6 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Full history so the "Promote docs to production" step can fast-forward
+          # `release` to the publish commit — a shallow clone can't prove `release`
+          # is an ancestor and the push is rejected as non-fast-forward.
+          fetch-depth: 0
           # Use a PAT (not the default GITHUB_TOKEN) so the commits the changesets
           # action pushes to the "Version Packages" PR trigger CI. GitHub suppresses
           # workflow runs for pushes/PRs made with GITHUB_TOKEN, which is why that
