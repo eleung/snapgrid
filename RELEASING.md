@@ -54,8 +54,14 @@ Each `@snapgridjs/*` package is configured on npmjs.com (package → **Settings*
 - **Publishing access** → _Require two-factor authentication and disallow tokens_.
 
 So the only ways to publish are this workflow (OIDC) or an interactive 2FA login from a maintainer's
-machine — there is no long-lived `NPM_TOKEN` anywhere. Requirements, already met: Node ≥ 22.14 and a
-pnpm with OIDC support (pinned here as `pnpm@10.30.3` via the root `packageManager` field).
+machine — there is no long-lived `NPM_TOKEN` anywhere.
+
+The catch: `changeset publish` runs the actual publish through **`npm`**, not pnpm, and npm only supports
+OIDC trusted publishing from **11.5.1+**. The Node 22 runner bundles npm 10.9.x, which ignores OIDC and
+publishes with no credential — npm then masks the unauthorized write as a confusing `E404 Not Found` on
+the registry `PUT`. So the workflow installs a current npm (`npm@11.16.0`) before the changesets step.
+(pnpm — pinned to `pnpm@10.30.3` via the root `packageManager` field — only runs installs and the build;
+it never does the publish.) Node ≥ 22.14 is also required.
 
 ## Manual release fallback
 
