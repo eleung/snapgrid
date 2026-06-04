@@ -105,7 +105,16 @@ This is what made the v0.1.0 launch a manual first publish. To add one:
    to _Require 2FA and disallow tokens_.
 3. From then on it releases through CI like the rest.
 
-## Docs deploy separately
+## Docs deploy — production tracks releases
 
-The documentation site deploys independently to **Cloudflare Pages** on every push to `main`
-(see [apps/docs/README.md](./apps/docs/README.md)). It is not part of the package release.
+The documentation site deploys to **Cloudflare Pages**, but its **production** build comes from the
+`release` branch — **not** `main`. The Release workflow fast-forwards `release` to the published commit
+only on an actual publish (the "Promote docs to production" step, gated on the `changesets`
+`published` output), so **snapgrid.dev always matches what's on npm**. A feature merged to `main` but
+not yet released shows up only on the `main` **preview** deployment, never the public site — which is
+what lets releases be batched without the docs running ahead of the package.
+
+To fix an urgent doc typo for an already-released feature without cutting a release, push the fix
+straight to `release` (it deploys to production) and also land it on `main`.
+
+See [apps/docs/README.md](./apps/docs/README.md) for the Cloudflare build settings.
