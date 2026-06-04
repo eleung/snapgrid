@@ -23,7 +23,7 @@
     "validate": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm size",
     "size": "size-limit",
     "changeset": "changeset",
-    "version-packages": "changeset version && pnpm --filter @snapgridjs/docs cards",
+    "version-packages": "changeset version && biome check --write packages/*/package.json && pnpm --filter @snapgridjs/docs cards",
     "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
