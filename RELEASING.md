@@ -114,7 +114,9 @@ only on an actual publish (the "Promote docs to production" step, gated on the `
 not yet released shows up only on the `main` **preview** deployment, never the public site — which is
 what lets releases be batched without the docs running ahead of the package.
 
-To fix an urgent doc typo for an already-released feature without cutting a release, push the fix
-straight to `release` (it deploys to production) and also land it on `main`.
+To get a docs change for an already-released feature onto the public site without cutting a release,
+land it on `main` as usual, then fast-forward `release` to that commit: `git push origin main:release`.
+(`release` must stay an ancestor of `main` — committing directly to it would diverge it and make the
+next release's promote step fail as a non-fast-forward.)
 
 See [apps/docs/README.md](./apps/docs/README.md) for the Cloudflare build settings.
