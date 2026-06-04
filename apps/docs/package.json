@@ -18,6 +18,7 @@
     "favicon": "node scripts/favicon.mjs",
     "og": "node scripts/og-image.mjs",
     "social": "node scripts/github-social.mjs",
+    "cards": "node scripts/og-image.mjs && node scripts/github-social.mjs",
     "assets": "node scripts/wordmark.mjs && node scripts/favicon.mjs && node scripts/og-image.mjs && node scripts/github-social.mjs",
     "check:og": "node scripts/check-og.mjs"
   },
