@@ -15,11 +15,13 @@ is no server runtime.
 
 ## Deployment — Cloudflare Pages
 
-The site deploys to **Cloudflare Pages** from `main`. Project settings:
+The site deploys to **Cloudflare Pages**. Production builds from the **`release`** branch (which only
+advances when packages are published — see [RELEASING.md](../../RELEASING.md)), so the public site
+tracks what's on npm rather than `main`. Project settings:
 
 | Setting                  | Value                              |
 | ------------------------ | ---------------------------------- |
-| Production branch        | `main`                             |
+| Production branch        | `release`                          |
 | Root directory           | _(repo root — leave empty)_        |
 | Build command            | `pnpm build`                       |
 | Build output directory   | `apps/docs/out`                    |
@@ -35,5 +37,6 @@ Notes:
   Cloudflare's corepack resolves the correct version automatically.
 - Served from the `snapgrid.dev` apex, so `basePath` is empty. To host under a
   subpath instead (e.g. a project site), set `DOCS_BASE_PATH=/subpath`.
-- Pushes to `main` deploy production; pull requests get automatic preview
-  deployments.
+- Production deploys come from `release` (advanced by the Release workflow on
+  publish). Pushes to `main` and pull requests get automatic **preview**
+  deployments — so unreleased docs are previewable but never on the public site.

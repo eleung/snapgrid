@@ -66,6 +66,7 @@ jobs:
       # GITHUB_TOKEN here is the PAT (CHANGESETS_TOKEN) so the Version Packages
       # PR is opened by the PAT identity and its CI runs — see the checkout note.
       - name: Create Release PR or publish
+        id: changesets
         uses: changesets/action@v1
         with:
           publish: pnpm release
@@ -74,3 +75,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CHANGESETS_TOKEN }}
           # No NPM_TOKEN — npm auth is via OIDC trusted publishing (see above).
           NPM_CONFIG_PROVENANCE: "true"
+
+      # On an actual publish, fast-forward the `release` branch to this commit.
+      # Cloudflare Pages builds the PRODUCTION docs from `release` (not `main`),
+      # so the public site (snapgrid.dev) only updates when packages are
+      # released — `main` pushes deploy to a preview URL instead. This keeps the
+      # docs in lockstep with what's on npm: a feature merged to `main` but not
+      # yet released stays on preview, never the public site. Uses the
+      # PAT-authed checkout above so the push triggers Cloudflare. See RELEASING.md.
+      - name: Promote docs to production
+        if: steps.changesets.outputs.published == 'true'
+        run: git push origin HEAD:release
