@@ -4,6 +4,37 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.2.0] - 2026-06-04
+
+The headless layer is rebuilt to be **dnd-kit–native**. A dragged tile now floats itself (dnd-kit's
+default feedback) instead of being mirrored by a separate overlay, and a grid composes into a
+`DragDropProvider` you supply rather than minting its own. This is a breaking change to the headless
+API only — the turnkey `<GridLayout>` / `<SnapGridGroup>` components still supply the provider for you
+and are unaffected.
+
+### Changed
+
+- **Breaking** — `@snapgridjs/react`: `SnapGridProvider` is removed. Render inside a dnd-kit
+  `DragDropProvider` and host the grid with the new `useGridContainer(options)` hook (returns
+  `{ containerProps, group, isDropTarget, controller }`); tiles resolve their grid by `group`.
+- `useGridItem(id, group)` is now a real dnd-kit `useSortable`, so tiles interoperate with the dnd-kit
+  sortable ecosystem.
+- Drop targets resolve through dnd-kit's collision system — one oracle drives both the move preview and
+  the drop, making cross-grid and external drops more robust.
+- `snapToGrid` is now implemented as a dnd-kit `Modifier` (still toggled via `dragConfig.snapToGrid`).
+
+### Added
+
+- `useGridItem` exposes an optional `handleRef` for wiring a drag handle.
+- Live drag state lives in an observable `GridController`, so a drag re-renders only the tiles whose
+  cell actually changed.
+- dnd-kit's raw `DragOverlay` is re-exported as an escape hatch for a custom floating preview.
+
+### Removed
+
+- **Breaking** — `@snapgridjs/react`: `GridDragOverlay`, `useGridDragOverlay`, and `dragOverlayStyle`.
+  A dragged tile floats itself, so there is no overlay to render.
+
 ## [0.1.0] - 2026-05-31
 
 Initial public release.
@@ -20,4 +51,5 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
-[0.1.0]: https://github.com/eleung/snapgrid/releases/tag/v0.1.0
+[0.2.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.2.0
+[0.1.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.1.0

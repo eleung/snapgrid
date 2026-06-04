@@ -38,9 +38,10 @@ required `validate` check and could not be merged without a manual nudge. The PA
 PR's CI run normally.
 
 The token is a fine-grained PAT scoped to this repo with **Contents: read/write** and **Pull requests:
-read/write**. It expires — when it does, the release job fails to open/update the PR; regenerate it and
-update the secret (`gh secret set CHANGESETS_TOKEN`). npm publishing itself does **not** use this token
-(that's OIDC, below), so a missing/expired PAT blocks the version PR but never the publish.
+read/write**. It expires — the current one on **2026-09-02 (Wed, Sep 2 2026)**. When it lapses the
+release job fails to open/update the PR; regenerate it, run `gh secret set CHANGESETS_TOKEN`, and update
+that date here. npm publishing itself does **not** use this token (that's OIDC, below), so a
+missing/expired PAT blocks the version PR but never the publish.
 
 ### Brand cards (OG + social)
 
