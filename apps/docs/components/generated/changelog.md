@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.3.0] - 2026-06-04
+
+**Pinned tiles** — a `static` item can opt back into user interaction.
+
+### Added
+
+- `@snapgridjs/react`: a `static` item that also sets `isDraggable: true` stays anchored against
+  compaction (others flow around it) yet can still be dragged by the user — a "pinned" tile.
+  `isResizable: true` does the same for resizing. A plain `static` item stays fully locked as before.
+
+### Changed
+
+- `@snapgridjs/extras`: the `gravity` / `masonry` / `shelf` packers now honor `static` placement
+  (statics are reserved in place and movable items pack around them), matching the built-in
+  compactors.
+
 ## [0.2.0] - 2026-06-04
 
 The headless layer is rebuilt to be **dnd-kit–native**. A dragged tile now floats itself (dnd-kit's
@@ -51,5 +67,6 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.3.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.3.0
 [0.2.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.2.0
 [0.1.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.1.0
