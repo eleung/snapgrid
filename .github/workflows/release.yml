@@ -26,6 +26,15 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
+      # `changeset publish` does the actual publish by shelling out to `npm`
+      # (NOT pnpm), and npm only gained OIDC trusted-publishing support in
+      # 11.5.1. The npm bundled with Node 22 is 10.9.x, which silently ignores
+      # OIDC, PUTs to the registry with no credential, and npm masks the
+      # unauthorized write to an existing scoped package as `E404 Not Found`.
+      # Pin a current npm so trusted publishing actually happens.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@11.16.0
+
       - run: pnpm install --frozen-lockfile
 
       # `pnpm version-packages` re-renders the OG + GitHub social cards so their
