@@ -1,6 +1,6 @@
 {
   "name": "@snapgridjs/react",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "React grid-layout components built on dnd-kit — a react-grid-layout v2 alternative.",
   "license": "MIT",
   "author": "Edmond Leung",
