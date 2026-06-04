@@ -29,6 +29,17 @@ snapgrid publishes three packages from this monorepo, versioned with
 
 That's the whole flow for a version bump of existing packages.
 
+### Brand cards (OG + social)
+
+The "Version Packages" PR also re-renders the social cards so their version pill tracks the bump:
+`version-packages` runs `pnpm --filter @snapgridjs/docs cards`, regenerating `apps/docs/public/og.png`
+(+ `og.version`, which the `check:og` CI guard enforces) and `media/github-social.png`. The OG card
+is site-served, so merging the PR redeploys the docs and the **live** card updates automatically.
+
+`media/github-social.png` is the one residual manual step: GitHub's repo **Settings → Social preview**
+is a web-UI upload with no API, so on a **minor/major** bump re-upload the freshly-committed file there.
+(Patch bumps keep the same `vX.Y` pill — no re-render or re-upload needed.)
+
 ## How auth works — trusted publishing (OIDC)
 
 The Release workflow publishes with **no token.** `pnpm publish` exchanges the workflow's GitHub

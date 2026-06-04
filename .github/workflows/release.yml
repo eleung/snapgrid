@@ -28,6 +28,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # `pnpm version-packages` re-renders the OG + GitHub social cards so their
+      # version pill tracks the bump (and `check:og` passes on the Version Packages
+      # PR). That render needs headless Chromium + ffmpeg. Only the version step
+      # uses these; the publish step ignores them. A transient render flake fails
+      # the job — just re-run it.
+      - name: Install card-render deps (Chromium + ffmpeg)
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pnpm --filter @snapgridjs/docs exec playwright install --with-deps chromium
+
       # When changesets are present this opens/updates a "Version Packages" PR.
       # When that PR merges (versions already bumped), it runs `pnpm release`,
       # which builds and publishes the changed packages to npm.
