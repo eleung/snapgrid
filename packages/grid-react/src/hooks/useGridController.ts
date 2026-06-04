@@ -39,6 +39,13 @@ const DEFAULT_HANDLES = ["se"] as const;
 
 type Point = { x: number; y: number };
 
+// Per-item drag/resize gate. Mirrors RGL's engine rule: a `static` item is locked
+// unless its flag (`isDraggable`/`isResizable`) is explicitly `true` ("pinned");
+// a non-static item just follows the flag (default `true`).
+function itemGateOpen(flag: boolean | undefined, isStatic: boolean | undefined): boolean {
+  return isStatic ? flag === true : (flag ?? true);
+}
+
 /** Options the grid host ({@link useGridContainer}) feeds the controller. */
 export interface UseGridControllerOptions {
   /** Stable id for the grid's droppable surface (auto-generated if omitted). */
@@ -489,7 +496,7 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
     (id: string) => {
       const it = committedById.get(id);
       if (!it) return false;
-      return gridDraggable && dragEnabled && (it.isDraggable ?? true) && !it.static;
+      return gridDraggable && dragEnabled && itemGateOpen(it.isDraggable, it.static);
     },
     [committedById, gridDraggable, dragEnabled],
   );
@@ -500,7 +507,7 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
     (id: string) => {
       const it = committedById.get(id);
       if (!it) return false;
-      return gridResizable && resizeEnabled && (it.isResizable ?? true) && !it.static;
+      return gridResizable && resizeEnabled && itemGateOpen(it.isResizable, it.static);
     },
     [committedById, gridResizable, resizeEnabled],
   );
