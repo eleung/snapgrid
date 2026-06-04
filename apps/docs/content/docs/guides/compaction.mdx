@@ -34,8 +34,9 @@ These honor `static` items and per-item collision rules.
 
 ## Extra packers
 
-`@snapgridjs/extras` adds variable-height packing styles. They repack **all** items by reading order,
-so the dropped cell influences order while the algorithm decides final positions.
+`@snapgridjs/extras` adds variable-height packing styles. They repack the **movable** items by reading
+order — the dropped cell influences order while the algorithm decides final positions — and reserve
+any `static` tiles in place, packing the rest around them.
 
 ```tsx
 import { masonryCompactor, gravityCompactor, shelfCompactor } from "@snapgridjs/extras";
@@ -49,9 +50,9 @@ import { masonryCompactor, gravityCompactor, shelfCompactor } from "@snapgridjs/
 | `wrapCompactor` | react-grid-layout's wrap packer — fills a row, then wraps to the next. |
 
 <Callout type="warning">
-  The extra packers repack everything and do **not** preserve `static` placement or enforce
-  `maxRows` (the `Compactor.compact(layout, cols)` contract only receives the column count). Use a
-  built-in compactor when you need `static` tiles or a hard row cap.
+  The extra packers honor `static` tiles (reserved in place, others pack around them) but do **not**
+  enforce `maxRows` — the `Compactor.compact(layout, cols)` contract only receives the column count.
+  Use a built-in compactor when you need a hard row cap.
 </Callout>
 
 ## Fast compactors

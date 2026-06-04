@@ -72,6 +72,40 @@ test("drag handle: the grip drags, the button stays clickable", async ({ page })
   expect(Math.abs((await tile.boundingBox())!.x - before!.x)).toBeGreaterThan(20);
 });
 
+test("static items: locked can't drag, pinned drags by the grip", async ({ page }) => {
+  const demo = page.locator(".dg-demo", { has: page.locator(".dg-anchor") });
+  const tile = demo.locator(".dg-cell", { has: page.locator(".dg-anchor") }).first();
+  const grip = tile.locator(".dg-anchor__grip");
+  const toggle = tile.locator(".dg-anchor__toggle");
+  const before = await tile.boundingBox();
+
+  // LOCKED (default): dragging the grip does nothing — the handle is disabled.
+  const gb0 = await grip.boundingBox();
+  await page.mouse.move(gb0!.x + gb0!.width / 2, gb0!.y + gb0!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(gb0!.x + 220, gb0!.y, { steps: 12 });
+  await page.waitForTimeout(120);
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  expect(Math.abs((await tile.boundingBox())!.x - before!.x)).toBeLessThan(3);
+
+  // Toggle to PINNED. The toggle is a clean sibling of the (disabled) handle, so
+  // it's clickable even while locked; the click itself must not move the tile.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  expect(Math.abs((await tile.boundingBox())!.x - before!.x)).toBeLessThan(3);
+
+  // PINNED: dragging the grip DOES move the anchor.
+  const gb = await grip.boundingBox();
+  await page.mouse.move(gb!.x + gb!.width / 2, gb!.y + gb!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(gb!.x + 240, gb!.y, { steps: 14 });
+  await page.waitForTimeout(120);
+  await page.mouse.up();
+  await page.waitForTimeout(350);
+  expect(Math.abs((await tile.boundingBox())!.x - before!.x)).toBeGreaterThan(20);
+});
+
 test("resize: dragging the SE handle grows the tile", async ({ page }) => {
   // The "Resize constraints" demo: the unconstrained "free" tile sits at the
   // right edge (can't widen), so drag the SE handle DOWN and assert it grows

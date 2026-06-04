@@ -72,7 +72,7 @@ also exported if you want to call them directly.
 | `fastVerticalOverlapCompactor` / `fastHorizontalOverlapCompactor` | Fast variants that allow overlap. |
 
 <Callout type="warning">
-  The original packers (masonry/gravity/shelf) repack all items and do not preserve `static` or
-  enforce `maxRows`. Use a built-in compactor when you need either. See
+  The original packers (masonry/gravity/shelf) honor `static` tiles but do not enforce `maxRows`. Use
+  a built-in compactor when you need a hard row cap. See
   [Compaction](/docs/guides/compaction#extra-packers).
 </Callout>

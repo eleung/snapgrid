@@ -14,11 +14,14 @@ export function StaticItemExample() {
 
 function Board() {
   const { width, containerRef } = useContainerWidth();
-  // `static: true` pins a tile — it never moves, and others flow around it.
   const [layout, setLayout] = useState<Layout>([
-    { i: "a", x: 0, y: 0, w: 4, h: 2 },
-    { i: "pinned", x: 4, y: 0, w: 4, h: 2, static: true },
-    { i: "b", x: 8, y: 0, w: 4, h: 2 },
+    { i: "a", x: 0, y: 0, w: 3, h: 2 },
+    // `static: true` anchors a tile — others flow around it.
+    { i: "locked", x: 3, y: 0, w: 3, h: 2, static: true },
+    // Add `isDraggable: true` to stay anchored against reflow but let the user
+    // still drag it ("pinned").
+    { i: "pinned", x: 6, y: 0, w: 3, h: 2, static: true, isDraggable: true },
+    { i: "b", x: 9, y: 0, w: 3, h: 2 },
   ]);
   const { containerProps, group } = useGridContainer({
     layout,

@@ -81,7 +81,7 @@ const layout = [
 | `minW` / `maxW` | Min / max width in columns. `maxW` defaults to the column count. |
 | `minH` / `maxH` | Min / max height in rows. `maxH` defaults to unbounded. |
 | `resizeHandles` | Per-item handle set, overriding `resizeConfig.handles`. |
-| `isResizable` | Per-item on/off, overriding the grid default. `static` items never resize. |
+| `isResizable` | Per-item on/off, overriding the grid default. `static` items don't resize unless they set `isResizable: true`. |
 
 <Callout type="info">
   When the active compactor has `preventCollision` set, a resize that would overlap another tile is

@@ -20,7 +20,7 @@ import {
   useResponsiveLayout,
   verticalCompactor,
 } from "@snapgridjs/react";
-import { Heart } from "lucide-react";
+import { GripVertical, Heart, Lock, Pin } from "lucide-react";
 import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
@@ -79,6 +79,9 @@ function HeadlessGrid(props: {
   onLayoutChange: (next: Layout) => void;
   options?: GridOpts;
   renderContent?: (item: LayoutItem) => ReactNode;
+  /** Render a custom positioned tile for an item (must carry a `key`), e.g. one
+   *  with a drag handle; return null to fall back to the default GridTile. */
+  renderTile?: (item: LayoutItem, group: string) => ReactNode;
   /** Render a bottom-right resize handle on each (resizable) tile. */
   resizable?: boolean;
 }) {
@@ -97,6 +100,7 @@ function HeadlessGridHost({
   onLayoutChange,
   options,
   renderContent = (item) => tileContent(item),
+  renderTile,
   resizable,
 }: {
   layout: Layout;
@@ -104,6 +108,7 @@ function HeadlessGridHost({
   onLayoutChange: (next: Layout) => void;
   options?: GridOpts;
   renderContent?: (item: LayoutItem) => ReactNode;
+  renderTile?: (item: LayoutItem, group: string) => ReactNode;
   resizable?: boolean;
 }) {
   const { containerProps, group } = useGridContainer({
@@ -115,11 +120,15 @@ function HeadlessGridHost({
   const placeholder = useGridPlaceholder(group);
   return (
     <div {...containerProps} className="dg-grid">
-      {layout.map((item) => (
-        <GridTile key={item.i} id={item.i} group={group} resizable={resizable}>
-          {renderContent(item)}
-        </GridTile>
-      ))}
+      {layout.map((item) => {
+        const custom = renderTile?.(item, group);
+        if (custom != null) return custom; // caller supplies the key
+        return (
+          <GridTile key={item.i} id={item.i} group={group} resizable={resizable}>
+            {renderContent(item)}
+          </GridTile>
+        );
+      })}
       <Placeholder placeholder={placeholder} />
     </div>
   );
@@ -400,31 +409,101 @@ function DragHandleTile({
 }
 
 /* ── Static item ────────────────────────────────────────────────────────── */
+// The "anchor" tile is static; the demo toggles its `isDraggable` to contrast a
+// LOCKED tile with a PINNED one (anchored against reflow, but still draggable).
 const STATIC: Layout = [
   { i: "a", x: 0, y: 0, w: 3, h: 2 },
-  { i: "pinned", x: 3, y: 0, w: 3, h: 2, static: true },
-  { i: "b", x: 6, y: 0, w: 3, h: 2 },
+  { i: "anchor", x: 3, y: 0, w: 4, h: 2, static: true },
+  { i: "b", x: 7, y: 0, w: 2, h: 2 },
   { i: "c", x: 9, y: 0, w: 3, h: 2 },
 ];
 
 export function StaticItemDemo() {
   const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [layout, setLayout] = useState<Layout>(STATIC);
+  const [pinned, setPinned] = useState(false);
+  const view = layout.map((it) => (it.i === "anchor" ? { ...it, isDraggable: pinned } : it));
   return (
     <DemoFrame
       title="Static items"
-      hint="the hatched tile is pinned — others flow around it"
+      hint={
+        pinned
+          ? "PINNED: drag the anchor by its grip — others still flow around it"
+          : "LOCKED: the anchor can't be dragged — others flow around it"
+      }
       code={EXAMPLE_CODE.static}
     >
       <div ref={containerRef}>
         <HeadlessGrid
-          layout={layout}
+          layout={view}
           width={width}
           onLayoutChange={setLayout}
           options={{ gridConfig: GRID }}
+          renderTile={(item, group) =>
+            item.i === "anchor" ? (
+              <AnchorTile
+                key={item.i}
+                id={item.i}
+                group={group}
+                pinned={pinned}
+                onTogglePin={() => setPinned((p) => !p)}
+              />
+            ) : null
+          }
         />
       </div>
     </DemoFrame>
+  );
+}
+
+// The lock ⟷ pin toggle tile: static (others flow around it); PINNED adds
+// `isDraggable` so it can be dragged by the grip.
+function AnchorTile({
+  id,
+  group,
+  pinned,
+  onTogglePin,
+}: {
+  id: string;
+  group: string;
+  pinned: boolean;
+  onTogglePin: () => void;
+}) {
+  const { ref, handleRef, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="dg-cell">
+      <div className={`dg-tile dg-tile--static dg-anchor${pinned ? " dg-anchor--pinned" : ""}`}>
+        <div className="dg-anchor__head">
+          {/* The grip is ALWAYS the drag handle (handleRef) so dnd-kit puts its
+              role + aria-disabled on the grip, not the cell — keeping the toggle
+              below a clean, clickable sibling (not nested in a disabled button-role). */}
+          <span
+            ref={handleRef}
+            className="dg-anchor__grip"
+            title={pinned ? "Drag to move" : undefined}
+          >
+            <GripVertical size={14} strokeWidth={1.75} aria-hidden="true" />
+          </span>
+          <span className="dg-tile__label">{pinned ? "PINNED" : "LOCKED"}</span>
+          <button
+            type="button"
+            className="dg-anchor__toggle"
+            aria-pressed={pinned}
+            title={pinned ? "Pinned (draggable) — click to lock" : "Locked — click to pin"}
+            onClick={onTogglePin}
+          >
+            {pinned ? (
+              <Pin size={15} strokeWidth={1.75} aria-hidden="true" />
+            ) : (
+              <Lock size={15} strokeWidth={1.75} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+        <span className="dg-tile__meta">
+          {pinned ? "anchored · draggable" : "anchored · locked"}
+        </span>
+      </div>
+    </div>
   );
 }
 

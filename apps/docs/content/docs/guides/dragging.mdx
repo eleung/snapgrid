@@ -102,7 +102,8 @@ pointer dragging, a packed axis can pull the tile back (e.g. moving down under v
 ## Per-item control
 
 - `isDraggable: false` on a `LayoutItem` disables dragging for that item only.
-- `static: true` disables both dragging and resizing, and other items flow around it. See
+- `static: true` anchors an item — others flow around it, and by default it can't be dragged or
+  resized (opt back in per item with `isDraggable` / `isResizable: true` for a "pinned" tile). See
   [Static items](/docs/guides/static-items).
 - The grid-level `isDraggable` option overrides everything when set to `false`.
 

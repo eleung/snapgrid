@@ -86,3 +86,40 @@ describe("shelfCompact (rows)", () => {
     expect(out.find((it) => it.i === "c")).toMatchObject({ x: 3, y: 1 });
   });
 });
+
+describe("static parity (pinned items stay put)", () => {
+  // A static item sits mid-grid; movables must pack around it, not over it.
+  const withStatic: Layout = [
+    { i: "s", x: 3, y: 0, w: 2, h: 2, static: true },
+    { i: "a", x: 0, y: 5, w: 2, h: 2 },
+    { i: "b", x: 0, y: 8, w: 3, h: 1 },
+  ];
+
+  it.each([
+    ["gravity", gravityCompact],
+    ["masonry", masonryCompact],
+    ["shelf", shelfCompact],
+  ])("%s keeps a static item exactly in place and packs others around it", (_name, compact) => {
+    const out = compact(withStatic, 6);
+    expect(out).toHaveLength(3);
+    expect(noOverlaps(out)).toBe(true);
+    expect(out.find((it) => it.i === "s")).toMatchObject({ x: 3, y: 0, w: 2, h: 2, static: true });
+  });
+
+  it.each([
+    ["gravity", gravityCompact],
+    ["masonry", masonryCompact],
+    ["shelf", shelfCompact],
+  ])("%s displaces a movable that would land on a static at the origin", (_name, compact) => {
+    const layout: Layout = [
+      { i: "s", x: 0, y: 0, w: 2, h: 2, static: true },
+      { i: "a", x: 0, y: 5, w: 2, h: 1 },
+    ];
+    const out = compact(layout, 6);
+    expect(noOverlaps(out)).toBe(true);
+    expect(out.find((it) => it.i === "s")).toMatchObject({ x: 0, y: 0 });
+    // "a" cannot sit on the static's origin cells (cols 0-1, row 0).
+    const a = out.find((it) => it.i === "a") as LayoutItem;
+    expect(a.y === 0 && a.x < 2).toBe(false);
+  });
+});
