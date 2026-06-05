@@ -13,8 +13,9 @@ snapgrid is a small monorepo. Most apps install only `@snapgridjs/react`.
 
 | Package | What it is | When you need it |
 | --- | --- | --- |
-| `@snapgridjs/react` | React components + hooks. Pulls in `@snapgridjs/core`. | **Always** — the main entry point. |
-| `@snapgridjs/core` | Framework-agnostic engine (move/resize/compaction, geometry). | Comes in automatically with `@snapgridjs/react`. Depend on it directly only for a custom, non-React integration. |
+| `@snapgridjs/react` | React components + hooks. Pulls in `@snapgridjs/dnd` + `@snapgridjs/core`. | **Always** — the main entry point. |
+| `@snapgridjs/core` | Framework-agnostic layout math (move/resize/compaction, geometry, drag-session). | Comes in automatically. Depend on it directly only to drive layout without dnd-kit or React. |
+| `@snapgridjs/dnd` | Framework-agnostic dnd-kit engine (the drag/resize/cross-grid brain). Pulls in `@snapgridjs/core`. | Comes in automatically. Depend on it directly only to build a binding for another framework. |
 | `@snapgridjs/extras` | Optional packers: `masonry`, `gravity`, `shelf`, `wrap`, and the fast `O(n log n)` compactors. | Only if you use those packing styles. |
 
 ## Install

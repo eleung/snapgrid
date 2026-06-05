@@ -32,8 +32,9 @@ pnpm dev          # docs site + live examples at http://localhost:3000
 
 ```
 packages/
-  grid-core    @snapgridjs/core    engine: geometry, move/resize, compaction, session
-  grid-react   @snapgridjs/react   React components + hooks
+  grid-core    @snapgridjs/core    layout math: geometry, move/resize, compaction, drag-session
+  grid-dnd     @snapgridjs/dnd     framework-agnostic dnd-kit engine + observable render bridge
+  grid-react   @snapgridjs/react   React components + hooks (a binding over grid-dnd)
   grid-extras  @snapgridjs/extras  extra packers (masonry, gravity, shelf)
 apps/
   docs         documentation site (Next.js + Nextra), home of the live examples

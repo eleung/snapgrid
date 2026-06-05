@@ -1,6 +1,6 @@
 ---
 title: API Overview
-description: Everything exported from @snapgridjs/react, /core, and /extras at a glance.
+description: Everything exported from @snapgridjs/react, /core, /dnd, and /extras at a glance.
 ---
 
 # API Overview
@@ -58,9 +58,16 @@ preview must differ from the tile — a clone, a ghost, or wholly custom markup.
 
 ## `@snapgridjs/core`
 
-The framework-agnostic engine: geometry, move/resize/insert/remove operations, and the drag
+The framework-agnostic layout math: geometry, move/resize/insert/remove operations, and the drag
 session state machine. Most apps never import it directly. See
 [Core engine & extras](/docs/api/core).
+
+## `@snapgridjs/dnd`
+
+The framework-agnostic dnd-kit engine `@snapgridjs/react` is built on — one per-manager
+drag/resize/cross-grid engine (`attachEngine`), the observable `GridController` render bridge, and
+the collision/sensor/payload helpers a binding wires up. Comes in automatically with
+`@snapgridjs/react`; import it directly only to build a binding for another framework.
 
 ## `@snapgridjs/extras`
 

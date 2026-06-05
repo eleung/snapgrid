@@ -3,15 +3,16 @@
 Maintainer runbook for cutting a snapgrid release. Contributors don't need this —
 see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-snapgrid publishes three packages from this monorepo, versioned with
+snapgrid publishes four packages from this monorepo, versioned with
 [Changesets](https://github.com/changesets/changesets):
 
 - `@snapgridjs/core`
+- `@snapgridjs/dnd`
 - `@snapgridjs/react`
 - `@snapgridjs/extras`
 
-These three are kept in **lockstep** — they always share one version (changesets `fixed` in
-`.changeset/config.json`), dnd-kit-style. Any release bumps all three to the same number, even ones
+These four are kept in **lockstep** — they always share one version (changesets `fixed` in
+`.changeset/config.json`), dnd-kit-style. Any release bumps all four to the same number, even ones
 without changes, so "snapgrid X.Y.Z" means one matched set. (`@snapgridjs/docs` is private and never
 published — it's in the changesets `ignore` list.)
 
