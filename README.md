@@ -65,10 +65,10 @@ snapgrid keeps the parts of [react-grid-layout](https://github.com/react-grid-la
 
 <!-- Figures from apps/docs/components/generated/bundle-size.ts (run `pnpm --filter @snapgridjs/docs measure`). The docs site reads them live; this README mirror is updated by hand. -->
 
-snapgrid itself is ~7 kB brotli, but it's built on [dnd-kit](https://dndkit.com/) (~31 kB), so a fresh install is **~38 kB brotli**, roughly **2.5× react-grid-layout v2's ~15 kB** (minified, React excluded). That weight _is_ dnd-kit, and it's a deliberate trade:
+snapgrid itself is ~8 kB brotli, but it's built on [dnd-kit](https://dndkit.com/) (~30 kB), so a fresh install is **~38 kB brotli**, roughly **2.5× react-grid-layout v2's ~15 kB** (minified, React excluded). That weight _is_ dnd-kit, and it's a deliberate trade:
 
 - **dnd-kit is the de-facto standard for drag-and-drop in React.** Its accessible, multi-sensor engine is what gives snapgrid keyboard dragging, touch support, and cross-grid out of the box (things RGL's older react-draggable/react-resizable stack doesn't).
-- **If your app already uses dnd-kit, snapgrid adds only ~7 kB.**
+- **If your app already uses dnd-kit, snapgrid adds only ~8 kB.**
 - snapgrid tracks dnd-kit's **latest framework-agnostic line** (`@dnd-kit/react`), the line dnd-kit recommends over the legacy `@dnd-kit/core`.
 
 ## Install
