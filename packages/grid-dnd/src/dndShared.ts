@@ -5,7 +5,7 @@ import {
   PointerSensor,
   type Sensors,
 } from "@dnd-kit/dom";
-import type { DragConfig } from "../types.js";
+import type { DragConfig } from "./types.js";
 
 /** Marker attribute placed on resize-handle elements. */
 export const RESIZE_HANDLE_ATTR = "data-snapgrid-resize-handle";

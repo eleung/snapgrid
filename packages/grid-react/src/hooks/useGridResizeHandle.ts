@@ -1,7 +1,7 @@
 import { useDraggable } from "@dnd-kit/react";
 import type { ResizeHandleAxis } from "@snapgridjs/core";
+import { NO_FEEDBACK, RESIZE_HANDLE_ATTR } from "@snapgridjs/dnd";
 import { useSyncExternalStore } from "react";
-import { NO_FEEDBACK, RESIZE_HANDLE_ATTR } from "./dndShared.js";
 import { useResolveController } from "./useResolveController.js";
 
 export interface UseGridResizeHandleResult {
@@ -29,7 +29,7 @@ export function useGridResizeHandle(
     id: `${itemId}::resize::${handle}`,
     disabled: !controller.config?.isItemResizable(itemId),
     plugins: NO_FEEDBACK,
-    data: { snapGrid: { kind: "resize", itemId, handle } },
+    data: { snapGrid: { kind: "resize", itemId, handle, group } },
   });
   const { isResizing } = useSyncExternalStore(
     controller.subscribe,

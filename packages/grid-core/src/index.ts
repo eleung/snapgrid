@@ -30,6 +30,7 @@ export {
   type DragSession,
   dragResize,
   dragTo,
+  hideActive,
   nudge,
   type ResizeAnchor,
   stripMoved,

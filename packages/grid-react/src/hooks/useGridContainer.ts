@@ -1,9 +1,12 @@
 import { useDroppable } from "@dnd-kit/react";
 import { type GridConfig, bottom } from "@snapgridjs/core";
+import {
+  type GridController,
+  SNAPGRID_GRID_ATTR,
+  domElement,
+  gridCollisionDetector,
+} from "@snapgridjs/dnd";
 import { type CSSProperties, useCallback, useRef, useSyncExternalStore } from "react";
-import type { GridController } from "../controller/GridController.js";
-import { SNAPGRID_GRID_ATTR, gridCollisionDetector } from "../dnd/collision.js";
-import { domElement } from "../dnd/entity.js";
 import { type UseGridControllerOptions, useGridController } from "./useGridController.js";
 
 export interface GridContainerProps {
@@ -42,7 +45,7 @@ function containerHeight(rows: number, grid: GridConfig): number {
 export function useGridContainer(opts: UseGridControllerOptions): UseGridContainerResult {
   const controller = useGridController(opts);
   const config = controller.config;
-  const { width, autoSize, gridConfig, setContainerElement } = config!;
+  const { width, autoSize, gridConfig } = config!;
   const gridElRef = useRef<Element | null>(null);
 
   const { ref, isDropTarget } = useDroppable({
@@ -66,16 +69,16 @@ export function useGridContainer(opts: UseGridControllerOptions): UseGridContain
   });
 
   // Merge dnd-kit's droppable ref with reporting the element to the controller
-  // (used to map the pointer to a cell when receiving a tile from another grid),
-  // and mark the element so nested grids can measure their depth (gridDepth).
+  // (the engine reads it to map the pointer to a cell when receiving a tile from
+  // another grid), and mark the element so nested grids can measure their depth.
   const setRef = useCallback(
     (element: Element | null) => {
       ref(element);
-      setContainerElement(element);
+      controller.element = element;
       gridElRef.current = element;
       if (element) element.setAttribute(SNAPGRID_GRID_ATTR, "");
     },
-    [ref, setContainerElement],
+    [ref, controller],
   );
 
   // Subscribe to the rendered layout (drag preview while dragging, else

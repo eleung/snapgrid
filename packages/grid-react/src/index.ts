@@ -56,6 +56,8 @@ export {
   type UseContainerWidthOptions,
   type UseContainerWidthResult,
 } from "./hooks/useContainerWidth.js";
+// Drag/drop config + event types are re-exported from the engine package, which
+// owns them (kept on the public API so `@snapgridjs/react` stays self-sufficient).
 export type {
   DragConfig,
   DragSourceInfo,
@@ -63,7 +65,7 @@ export type {
   GridDropData,
   GridEventCallback,
   ResizeConfig,
-} from "./types.js";
+} from "@snapgridjs/dnd";
 
 // Re-export the layout-engine surface so consumers can build compactors,
 // inspect types, and use geometry helpers without a separate import.

@@ -1,8 +1,8 @@
 import { DragDropProvider } from "@dnd-kit/react";
 import type { Layout } from "@snapgridjs/core";
+import type { GridController } from "@snapgridjs/dnd";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { GridController } from "../../controller/GridController.js";
 import { useGridContainer } from "../useGridContainer.js";
 
 const gridConfig = {

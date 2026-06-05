@@ -5,9 +5,9 @@ import type {
   Layout,
   ResponsiveLayouts,
 } from "@snapgridjs/core";
+import type { DragConfig, ResizeConfig } from "@snapgridjs/dnd";
 import { type CSSProperties, type ReactNode, useMemo } from "react";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout.js";
-import type { DragConfig, ResizeConfig } from "../types.js";
 import { GridLayout } from "./GridLayout.js";
 
 export interface ResponsiveGridLayoutProps {

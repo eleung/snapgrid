@@ -1,6 +1,5 @@
 import { useDragDropManager } from "@dnd-kit/react";
-import type { GridController } from "../controller/GridController.js";
-import { getController } from "../controller/registry.js";
+import { type GridController, getController } from "@snapgridjs/dnd";
 
 /**
  * Resolve a grid's controller by its `group` (= the grid's id), scoped to the

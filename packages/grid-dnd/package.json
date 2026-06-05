@@ -1,29 +1,24 @@
 {
-  "name": "@snapgridjs/react",
+  "name": "@snapgridjs/dnd",
   "version": "0.4.0",
-  "description": "React grid-layout components built on dnd-kit — a react-grid-layout v2 alternative.",
+  "description": "Framework-agnostic dnd-kit grid engine for snapgrid — the shared drag/resize/cross-grid brain consumed by @snapgridjs/react (and future Vue/Solid bindings).",
   "license": "MIT",
   "author": "Edmond Leung",
   "homepage": "https://snapgrid.dev",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/eleung/snapgrid.git",
-    "directory": "packages/grid-react"
+    "directory": "packages/grid-dnd"
   },
   "bugs": "https://github.com/eleung/snapgrid/issues",
   "keywords": [
-    "react",
     "grid",
     "grid-layout",
-    "react-grid-layout",
     "drag-and-drop",
-    "draggable",
-    "resizable",
-    "responsive",
-    "dashboard",
-    "kanban",
     "dnd-kit",
-    "snapgrid"
+    "snapgrid",
+    "headless",
+    "framework-agnostic"
   ],
   "type": "module",
   "sideEffects": false,
@@ -53,20 +48,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@snapgridjs/core": "workspace:*",
-    "@snapgridjs/dnd": "workspace:*"
+    "@snapgridjs/core": "workspace:*"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18",
-    "@dnd-kit/dom": "^0.4.0",
-    "@dnd-kit/react": "^0.4.0"
+    "@dnd-kit/abstract": "^0.4.0",
+    "@dnd-kit/collision": "^0.4.0",
+    "@dnd-kit/dom": "^0.4.0"
   },
   "devDependencies": {
     "@dnd-kit/abstract": "^0.4.0",
     "@dnd-kit/collision": "^0.4.0",
     "@dnd-kit/dom": "^0.4.0",
-    "@dnd-kit/geometry": "^0.4.0",
-    "@dnd-kit/react": "^0.4.0"
+    "@dnd-kit/geometry": "^0.4.0"
   }
 }

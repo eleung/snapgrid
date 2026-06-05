@@ -241,6 +241,15 @@ export function commitLayout(session: DragSession): LayoutItem[] {
   return stripMoved(session.preview);
 }
 
+/**
+ * Hide the active tile within its grid: show the committed layout and drop the
+ * placeholder. Used when the dragged tile leaves its grid for another — it floats
+ * itself across grids (no in-grid overlay), so the source grid shows no preview.
+ */
+export function hideActive(session: DragSession): DragSession {
+  return { ...session, preview: session.committed as LayoutItem[], placeholder: null };
+}
+
 /** Drop react-grid-layout's internal `moved` flag before handing layout to the user. */
 export function stripMoved(layout: readonly LayoutItem[]): LayoutItem[] {
   return layout.map((it) => {
