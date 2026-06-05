@@ -81,7 +81,11 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
 
   // Stable identity for the drag payload so dnd-kit doesn't churn on it every
   // render; it changes only when this tile's resolved entry does (a reflow).
-  const data = useMemo(() => ({ snapGrid: { kind: "move", itemId: id, item } }), [id, item]);
+  // `group` lets the engine resolve this tile's owning grid from the payload.
+  const data = useMemo(
+    () => ({ snapGrid: { kind: "move", itemId: id, item, group } }),
+    [id, item, group],
+  );
 
   const {
     ref: sortableRef,

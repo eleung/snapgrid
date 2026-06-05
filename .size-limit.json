@@ -1,8 +1,17 @@
 [
   {
-    "name": "@snapgridjs/react + core (own code, brotli)",
-    "path": ["packages/grid-react/dist/index.mjs", "packages/grid-core/dist/index.mjs"],
-    "limit": "15 kB"
+    "name": "@snapgridjs/react + dnd + core (own code, brotli)",
+    "path": [
+      "packages/grid-react/dist/index.mjs",
+      "packages/grid-dnd/dist/index.mjs",
+      "packages/grid-core/dist/index.mjs"
+    ],
+    "limit": "16.5 kB"
+  },
+  {
+    "name": "@snapgridjs/dnd (brotli)",
+    "path": "packages/grid-dnd/dist/index.mjs",
+    "limit": "7.5 kB"
   },
   {
     "name": "@snapgridjs/core (brotli)",

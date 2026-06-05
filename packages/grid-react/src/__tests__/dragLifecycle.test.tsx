@@ -20,9 +20,11 @@ const gridConfig = {
 };
 
 type Monitor = { monitor: { dispatch(type: string, event: unknown): void } };
+// `group` mirrors the real useGridItem/useGridResizeHandle payload — the engine
+// resolves a drag's source grid from it.
 type SnapGrid =
-  | { kind: "move"; itemId: string; item: LayoutItem }
-  | { kind: "resize"; itemId: string; handle: string };
+  | { kind: "move"; itemId: string; item: LayoutItem; group: string }
+  | { kind: "resize"; itemId: string; handle: string; group: string };
 
 function gridSource(snapGrid: SnapGrid) {
   return { id: snapGrid.itemId, data: { snapGrid } };
@@ -116,7 +118,7 @@ const B: LayoutItem = { i: "b", x: 2, y: 0, w: 2, h: 1 };
 describe("drag lifecycle (events + commits via the monitor)", () => {
   it("an in-grid move fires onDragStart → onDrag → onDragStop and commits the new layout", () => {
     const { cb, manager } = setupGrid("g", [A, B]);
-    const move: SnapGrid = { kind: "move", itemId: "a", item: A };
+    const move: SnapGrid = { kind: "move", itemId: "a", item: A, group: "g" };
 
     fire(
       manager,
@@ -151,7 +153,7 @@ describe("drag lifecycle (events + commits via the monitor)", () => {
 
   it("a canceled move fires onDragStop but does NOT commit a layout change", () => {
     const { cb, manager } = setupGrid("g", [A, B]);
-    const move: SnapGrid = { kind: "move", itemId: "a", item: A };
+    const move: SnapGrid = { kind: "move", itemId: "a", item: A, group: "g" };
     fire(
       manager,
       "dragstart",
@@ -170,7 +172,7 @@ describe("drag lifecycle (events + commits via the monitor)", () => {
 
   it("a resize fires onResizeStart → onResize → onResizeStop and commits the new size", () => {
     const { cb, manager } = setupGrid("g", [A, B]);
-    const resize: SnapGrid = { kind: "resize", itemId: "a", handle: "se" };
+    const resize: SnapGrid = { kind: "resize", itemId: "a", handle: "se", group: "g" };
     fire(
       manager,
       "dragstart",
@@ -218,7 +220,7 @@ describe("drag lifecycle (events + commits via the monitor)", () => {
 
   it("a keyboard drag steps the tile with arrow keys and commits in-grid", () => {
     const { cb, manager } = setupGrid("g", [A, B]);
-    const move: SnapGrid = { kind: "move", itemId: "a", item: A };
+    const move: SnapGrid = { kind: "move", itemId: "a", item: A, group: "g" };
     const activator = new KeyboardEvent("keydown", { key: "Enter" });
     fire(manager, "dragstart", ev({ source: gridSource(move), target: "g", activator }));
     expect(cb.onDragStart).toHaveBeenCalledTimes(1);
@@ -272,7 +274,7 @@ describe("cross-grid hand-off (one manager, two grids)", () => {
       </DragDropProvider>,
     );
     const manager = holder.manager!;
-    const move: SnapGrid = { kind: "move", itemId: "a", item: A };
+    const move: SnapGrid = { kind: "move", itemId: "a", item: A, group: "A" };
 
     // Start in A, move the pointer over B (so B builds a receive session), drop in B.
     fire(
@@ -303,5 +305,68 @@ describe("cross-grid hand-off (one manager, two grids)", () => {
     const bNext = firstLayout(bCb.onLayoutChange);
     expect(bNext.some((it) => it.i === "a")).toBe(true);
     expect(bCb.onDragStop).not.toHaveBeenCalled();
+  });
+
+  it("a drop whose end-target differs from the previewed grid still lands there (no lost tile)", () => {
+    const aCb = makeCallbacks();
+    const bCb = makeCallbacks();
+    const holder: { manager?: Monitor } = {};
+    function GridA() {
+      holder.manager = useDragDropManager() as unknown as Monitor;
+      const { containerProps } = useGridContainer({
+        id: "A",
+        layout: [A],
+        width: 1210,
+        gridConfig,
+        ...aCb,
+      });
+      return <div {...containerProps} />;
+    }
+    function GridB() {
+      const x: LayoutItem = { i: "x", x: 0, y: 0, w: 1, h: 1 };
+      const { containerProps } = useGridContainer({
+        id: "B",
+        layout: [x],
+        width: 1210,
+        gridConfig,
+        ...bCb,
+      });
+      return <div {...containerProps} />;
+    }
+    render(
+      <DragDropProvider>
+        <GridA />
+        <GridB />
+      </DragDropProvider>,
+    );
+    const manager = holder.manager!;
+    const move: SnapGrid = { kind: "move", itemId: "a", item: A, group: "A" };
+
+    // Preview into B (B builds the receive session), but release with a drop target
+    // that ISN'T B — a racy/overlapping collision result at the drop frame. The item
+    // must follow the live receive session in B, never be removed from A and
+    // committed nowhere (the silent-loss bug).
+    fire(
+      manager,
+      "dragstart",
+      ev({ source: gridSource(move), target: "A", pointer: { x: 50, y: 50 } }),
+    );
+    fire(
+      manager,
+      "dragmove",
+      ev({ source: gridSource(move), target: "B", pointer: { x: 100, y: 100 } }),
+    );
+    fire(
+      manager,
+      "dragend",
+      ev({ source: gridSource(move), target: "C", pointer: { x: 100, y: 100 } }),
+    );
+
+    // A still loses "a"…
+    expect(aCb.onLayoutChange).toHaveBeenCalledTimes(1);
+    expect(firstLayout(aCb.onLayoutChange).some((it) => it.i === "a")).toBe(false);
+    // …and it lands in the previewed grid B, not lost to the mismatched target.
+    expect(bCb.onLayoutChange).toHaveBeenCalledTimes(1);
+    expect(firstLayout(bCb.onLayoutChange).some((it) => it.i === "a")).toBe(true);
   });
 });

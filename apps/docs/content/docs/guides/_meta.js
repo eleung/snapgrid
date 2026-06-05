@@ -12,5 +12,6 @@ export default {
   styling: "Styling",
   events: "Events & lifecycle",
   ssr: "Server-side rendering",
+  architecture: "Architecture & dnd-kit",
   "migrating-from-rgl": "Migrating from RGL",
 };

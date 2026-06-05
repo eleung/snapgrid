@@ -30,7 +30,7 @@ tracks what's on npm rather than `main`. Project settings:
 Notes:
 
 - The build must run from the **repo root** so the workspace packages
-  (`@snapgridjs/core`, `@snapgridjs/react`, `@snapgridjs/extras`) build first.
+  (`@snapgridjs/core`, `@snapgridjs/dnd`, `@snapgridjs/react`, `@snapgridjs/extras`) build first.
   `pnpm build` (`pnpm -r build`) handles the topological order and runs the
   Pagefind index as a `postbuild` step.
 - pnpm is pinned via the root `package.json` `packageManager` field, so

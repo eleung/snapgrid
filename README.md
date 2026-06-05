@@ -148,7 +148,8 @@ function Tile({ id, group }: { id: string; group: string }) {
 | Package | Description |
 | --- | --- |
 | [`@snapgridjs/react`](./packages/grid-react) | React components + hooks. The main entry point. |
-| [`@snapgridjs/core`](./packages/grid-core) | Framework-agnostic layout engine (geometry, move/resize, compaction). |
+| [`@snapgridjs/core`](./packages/grid-core) | Framework-agnostic layout math (geometry, move/resize, compaction, drag-session). |
+| [`@snapgridjs/dnd`](./packages/grid-dnd) | Framework-agnostic dnd-kit engine (drag/resize/cross-grid) the bindings build on. Comes in with `@snapgridjs/react`; for binding authors. |
 | [`@snapgridjs/extras`](./packages/grid-extras) | Optional packers: masonry, gravity, shelf, wrap. |
 
 ## Development

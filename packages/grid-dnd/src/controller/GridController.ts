@@ -1,6 +1,7 @@
 import type { Modifiers, Sensors } from "@dnd-kit/abstract";
 import type { DragDropManager } from "@dnd-kit/dom";
 import type {
+  Compactor,
   DragSession,
   GridConfig,
   Layout,
@@ -8,11 +9,29 @@ import type {
   PositionParams,
   ResizeHandleAxis,
 } from "@snapgridjs/core";
+import type { DragConfig, DropConfig, GridEventCallback } from "../types.js";
+
+/**
+ * The per-grid drag/resize callbacks the consumer supplied. Published to the
+ * controller so the shared {@link SnapGridEngine} can invoke the RIGHT grid's
+ * callbacks at the right phase (the engine is manager-wide; callbacks are per-grid).
+ */
+export interface GridCallbacks {
+  onDragStart?: GridEventCallback;
+  onDrag?: GridEventCallback;
+  onDragStop?: GridEventCallback;
+  onResizeStart?: GridEventCallback;
+  onResize?: GridEventCallback;
+  onResizeStop?: GridEventCallback;
+  onLayoutChange?: (layout: Layout) => void;
+  onDrop?: (layout: Layout, item: LayoutItem, event: Event | null) => void;
+}
 
 /**
  * Per-grid configuration the container host writes to the controller each render
  * (during render, so items that resolve this controller by `group` read fresh
- * config on the same pass). Replaces the fields the old GridContext exposed.
+ * config on the same pass). Also the seam the manager-wide {@link SnapGridEngine}
+ * reads per-grid geometry, compaction, gates, and callbacks from.
  */
 export interface GridControllerConfig {
   positionParams: PositionParams;
@@ -24,8 +43,11 @@ export interface GridControllerConfig {
   isItemDraggable: (id: string) => boolean;
   isItemResizable: (id: string) => boolean;
   resizeHandlesFor: (id: string) => readonly ResizeHandleAxis[];
-  /** Report the container element (used to map a pointer to a cell on receive). */
-  setContainerElement: (element: Element | null) => void;
+  // ── Read by SnapGridEngine ──────────────────────────────────────────────
+  compactor: Compactor;
+  dragConfig?: DragConfig;
+  dropConfig?: DropConfig;
+  callbacks: GridCallbacks;
 }
 
 export interface ItemSnapshot {
@@ -92,10 +114,21 @@ export class GridController {
   /** The dnd-kit manager this grid is registered with (set by useInstance). */
   manager: DragDropManager | undefined;
 
+  /**
+   * This grid's container element, reported by the host. The engine reads it to
+   * map a pointer to a cell when receiving a tile (its `getBoundingClientRect`).
+   */
+  element: Element | null = null;
+
   constructor(id: string, committed: Layout = [], manager?: DragDropManager) {
     this.id = id;
     this.#committed = committed;
     this.manager = manager;
+  }
+
+  /** The committed (base) layout — the engine's source of truth during a drag. */
+  getCommitted(): Layout {
+    return this.#committed;
   }
 
   /** Replace the per-grid config (called by the container host during render). */

@@ -3,8 +3,7 @@
   "compilerOptions": {
     "types": ["node"],
     "paths": {
-      "@snapgridjs/core": ["../grid-core/src/index.ts"],
-      "@snapgridjs/dnd": ["../grid-dnd/src/index.ts"]
+      "@snapgridjs/core": ["../grid-core/src/index.ts"]
     }
   },
   "include": ["src", "tsdown.config.ts", "vitest.setup.ts"]
