@@ -1,6 +1,6 @@
 ---
 title: Nested grids
-description: Put a grid inside a tile of another grid. Standalone providers keep the two isolated.
+description: Put a grid inside a tile of another grid. Nested grids share one provider, so tiles can be dragged between levels.
 ---
 
 import { Callout } from "nextra/components";
@@ -8,92 +8,97 @@ import { NestedDemo } from "@/components/demos";
 
 # Nested grids
 
-A grid can live **inside a tile of another grid**. Because each grid sits under its **own** dnd-kit
-`DragDropProvider`, the inner and outer grids run independent drag sessions. Dragging an inner tile
-rearranges only the inner grid, and dragging the outer tile carries the whole nested grid along.
+A grid can live **inside a tile of another grid**. Nested grids **share the outer grid's**
+`DragDropProvider` (one dnd-kit manager), so a tile can be dragged **between** the inner and outer
+grids. snapgrid resolves which grid the pointer is over with an **innermost-wins** rule: a drag that
+starts inside the inner grid stays scoped to it, and dragging a tile out hands it to the outer grid.
+
+<Callout type="info">
+  Nested grids cross levels by default. To keep a sub-grid **self-contained** — tiles can't leave it —
+  see [Contain a nested grid](#contain-a-nested-grid-opt-out-of-cross-layer) below.
+</Callout>
 
 <NestedDemo />
 
-The one rule that keeps them from fighting: **the outer grid must drag from a handle that sits
-outside the inner grid.** Give the outer tile a header (the drag handle) and put the inner grid in
-the body. A pointer-down inside the inner grid then never arms the outer drag.
-
-Each grid is its **own** `DragDropProvider`, and — as everywhere — `useGridContainer` runs in a child
-host *inside* that provider:
+The one thing to wire: **the outer tile that hosts the inner grid must drag only from a handle**, so a
+pointer-down inside the inner grid doesn't drag the whole panel. Put a `handleRef` (from
+`useGridItem`) on the panel's header — **not** the grid-wide `dragConfig.handle`, which would force
+*every* outer tile to drag from that selector and disable the ones without it.
 
 ```tsx
-import { DragDropProvider } from "@dnd-kit/react";
 import { useGridContainer, useGridItem } from "@snapgridjs/react";
 
-// The outer grid: its own provider wrapping the host.
-function OuterGrid({ outer, width, setOuter }) {
-  return (
-    <DragDropProvider>
-      <OuterBoard outer={outer} width={width} setOuter={setOuter} />
-    </DragDropProvider>
-  );
-}
-
+// One provider at the top (yours, or supplied by <GridLayout> / <SnapGridGroup>).
+// The inner grid does NOT mount its own — it shares this one.
 function OuterBoard({ outer, width, setOuter }) {
-  const { containerProps, group } = useGridContainer({
-    layout: outer,
-    width,
-    onLayoutChange: setOuter,
-    dragConfig: { handle: ".panel-head" }, // handle sits OUTSIDE the inner grid
-  });
+  const { containerProps, group } = useGridContainer({ layout: outer, width, onLayoutChange: setOuter });
   return (
     <div {...containerProps}>
       {outer.map((it) => (
-        <Tile key={it.i} id={it.i} group={group}>
-          {it.i === "panel" ? (
-            <div className="panel">
-              <div className="panel-head">Nested board</div> {/* outer drag handle */}
-              <div className="panel-body">
-                <InnerGrid /> {/* its OWN provider — see below */}
-              </div>
-            </div>
-          ) : (
-            it.i
-          )}
-        </Tile>
+        <Tile key={it.i} id={it.i} group={group} />
       ))}
     </div>
   );
 }
 
-function Tile({ id, group, children }) {
-  const { ref, style } = useGridItem(id, group);
+function Tile({ id, group }) {
+  const { ref, handleRef, style } = useGridItem(id, group);
+  if (id === "panel") {
+    return (
+      <div ref={ref} style={style} className="panel">
+        {/* The header is the only drag handle, so grabbing an inner tile never
+            drags the panel — and the other outer tiles stay whole-tile draggable. */}
+        <div ref={handleRef} className="panel-head">Nested board</div>
+        <InnerBoard /> {/* an ordinary host — shares the provider above, no new one */}
+      </div>
+    );
+  }
   return (
     <div ref={ref} style={style} className="tile">
-      {children}
+      {id}
     </div>
   );
 }
 
-// InnerGrid follows the exact same shape — its own <DragDropProvider> wrapping a
-// host that calls useGridContainer + useContainerWidth for the inner board.
+// InnerBoard is an ordinary useGridContainer host. It just does NOT wrap itself
+// in a <DragDropProvider>, so it joins the outer grid's manager.
 ```
 
-## Why it works
+## How it works
 
-Each grid mounts its **own** dnd-kit `DragDropProvider`, so the inner grid's draggables, droppable
-surface, and drag session are entirely separate from the outer's. The handle gating
-(`dragConfig.handle`) is what keeps the shared pointer event from arming both. The inner tiles sit
-outside the outer's handle, so only the inner grid responds.
+The grids share one dnd-kit manager, so a single collision pass sees both droppable surfaces. When
+their rects overlap (the pointer is over the inner grid, which sits inside the outer), snapgrid ranks
+the **innermost** grid highest, so the drag resolves to the inner grid. Move the pointer out of the
+inner grid and the outer grid wins — that's how a tile crosses levels. The panel's `handleRef` keeps a
+pointer-down on an inner tile from arming the panel's own drag.
 
-<Callout type="warning">
-  Without a handle the outer tile drags from anywhere, including the inner grid, so a single
-  pointer-down would arm **both** grids. Always give the outer grid a handle that lives outside the
-  inner area.
-</Callout>
+A tile that crosses levels is **removed from one grid's layout and added to the other's** — wire both
+grids' `onLayoutChange`, exactly like [cross-grid dragging](/docs/guides/cross-grid) between siblings.
+
+## Contain a nested grid (opt out of cross-layer)
+
+To keep a nested grid's tiles from leaving it — a self-contained widget — give it its **own**
+`<DragDropProvider>`. That puts it on a separate manager, so the outer grid's collision never sees it
+and tiles can't cross the boundary:
+
+```tsx
+import { DragDropProvider } from "@dnd-kit/react";
+
+<div className="panel">
+  <div ref={handleRef} className="panel-head">Contained board</div>
+  <DragDropProvider>
+    <InnerBoard /> {/* its own manager → isolated; tiles stay put */}
+  </DragDropProvider>
+</div>;
+```
 
 ## Limits
 
-- **Size the inner grid to its cell.** The inner grid measures its own container with
-  `useContainerWidth`, so it reflows naturally as the outer tile is resized.
-
 <Callout type="warning">
-  **Nested grids are isolated.** Each needs its **own** `DragDropProvider` — share one and the inner
-  grid is ambiguous. Tiles can't cross between levels, either; to move tiles between grids, make them
-  **siblings** (not nested) and use [cross-grid dragging](/docs/guides/cross-grid).
+  Host the inner grid with a per-tile `handleRef`, not a grid-wide `dragConfig.handle`. The latter is
+  applied to every tile in the grid, so any tile without a matching handle element becomes
+  undraggable.
 </Callout>
+
+- **Size the inner grid to its cell.** It measures its own container with `useContainerWidth`, so it
+  reflows as the outer tile is resized.

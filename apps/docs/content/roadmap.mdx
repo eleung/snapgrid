@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-description: Where snapgrid is headed. Bindings for Vue, Svelte, Solid and vanilla TypeScript, deeper dnd-kit interop with Droppable and Sortable, and cross-level nested dragging.
+description: Where snapgrid is headed. Bindings for Vue, Svelte, Solid and vanilla TypeScript, and deeper dnd-kit interop with Droppable and Sortable.
 ---
 
 import { Callout } from "nextra/components";
@@ -45,19 +45,6 @@ both directions:
 
 The aim is for a snapgrid grid to be just another participant in a dnd-kit drag: items flow in and
 out of lists, boards, and drop zones without bespoke glue code.
-
-## Cross-level nested dragging
-
-[Nested grids](/docs/guides/nesting) are isolated by design — each on its own `DragDropProvider` — so
-today a tile can't be dragged between an inner grid and its outer one. Grids sharing a provider run a
-single collision pass with no **"innermost-wins"** rule, so a drag over a nested grid would be
-ambiguous; isolation is what keeps it predictable.
-
-We're thinking about lifting that — **if** we can land a clean innermost-wins collision model that
-unambiguously resolves the *deepest* grid under the pointer, paired with UX worth shipping (which
-grid receives, where the placeholder lands, how a drag escapes back to the parent). It's a maybe,
-gated on getting that resolution and feel right. Until then, move tiles with a **sibling** layout and
-[cross-grid dragging](/docs/guides/cross-grid).
 
 ## Shape the roadmap
 

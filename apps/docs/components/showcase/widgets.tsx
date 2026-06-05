@@ -242,9 +242,9 @@ function TeamGrid() {
   return (
     <div ref={ref} className="sg-teamgrid">
       <div className="sg-teamgrid__scroll">
-        {/* Its OWN provider — a nested grid must not share the dashboard's, or the
-            two collide on one collision pass and their overlays conflict. See the
-            Nesting guide. */}
+        {/* Its OWN provider keeps this team grid CONTAINED — members can't be
+            dragged out into the dashboard. (Nested grids otherwise share a
+            provider and allow cross-level dragging; see the Nesting guide.) */}
         <DragDropProvider>
           <GridLayout
             layout={layout}

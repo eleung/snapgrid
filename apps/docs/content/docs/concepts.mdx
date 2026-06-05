@@ -177,5 +177,5 @@ The handful of things that trip people up. Each is spelled out in its guide; thi
 | **Headless tiles have no affordances** | No resize handles, placeholder, or classes — render them with `useGridResizeHandle` / `useGridPlaceholder` and bring your own classes. | [Headless](/docs/guides/headless) · [Styling](/docs/guides/styling) |
 | **Always controlled** | Apply every `onLayoutChange` or nothing moves; never mutate the layout. | above |
 | **Feed a clean initial layout** | snapgrid renders your layout verbatim and only re-packs *during* a drag — pre-compact gaps/overlaps. | [Migrating](/docs/guides/migrating-from-rgl) |
-| **Nested grids get their own provider** | A grid nested in another must mount its **own** `<DragDropProvider>`; sharing one makes the inner grid ambiguous. | [Nesting](/docs/guides/nesting) |
+| **Nested grids share one provider** | A grid nested in another shares the outer's `<DragDropProvider>`; innermost-wins collision resolves the inner grid, so tiles cross levels. Give a sub-grid its **own** provider to contain it. | [Nesting](/docs/guides/nesting) |
 | **Mind the defaults** | `rowHeight` is 150; `width` is `initialWidth` (1280) until measured — gate on `mounted` to avoid a first-paint reflow under SSR. | [SSR](/docs/guides/ssr) |

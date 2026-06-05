@@ -147,6 +147,26 @@ test("compaction: switching packer keeps tiles overlap-free", async ({ page }) =
   }
 });
 
+test("cross-grid: a tile can be dropped into the other grid's TOP row", async ({ page }) => {
+  // Grid B's top row is occupied, so this exercises the receive-displaces-occupant
+  // path. Regression for: a received tile could only ever land a row down.
+  const demo = page.locator(".dg-demo", { has: page.getByText(/grid a/i) });
+  await demo.scrollIntoViewIfNeeded();
+  const subA = demo.locator(".dg-subgrid", { has: page.getByText(/grid a/i) });
+  const subB = demo.locator(".dg-subgrid", { has: page.getByText(/grid b/i) });
+  const from = (await subA.locator(".dg-grid > .dg-cell").first().boundingBox())!;
+  const gridB = (await subB.locator(".dg-grid").boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 12, from.y + 12, { steps: 4 });
+  await page.mouse.move(gridB.x + gridB.width / 2, gridB.y + 8, { steps: 16 });
+  await page.waitForTimeout(150);
+  // The landing placeholder sits in the top row, not pushed a row down.
+  const ph = (await subB.locator(".dg-placeholder").boundingBox())!;
+  expect(ph.y - gridB.y).toBeLessThan(20);
+  await page.mouse.up();
+});
+
 test("cross-grid: a tile can be dragged into the other grid", async ({ page }) => {
   const demo = page.locator(".dg-demo", { has: page.getByText(/grid a/i) });
   // This demo sits far down the page; scroll it into view first so boundingBox()
@@ -225,4 +245,51 @@ test("snapToGrid: the floating tile quantizes to whole cells", async ({ page }) 
   expect(Math.abs((xStillSameCell ?? 0) - (xSmall ?? 0))).toBeLessThan(8);
   // Crossing a cell boundary moves the tile by a meaningful (cell-sized) jump.
   expect((xNextCell ?? 0) - (xSmall ?? 0)).toBeGreaterThan(80);
+});
+
+test("nested: an inner-grid tile can be dragged out into the outer grid", async ({ page }) => {
+  // The inner and outer grids now share one manager, so a tile can cross layers.
+  const demo = page.locator(".dg-demo", { has: page.locator(".dg-nest") });
+  await demo.scrollIntoViewIfNeeded();
+  const innerTiles = demo.locator(".dg-nest__tile");
+  await expect(innerTiles).toHaveCount(4);
+
+  const from = (await innerTiles.first().boundingBox())!;
+  // The inner grid lives in the panel (left); the outer grid's right side
+  // (tiles a/b) is clear of it — drop the inner tile there.
+  const outer = (await demo.locator(".dg-grid").first().boundingBox())!;
+  await dragInto(page, from, {
+    x: outer.x + outer.width * 0.8,
+    y: outer.y + outer.height * 0.5,
+    width: 20,
+    height: 20,
+  });
+
+  // The tile left the inner grid (escaped into the outer one).
+  await expect(innerTiles).toHaveCount(3);
+});
+
+test("nested: a non-panel outer tile is draggable (per-tile handle, not grid-wide)", async ({
+  page,
+}) => {
+  // The panel uses a per-tile `handleRef`; the other outer tiles must stay
+  // whole-tile draggable (a grid-wide `dragConfig.handle` would disable them).
+  const demo = page.locator(".dg-demo", { has: page.locator(".dg-nest") });
+  await demo.scrollIntoViewIfNeeded();
+  const tile = demo
+    .locator(".dg-grid")
+    .first()
+    .locator(":scope > .dg-cell")
+    .filter({ hasNot: page.locator(".dg-nest") })
+    .first();
+  const before = (await tile.boundingBox())!;
+  const cx = before.x + before.width / 2;
+  const cy = before.y + before.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx, cy + 120, { steps: 12 });
+  await page.waitForTimeout(120);
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  expect((await tile.boundingBox())!.y - before.y).toBeGreaterThan(40);
 });

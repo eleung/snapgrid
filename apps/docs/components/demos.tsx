@@ -931,45 +931,33 @@ export function HeroGrid() {
 
 /* ── Nested grids (a grid inside an outer tile) ─────────────────────────── */
 const NESTED_OUTER: Layout = [
-  { i: "panel", x: 0, y: 0, w: 7, h: 4 },
-  { i: "a", x: 7, y: 0, w: 5, h: 2 },
-  { i: "b", x: 7, y: 2, w: 5, h: 2 },
+  { i: "panel", x: 0, y: 0, w: 8, h: 4 },
+  { i: "a", x: 8, y: 0, w: 4, h: 2 },
+  { i: "b", x: 8, y: 2, w: 4, h: 2 },
 ];
+// 8-column inner grid in an 8-column-wide panel, with the outer grid's rowHeight
+// and margin — so the inner cells line up with the outer grid's rhythm.
 const NESTED_INNER: Layout = [
-  { i: "1", x: 0, y: 0, w: 1, h: 1 },
-  { i: "2", x: 1, y: 0, w: 1, h: 1 },
-  { i: "3", x: 2, y: 0, w: 1, h: 1 },
-  { i: "4", x: 0, y: 1, w: 2, h: 1 },
+  { i: "1", x: 0, y: 0, w: 2, h: 1 },
+  { i: "2", x: 2, y: 0, w: 2, h: 1 },
+  { i: "3", x: 4, y: 0, w: 2, h: 1 },
+  { i: "4", x: 0, y: 1, w: 4, h: 1 },
 ];
 const NESTED_INNER_GRID = {
-  cols: 4,
-  rowHeight: 36,
-  margin: [6, 6] as [number, number],
+  cols: 8,
+  rowHeight: 52,
+  margin: [10, 10] as [number, number],
   containerPadding: [0, 0] as [number, number],
 };
 
 export function NestedDemo() {
   const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [layout, setLayout] = useState<Layout>(NESTED_OUTER);
-  // Inner-grid state is lifted here so BOTH the live panel tile and its drag
-  // overlay read the same current layout — otherwise the overlay would mount a
-  // fresh inner grid stuck at its initial arrangement.
   const [inner, setInner] = useState<Layout>(NESTED_INNER);
-  // The panel chrome, shared by the in-grid tile and the overlay clone. The
-  // overlay gets a STATIC preview of the inner board (no second provider/grid),
-  // so it shows the inner tiles where they actually are right now.
-  const panel = (body: ReactNode) => (
-    <div className="dg-nest">
-      <div className="dg-nest__head">
-        <span className="dg-grip">⠿</span> Nested board
-      </div>
-      <div className="dg-nest__body">{body}</div>
-    </div>
-  );
   return (
     <DemoFrame
       title="Nested grids"
-      hint="drag the panel by its header; drag the inner tiles freely"
+      hint="drag the panel by its header; drag tiles between the inner and outer grids"
       code={EXAMPLE_CODE.nested}
     >
       <div ref={containerRef}>
@@ -977,29 +965,61 @@ export function NestedDemo() {
           layout={layout}
           width={width}
           onLayoutChange={setLayout}
-          options={{
-            gridConfig: GRID,
-            // The outer tile drags only from its header, which sits OUTSIDE the
-            // inner grid — so a pointer-down on an inner tile never arms the outer.
-            dragConfig: { handle: ".dg-nest__head" },
-            isResizable: false,
-          }}
-          renderContent={(it) =>
+          options={{ gridConfig: GRID, isResizable: false }}
+          // The panel renders as a custom tile so its header can be the drag
+          // handle (handleRef); the other tiles fall back to GridTile.
+          renderTile={(it, group) =>
             it.i === "panel" ? (
-              panel(<NestedInner layout={inner} onLayoutChange={setInner} />)
-            ) : (
-              <Tile label={it.i.toUpperCase()} accent={it.i === "b"} />
-            )
+              <NestedPanelTile
+                key={it.i}
+                id={it.i}
+                group={group}
+                inner={inner}
+                onInnerChange={setInner}
+              />
+            ) : null
           }
+          renderContent={(it) => <Tile label={it.i.toUpperCase()} accent={it.i === "b"} />}
         />
       </div>
     </DemoFrame>
   );
 }
 
-/** The inner grid — its own standalone provider (HeadlessGrid supplies one), so
- * its drags stay isolated from the outer grid. Controlled by NestedDemo so the
- * overlay preview can mirror its current layout. */
+// The outer "panel" tile, holding the inner grid. `handleRef` makes the panel
+// drag only from its header — so grabbing an inner tile never drags the whole
+// panel — while the other outer tiles stay whole-tile draggable (a grid-wide
+// `dragConfig.handle` would have disabled them).
+function NestedPanelTile({
+  id,
+  group,
+  inner,
+  onInnerChange,
+}: {
+  id: string;
+  group: string;
+  inner: Layout;
+  onInnerChange: (next: Layout) => void;
+}) {
+  const { ref, handleRef, style } = useGridItem(id, group);
+  return (
+    <div ref={ref} style={style} className="dg-cell">
+      <div className="dg-nest">
+        <div ref={handleRef} className="dg-nest__head">
+          <span className="dg-grip">⠿</span> Nested board
+        </div>
+        <div className="dg-nest__body">
+          <NestedInner layout={inner} onLayoutChange={onInnerChange} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The inner grid. Uses HeadlessGridHost (not HeadlessGrid) so it shares the
+ * outer grid's provider/manager — tiles can be dragged between the inner and
+ * outer grids; innermost-grid collision keeps an inner drag scoped to it. State
+ * is lifted to NestedDemo. */
 function NestedInner({
   layout,
   onLayoutChange,
@@ -1010,7 +1030,7 @@ function NestedInner({
   const { width, containerRef } = useContainerWidth({ initialWidth: 440 });
   return (
     <div ref={containerRef}>
-      <HeadlessGrid
+      <HeadlessGridHost
         layout={layout}
         width={width}
         onLayoutChange={onLayoutChange}
