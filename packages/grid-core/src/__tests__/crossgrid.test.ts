@@ -39,6 +39,17 @@ describe("insertItemWithCompactor", () => {
     expect(x?.w).toBe(2);
   });
 
+  it("inserts into an occupied row, pushing the occupant down (e.g. the top row)", () => {
+    // A foreign tile dropped on an occupied cell must take it and displace the
+    // occupant — not get stacked below it. Guards the cross-grid/nested receive
+    // bug where a received tile could never land in an occupied top row.
+    const layout: Layout = [{ i: "a", x: 0, y: 0, w: 6, h: 1 }];
+    const foreign: LayoutItem = { i: "X", x: 0, y: 0, w: 2, h: 1 };
+    const next = insertItemWithCompactor(layout, foreign, 0, 0, opts);
+    expect(next.find((it) => it.i === "X")?.y).toBe(0); // lands in the top row
+    expect(next.find((it) => it.i === "a")?.y).toBe(1); // occupant pushed down
+  });
+
   it("does not duplicate an item that already exists", () => {
     const layout: Layout = [
       { i: "a", x: 0, y: 0, w: 2, h: 2 },

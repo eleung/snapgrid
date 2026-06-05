@@ -3,6 +3,7 @@ import {
   type Compactor,
   type Layout,
   type LayoutItem,
+  bottom,
   cloneLayout,
   cloneLayoutItem,
   getAllCollisions,
@@ -139,9 +140,16 @@ export function insertItemWithCompactor(
   y: number,
   { compactor, cols }: ResizeItemOptions,
 ): LayoutItem[] {
-  const exists = layout.some((it) => it.i === item.i);
-  const base: Layout = exists
-    ? layout
-    : [...layout, { ...cloneLayoutItem(item), x, y, moved: false }];
+  if (layout.some((it) => it.i === item.i)) {
+    return moveItemWithCompactor(layout, { ...item, x, y }, x, y, { compactor, cols });
+  }
+  // Seed the new item BELOW the content for the built-in cascades, so the
+  // moveElement below moves it UP into (x, y) and displaces whatever's there.
+  // Adding it straight at (x, y) makes that move a no-op (it's already there), so
+  // a received tile could never land in an occupied row — e.g. the target grid's
+  // top row. Custom packers repack everything in compact(), so the seed row
+  // doesn't matter for them.
+  const seedY = BUILTIN_COMPACT_TYPES.has(compactor.type) ? bottom(layout) : y;
+  const base: Layout = [...layout, { ...cloneLayoutItem(item), x, y: seedY, moved: false }];
   return moveItemWithCompactor(base, { ...item, x, y }, x, y, { compactor, cols });
 }
