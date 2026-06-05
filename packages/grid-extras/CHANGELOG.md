@@ -1,5 +1,12 @@
 # @snapgridjs/extras
 
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [927c9fe]
+  - @snapgridjs/core@0.4.0
+
 ## 0.2.0
 
 ### Minor Changes

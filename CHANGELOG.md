@@ -4,6 +4,28 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.4.0] - 2026-06-05
+
+Nested grids gain **cross-level dragging**, and all packages now move in lockstep on one version.
+
+### Added
+
+- `@snapgridjs/react`: **nested grids share one provider and support cross-level dragging.** A grid
+  inside another tile shares the outer `DragDropProvider`; collision resolves the **innermost** grid
+  under the pointer, so a drag stays scoped to the inner grid until you drag a tile out, and tiles
+  move between levels. A grid won't accept a source that contains it. Keep a nested grid
+  self-contained by giving it its own `DragDropProvider`.
+
+### Fixed
+
+- `@snapgridjs/core`: a tile received from another grid (cross-grid or nested) couldn't land in an
+  occupied row — e.g. the target grid's top row. It now displaces the occupant, matching a same-grid drop.
+
+### Changed
+
+- `@snapgridjs/core`, `@snapgridjs/react`, and `@snapgridjs/extras` now share **one version** and are
+  released together (lockstep), so a given version number is always a matched set.
+
 ## [0.3.0] - 2026-06-04
 
 **Pinned tiles** — a `static` item can opt back into user interaction.
@@ -67,6 +89,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.4.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.4.0
 [0.3.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.3.0
 [0.2.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.2.0
 [0.1.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.1.0
