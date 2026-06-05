@@ -3,8 +3,8 @@
 // Minified + tree-shaken `import { GridLayout }`, brotli, React excluded.
 export const BUNDLE_SIZE = {
   total: 38,
-  snapgrid: 7,
-  dndkit: 31,
+  snapgrid: 8,
+  dndkit: 30,
   unit: "kB",
   compression: "brotli",
 } as const;

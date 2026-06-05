@@ -10,7 +10,10 @@ snapgrid publishes three packages from this monorepo, versioned with
 - `@snapgridjs/react`
 - `@snapgridjs/extras`
 
-(`@snapgridjs/docs` is private and never published — it's in the changesets `ignore` list.)
+These three are kept in **lockstep** — they always share one version (changesets `fixed` in
+`.changeset/config.json`), dnd-kit-style. Any release bumps all three to the same number, even ones
+without changes, so "snapgrid X.Y.Z" means one matched set. (`@snapgridjs/docs` is private and never
+published — it's in the changesets `ignore` list.)
 
 ## Normal release (the happy path)
 

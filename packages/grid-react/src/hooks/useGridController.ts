@@ -31,6 +31,7 @@ import {
   externalDropSpec,
   receiveCell,
 } from "../dnd/dragFlow.js";
+import { domElement } from "../dnd/entity.js";
 import { SnapToGrid } from "../dnd/snapToGrid.js";
 import type { DragConfig, DropConfig, GridEventCallback, ResizeConfig } from "../types.js";
 import { buildItemSensors } from "./dndShared.js";
@@ -245,7 +246,7 @@ export function useGridController(opts: UseGridControllerOptions): GridControlle
         // Share the grab offset (pointer position within the tile) so a receiving
         // grid maps the pointer to the cell under the same point the user grabbed,
         // not the tile's corner.
-        const el = (event.operation.source as { element?: Element } | null)?.element;
+        const el = domElement(event.operation.source);
         const cr = el?.getBoundingClientRect();
         if (cr) {
           setGrabOffset(managerRef.current, { x: pointer.x - cr.left, y: pointer.y - cr.top });

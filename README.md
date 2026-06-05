@@ -34,7 +34,7 @@ Draggable, resizable, responsive grid layouts for React, with pluggable packing 
 - **Headless-first**: compose `useGridContainer` + hooks under a dnd-kit `DragDropProvider` for full control of your markup — or drop in the turnkey [`<GridLayout>`](https://snapgrid.dev/docs/guides/component-layer) (react-grid-layout-style) when you don't need that. Ships **no CSS**.
 - **Pluggable packing**: `vertical` / `horizontal` / `none`, plus `masonry` / `gravity` / `shelf` from `@snapgridjs/extras`, or your own `Compactor`.
 - **Cross-grid dragging**: wrap grids in a `<SnapGridGroup>` and drag tiles between them.
-- **Nested grids**: drop a grid inside a tile of another grid; each level keeps its own isolated drag session.
+- **Nested grids**: drop a grid inside a tile of another grid and drag tiles between levels — or isolate a sub-grid by giving it its own provider.
 - **Responsive**: per-breakpoint layouts with `<ResponsiveGridLayout>`.
 - **Resizable, with limits**: any edge/corner, per-item `minW/maxW/minH/maxH`, and `static` tiles.
 - **Keyboard accessible**: every tile is keyboard-draggable — Enter/Space to pick up, arrow keys to move, Esc to cancel.
@@ -50,7 +50,7 @@ snapgrid keeps the parts of [react-grid-layout](https://github.com/react-grid-la
 | Responsive breakpoints | ✅ | ✅ |
 | Resize handles · per-item min/max · static tiles | ✅ | ✅ |
 | **Drag tiles _between_ grids** | ✅ built-in (`SnapGridGroup`) | ❌ |
-| **Nested grids** | ✅ isolated per level | ⚠️ manual |
+| **Nested grids** | ✅ cross-level dragging | ⚠️ manual |
 | **Keyboard dragging / a11y** | ✅ Enter · arrows · Esc | ❌ |
 | **Headless** (bring your own markup) | ✅ provider + hooks | ❌ renders its own DOM |
 | Pluggable packing | ✅ vertical / horizontal / none **+ masonry / gravity / shelf + custom** | vertical / horizontal / none |
@@ -65,10 +65,10 @@ snapgrid keeps the parts of [react-grid-layout](https://github.com/react-grid-la
 
 <!-- Figures from apps/docs/components/generated/bundle-size.ts (run `pnpm --filter @snapgridjs/docs measure`). The docs site reads them live; this README mirror is updated by hand. -->
 
-snapgrid itself is ~7 kB brotli, but it's built on [dnd-kit](https://dndkit.com/) (~31 kB), so a fresh install is **~38 kB brotli**, roughly **2.5× react-grid-layout v2's ~15 kB** (minified, React excluded). That weight _is_ dnd-kit, and it's a deliberate trade:
+snapgrid itself is ~8 kB brotli, but it's built on [dnd-kit](https://dndkit.com/) (~30 kB), so a fresh install is **~38 kB brotli**, roughly **2.5× react-grid-layout v2's ~15 kB** (minified, React excluded). That weight _is_ dnd-kit, and it's a deliberate trade:
 
 - **dnd-kit is the de-facto standard for drag-and-drop in React.** Its accessible, multi-sensor engine is what gives snapgrid keyboard dragging, touch support, and cross-grid out of the box (things RGL's older react-draggable/react-resizable stack doesn't).
-- **If your app already uses dnd-kit, snapgrid adds only ~7 kB.**
+- **If your app already uses dnd-kit, snapgrid adds only ~8 kB.**
 - snapgrid tracks dnd-kit's **latest framework-agnostic line** (`@dnd-kit/react`), the line dnd-kit recommends over the legacy `@dnd-kit/core`.
 
 ## Install

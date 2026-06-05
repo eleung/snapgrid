@@ -1,7 +1,9 @@
 import { useDroppable } from "@dnd-kit/react";
 import { type GridConfig, bottom } from "@snapgridjs/core";
-import { type CSSProperties, useCallback, useSyncExternalStore } from "react";
+import { type CSSProperties, useCallback, useRef, useSyncExternalStore } from "react";
 import type { GridController } from "../controller/GridController.js";
+import { SNAPGRID_GRID_ATTR, gridCollisionDetector } from "../dnd/collision.js";
+import { domElement } from "../dnd/entity.js";
 import { type UseGridControllerOptions, useGridController } from "./useGridController.js";
 
 export interface GridContainerProps {
@@ -24,12 +26,6 @@ export interface UseGridContainerResult {
   controller: GridController;
 }
 
-// Outranks a dragged tile/card's own sortable droppable, so collision inside the
-// grid resolves to the container (not a tile). That keeps dnd-kit's sortable
-// reorder out of the grid (RGL drives the move) and lets a foreign sortable
-// resolve the grid as its drop target for cell mapping.
-const GRID_COLLISION_PRIORITY = 10;
-
 /** Total container height in pixels for the given number of occupied rows. */
 function containerHeight(rows: number, grid: GridConfig): number {
   const padY = (grid.containerPadding ?? grid.margin)[1];
@@ -47,6 +43,7 @@ export function useGridContainer(opts: UseGridControllerOptions): UseGridContain
   const controller = useGridController(opts);
   const config = controller.config;
   const { width, autoSize, gridConfig, setContainerElement } = config!;
+  const gridElRef = useRef<Element | null>(null);
 
   const { ref, isDropTarget } = useDroppable({
     id: controller.id,
@@ -56,19 +53,27 @@ export function useGridContainer(opts: UseGridControllerOptions): UseGridContain
     // them and they'd never resolve as a drop target. (The provider still
     // decides whether to actually receive an external source via dropConfig.)
     accept: (source) => {
+      // Reject a source whose element CONTAINS this grid — an ancestor tile that
+      // hosts this nested grid. Prevents dropping a host tile into the grid it
+      // contains (a paradox) now that nested grids can share one manager.
+      const srcEl = domElement(source);
+      if (srcEl && gridElRef.current && srcEl.contains(gridElRef.current)) return false;
       if (source.type === "grid-item") return true;
       const data = source.data as { snapGridDrop?: unknown } | undefined;
       return data?.snapGridDrop != null;
     },
-    collisionPriority: GRID_COLLISION_PRIORITY,
+    collisionDetector: gridCollisionDetector,
   });
 
   // Merge dnd-kit's droppable ref with reporting the element to the controller
-  // (used to map the pointer to a cell when receiving a tile from another grid).
+  // (used to map the pointer to a cell when receiving a tile from another grid),
+  // and mark the element so nested grids can measure their depth (gridDepth).
   const setRef = useCallback(
     (element: Element | null) => {
       ref(element);
       setContainerElement(element);
+      gridElRef.current = element;
+      if (element) element.setAttribute(SNAPGRID_GRID_ATTR, "");
     },
     [ref, setContainerElement],
   );

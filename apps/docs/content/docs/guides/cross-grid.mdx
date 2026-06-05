@@ -87,3 +87,9 @@ pair). Wire cross-grid persistence to `onLayoutChange` on both grids.
 
 If a tile is dropped outside every grid in the group, the move reverts. The source keeps it and no
 `onLayoutChange` fires.
+
+<Callout type="info">
+  Want a grid **inside a tile** of another rather than side-by-side siblings? See
+  [Nested grids](/docs/guides/nesting) — they also cross levels by default, and you can give a
+  sub-grid its own provider to keep it self-contained.
+</Callout>

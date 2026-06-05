@@ -131,7 +131,7 @@ const FEATURES: Feature[] = [
     icon: Layers,
     href: "/docs/guides/nesting",
     title: "Nested grids",
-    body: "Drop a grid inside a tile of another. Each is its own provider, so the levels stay isolated.",
+    body: "Drop a grid inside a tile of another and drag tiles between levels — or give a sub-grid its own provider to keep it contained.",
   },
   {
     icon: MonitorSmartphone,
