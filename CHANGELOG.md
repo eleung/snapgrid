@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.5.0] - 2026-06-06
+
+The dnd-kit engine is extracted into a new package, **`@snapgridjs/dnd`** — the drag/resize/cross-grid
+brain is now framework-agnostic and reusable. For React users the upgrade is transparent.
+
+### Added
+
+- **`@snapgridjs/dnd`** — the framework-agnostic dnd-kit engine `@snapgridjs/react` is built on: one
+  per-manager drag/resize/cross-grid engine, the observable `GridController` render bridge, the
+  collision detector, sensors, and the snap-to-grid modifier. It exists so future Vue/Solid/Svelte
+  bindings can share one engine. See the new
+  [Architecture & dnd-kit](https://snapgrid.dev/docs/guides/architecture) guide.
+
+### Changed
+
+- `@snapgridjs/react` is now a thin binding over `@snapgridjs/dnd`. **For React consumers this is
+  transparent** — the public API is unchanged (drag/drop config and event types are still exported
+  from `@snapgridjs/react`, re-exported from the engine package).
+- One engine per dnd-kit manager now drives every grid (previously one monitor per grid), so a
+  multi-grid page processes each drag event once.
+- All four packages — `@snapgridjs/core`, `@snapgridjs/dnd`, `@snapgridjs/react`, `@snapgridjs/extras`
+  — now release together in lockstep.
+
 ## [0.4.0] - 2026-06-05
 
 Nested grids gain **cross-level dragging**, and all packages now move in lockstep on one version.
@@ -89,6 +112,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.5.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.5.0
 [0.4.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.4.0
 [0.3.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.3.0
 [0.2.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.2.0
