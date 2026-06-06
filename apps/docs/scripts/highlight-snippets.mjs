@@ -146,6 +146,7 @@ const EXAMPLES = [
   { id: "crossGrid", file: "../components/examples/CrossGridExample.tsx" },
   { id: "nested", file: "../components/examples/NestedExample.tsx" },
   { id: "externalDrop", file: "../components/examples/ExternalDropExample.tsx" },
+  { id: "sortableGrid", file: "../components/examples/SortableGridExample.tsx" },
   { id: "componentLayer", file: "../components/examples/ComponentLayerExample.tsx" },
   { id: "notFound", file: "../components/examples/NotFoundExample.tsx" },
 ];

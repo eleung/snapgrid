@@ -11,8 +11,9 @@ import { BasicGridDemo } from "@/components/demos";
 **snapgrid** is a draggable, resizable, repacking grid layout for React — a
 [react-grid-layout](https://github.com/react-grid-layout/react-grid-layout) v2 alternative built on
 [dnd-kit](https://next.dndkit.com). It keeps the controlled `{ i, x, y, w, h }` model RGL users know,
-and adds things RGL can't do: dragging tiles **between** grids, nested grids, keyboard accessibility,
-and pluggable packing — masonry, gravity, shelf, or your own compactor.
+and adds things RGL can't do: dragging tiles **between** grids, nested grids, interop with the wider
+dnd-kit ecosystem (sortable lists, boards), keyboard accessibility, and pluggable packing — masonry,
+gravity, shelf, or your own compactor.
 
 It's **headless-first** — you wire hooks to your own markup — with a turnkey `<GridLayout>` for when
 you just want a grid that works.
@@ -260,5 +261,5 @@ moves to headless). See [Migrating from RGL](/docs/guides/migrating-from-rgl).
 - [Core Concepts](/docs/concepts) — the mental model (controlled state, the dnd-kit DNA, the `group` key) plus a gotchas cheat-sheet.
 - [Headless usage](/docs/guides/headless) — the hooks in depth: resize handles, the placeholder, and how a dragged tile floats itself.
 - [Component layer](/docs/guides/component-layer) — the turnkey `<GridLayout>` when you don't need custom markup.
-- [Dragging](/docs/guides/dragging) · [Resizing](/docs/guides/resizing) · [Compaction](/docs/guides/compaction) · [Cross-grid](/docs/guides/cross-grid) · [Responsive](/docs/guides/responsive).
+- [Dragging](/docs/guides/dragging) · [Resizing](/docs/guides/resizing) · [Compaction](/docs/guides/compaction) · [Cross-grid](/docs/guides/cross-grid) · [dnd-kit interop](/docs/guides/dnd-kit-interop) · [Responsive](/docs/guides/responsive).
 - [API Reference](/docs/api/overview) — every hook, component, and type.

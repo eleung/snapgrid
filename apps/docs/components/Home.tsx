@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeftRight,
   Boxes,
   Check,
   Component,
@@ -10,6 +9,7 @@ import {
   Layers,
   type LucideIcon,
   MonitorSmartphone,
+  Puzzle,
   Scaling,
   SlidersHorizontal,
 } from "lucide-react";
@@ -122,10 +122,10 @@ const FEATURES: Feature[] = [
     body: "Vertical, horizontal, or free. Plus masonry, gravity, and shelf packers, or bring your own Compactor.",
   },
   {
-    icon: ArrowLeftRight,
-    href: "/docs/guides/cross-grid",
-    title: "Cross-grid dragging",
-    body: "Grids on one dnd-kit provider exchange tiles: the source loses the tile, the destination gains it — each commits its own layout.",
+    icon: Puzzle,
+    href: "/docs/guides/dnd-kit-interop",
+    title: "Cross-grid & dnd-kit interop",
+    body: "Drag tiles between grids, or between a grid and a dnd-kit sortable list or board — cards land at a real cell, tiles drop back out, all under one provider.",
   },
   {
     icon: Layers,
@@ -159,8 +159,8 @@ export function Home() {
       <Link className="dg-roadmap-teaser" href="/roadmap">
         <span className="dg-roadmap-teaser__tag">Roadmap</span>
         <span className="dg-roadmap-teaser__text">
-          Next: <strong>Vue, Svelte, Solid &amp; vanilla-TS</strong> bindings, and{" "}
-          <strong>two-way dnd-kit interop</strong> with Droppables &amp; Sortables.
+          Next: <strong>Vue, Svelte, Solid &amp; vanilla-TS</strong> bindings on snapgrid&apos;s
+          framework-agnostic core.
         </span>
         <span className="dg-roadmap-teaser__more">See the roadmap →</span>
       </Link>

@@ -60,6 +60,7 @@ The controlled state plus the per-grid config. These are exactly `<GridLayout>`'
 | `dragConfig` | `DragConfig` | — | [Drag behaviour](/docs/guides/dragging): `handle` (CSS selector — headless prefers [`handleRef`](#usegriditem)), `cancel`, `threshold`, `bounded`, `snapToGrid`. |
 | `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/docs/guides/resizing): which handle axes are allowed. |
 | `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/docs/guides/external-drop): `enabled`, `defaultItem`, `accept`. |
+| `accept` | `(source) => boolean` | — | [dnd-kit interop](/docs/guides/dnd-kit-interop): also accept a foreign sortable (e.g. a tray card) as a drop target. You drive the receive yourself in `onDragOver` with [`snapMove`](/docs/guides/dnd-kit-interop#snapmove). |
 | `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/docs/guides/compaction). Swap at runtime. |
 | `isDraggable` | `boolean` | `true` | Grid-level drag toggle (overrides per-item when `false`). |
 | `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
@@ -92,7 +93,7 @@ return <div ref={ref} style={style}>{item?.i}</div>;
 | --- | --- | --- |
 | `ref` | `(el: Element \| null) => void` | Attach to the tile element. |
 | `handleRef` | `(el: Element \| null) => void` | Optional drag handle — attach to a child to restrict pointer dragging to it. The headless form of `dragConfig.handle`. |
-| `style` | `CSSProperties` | `position` + GPU `transform` + size + reflow transition. |
+| `style` | `CSSProperties` | `position: absolute` + left/top + size. Reflow animates on the compositor (a transform FLIP), so the dnd-kit float reads the tile's true rect during ecosystem hand-offs. |
 | `isDragging` | `boolean` | True while this tile is the active drag source. |
 | `item` | `LayoutItem \| undefined` | The tile's current (possibly reflowed) entry. |
 

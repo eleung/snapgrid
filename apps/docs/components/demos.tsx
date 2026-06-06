@@ -1,7 +1,10 @@
 "use client";
 
 import { Feedback } from "@dnd-kit/dom";
+import { move } from "@dnd-kit/helpers";
 import { DragDropProvider, useDraggable } from "@dnd-kit/react";
+import { useSortable } from "@dnd-kit/react/sortable";
+import { defaultGridConfig, toPositionParams } from "@snapgridjs/core";
 import { gravityCompactor, masonryCompactor, shelfCompactor } from "@snapgridjs/extras";
 import {
   type Compactor,
@@ -12,6 +15,8 @@ import {
   SnapGridGroup,
   horizontalCompactor,
   noCompactor,
+  removeItemWithCompactor,
+  snapMove,
   useContainerWidth,
   useGridContainer,
   useGridItem,
@@ -25,6 +30,7 @@ import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -1037,6 +1043,192 @@ function NestedInner({
         options={{ gridConfig: NESTED_INNER_GRID, isResizable: false }}
         renderContent={(it) => <div className="dg-nest__tile">{it.i}</div>}
       />
+    </div>
+  );
+}
+
+/* ── Sortable ↔ grid interop ────────────────────────────────────────────── */
+// A grid beside a dnd-kit *sortable* tray, under ONE DragDropProvider. Drag a
+// tray card into the grid (it lands at a real cell, with compaction) or a grid
+// tile out into the tray; reorder the tray itself. The cross-parent moves are
+// reduced LIVE in onDragOver — dnd-kit reparents the node mid-drag, so reducing
+// on drop would desync React (removeChild). snapMove() is the grid-side reducer;
+// dnd-kit's move() handles the tray. In-grid moves are left to the grid's engine.
+const INTEROP_GRID = {
+  cols: 6,
+  rowHeight: 60,
+  margin: [10, 10] as [number, number],
+  containerPadding: [10, 10] as [number, number],
+};
+const INTEROP_TRAY_W = 132;
+const INTEROP_GAP = 16;
+const INTEROP_GRID_INIT: Layout = [
+  { i: "chart", x: 0, y: 0, w: 4, h: 2 },
+  { i: "stats", x: 4, y: 0, w: 2, h: 2 },
+  { i: "feed", x: 0, y: 2, w: 3, h: 2 },
+];
+const INTEROP_TRAY_INIT = ["users", "sales", "tasks"];
+
+/** Insert `id` into `list` just before `beforeId` (removing any existing copy). */
+function insertBefore(list: string[], id: string, beforeId: string): string[] {
+  const without = list.filter((x) => x !== id);
+  const i = without.indexOf(beforeId);
+  return i < 0 ? [...without, id] : [...without.slice(0, i), id, ...without.slice(i)];
+}
+
+export function SortableGridDemo() {
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
+  const [grid, setGrid] = useState<Layout>(INTEROP_GRID_INIT);
+  const [tray, setTray] = useState<string[]>(INTEROP_TRAY_INIT);
+
+  // The grid's own width (the tray takes a fixed column) — used for both the host
+  // and snapMove's cell math, so the dropped cell lines up with what's rendered.
+  const gridWidth = Math.max(160, width - INTEROP_TRAY_W - INTEROP_GAP);
+  // Memoized so the per-frame re-renders during a drag (setGrid/setTray) don't
+  // reallocate the config + PositionParams every dragover.
+  const positionParams = useMemo(
+    () => toPositionParams({ ...defaultGridConfig, ...INTEROP_GRID }, gridWidth),
+    [gridWidth],
+  );
+
+  return (
+    <DemoFrame
+      title="Sortable ↔ grid"
+      hint="drag a widget into the grid · drag a tile out to the tray · reorder the tray"
+      code={EXAMPLE_CODE.sortableGrid}
+    >
+      <div ref={containerRef}>
+        <DragDropProvider
+          onDragOver={(event) => {
+            const { source, target } = event.operation;
+            if (!source || !target) return;
+            const id = String(source.id);
+            const st = source.type;
+            const tt = target.type;
+            if (st === "tray-card" && tt === "grid") {
+              // Tray card → grid: drop it out of the tray and into the layout.
+              setTray((t) => t.filter((x) => x !== id));
+              setGrid((g) =>
+                snapMove(g, event, {
+                  positionParams,
+                  compactor: verticalCompactor,
+                  defaultItem: { w: 2, h: 2 },
+                }),
+              );
+            } else if (st === "grid-item" && tt === "tray-card") {
+              // Grid tile → tray: pull it out of the grid (re-packing the hole it
+              // leaves — a plain filter would leave a gap) and into the tray.
+              setGrid((g) =>
+                removeItemWithCompactor(g, id, {
+                  compactor: verticalCompactor,
+                  cols: positionParams.cols,
+                }),
+              );
+              setTray((t) => (t.includes(id) ? t : insertBefore(t, id, String(target.id))));
+            } else if (st === "tray-card" && tt === "tray-card") {
+              // Reorder within the tray.
+              setTray((t) => move(t, event));
+            }
+            // In-grid moves fall through — the grid's engine drives them.
+          }}
+        >
+          <SortableGridBody grid={grid} setGrid={setGrid} tray={tray} width={gridWidth} />
+        </DragDropProvider>
+      </div>
+    </DemoFrame>
+  );
+}
+
+// Rendered inside the provider so useGridContainer resolves the shared manager.
+function SortableGridBody({
+  grid,
+  setGrid,
+  tray,
+  width,
+}: {
+  grid: Layout;
+  setGrid: (next: Layout) => void;
+  tray: string[];
+  width: number;
+}) {
+  const { containerProps, group } = useGridContainer({
+    layout: grid,
+    width,
+    onLayoutChange: setGrid,
+    gridConfig: INTEROP_GRID,
+    isResizable: false,
+    // Accept the tray's cards as drop targets; snapMove (above) does the receive.
+    accept: (s) => s.type === "tray-card",
+  });
+  const placeholder = useGridPlaceholder(group);
+  return (
+    <div
+      className="dg-interop"
+      style={{ display: "flex", gap: INTEROP_GAP, alignItems: "flex-start" }}
+    >
+      <div
+        className="dg-tray"
+        style={{
+          width: INTEROP_TRAY_W,
+          flex: "0 0 auto",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--dg-muted)", marginBottom: 6 }}>
+          Widgets
+        </span>
+        {tray.map((id, i) => (
+          <TrayCard key={id} id={id} index={i} />
+        ))}
+      </div>
+      <div
+        {...containerProps}
+        className="dg-grid"
+        style={{ ...containerProps.style, flex: "1 1 auto" }}
+      >
+        {grid.map((it) => (
+          <GridTile key={it.i} id={it.i} group={group}>
+            <div className="dg-nest__tile">{it.i}</div>
+          </GridTile>
+        ))}
+        <Placeholder placeholder={placeholder} />
+      </div>
+    </div>
+  );
+}
+
+// A tray card — a plain dnd-kit useSortable (kept default plugins, so it reorders
+// live within the tray and self-floats). It accepts grid tiles too, so one can be
+// dropped in. No isDragging opacity: dnd-kit clones the card for the float, so an
+// opacity here would dim the floating preview (the grid tiles float at full opacity
+// — keep both consistent).
+function TrayCard({ id, index }: { id: string; index: number }) {
+  const { ref, isDragging } = useSortable({
+    id,
+    index,
+    group: "tray",
+    type: "tray-card",
+    accept: ["tray-card", "grid-item"],
+  });
+  return (
+    <div
+      ref={ref}
+      className="dg-tray__card"
+      data-dragging={isDragging || undefined}
+      style={{
+        padding: "9px 11px",
+        marginBottom: 7,
+        borderRadius: 8,
+        background: "var(--dg-card)",
+        border: "1px solid var(--dg-line-strong)",
+        fontWeight: 600,
+        fontSize: 13,
+        cursor: "grab",
+        touchAction: "none",
+      }}
+    >
+      {id}
     </div>
   );
 }

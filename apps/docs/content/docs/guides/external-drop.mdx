@@ -115,3 +115,9 @@ state and any side data keyed by id (titles, content, etc.) in one place.
   Synthesized ids are prefixed with the grid's id, so two drop-enabled grids in a group never mint
   the same id.
 </Callout>
+
+## Beyond one-way drops
+
+External drop is a **one-way** drop of a plain dnd-kit `Draggable` into a grid. For **two-way**
+movement with a `useSortable` list or board — cards in, tiles back out, both reordering live — see
+[dnd-kit interop](/docs/guides/dnd-kit-interop).

@@ -14,6 +14,7 @@ import {
   CrossGridDemo,
   NestedDemo,
   ExternalDropDemo,
+  SortableGridDemo,
   ComponentLayerDemo,
 } from "@/components/demos";
 
@@ -81,6 +82,12 @@ A grid inside another grid's tile. Drag the panel by its header, rearrange the i
 Drag a chip from a palette into the grid; the grid synthesizes a new item. → [External drop guide](/docs/guides/external-drop)
 
 <ExternalDropDemo />
+
+## Sortable ↔ grid
+
+The grid interoperates with the wider dnd-kit ecosystem: drag a card from a `useSortable` tray into the grid (it lands at a real cell), drag a tile back out, or reorder the tray — all under one provider. → [dnd-kit interop guide](/docs/guides/dnd-kit-interop)
+
+<SortableGridDemo />
 
 ## Component layer
 

@@ -10,8 +10,9 @@ import { BasicGridDemo } from "@/components/demos";
 
 The hooks are snapgrid's primary API. They hand you refs, positioning styles, and drag state — you
 bring the markup, classes, and content. Reach for them when you want full control, or to compose with
-the dnd-kit draggables and sortables you already have. (`<GridLayout>` is a thin shell over these same
-hooks — see [Component layer](/docs/guides/component-layer) when you'd rather not wire it yourself.)
+the dnd-kit draggables and sortables you already have ([dnd-kit interop](/docs/guides/dnd-kit-interop)).
+(`<GridLayout>` is a thin shell over these same hooks — see
+[Component layer](/docs/guides/component-layer) when you'd rather not wire it yourself.)
 
 <BasicGridDemo />
 
@@ -89,7 +90,7 @@ function Tile({ id, group }) {
 | --- | --- |
 | `ref` | Attach to the tile element. |
 | `handleRef` | Optional drag handle — attach to a child to restrict pointer dragging to it (see [Dragging](/docs/guides/dragging#drag-handles)). Leave it off and the whole tile drags. |
-| `style` | Absolute positioning (`left/top/width/height` via a transform). Spread it; don't override the position. |
+| `style` | Absolute positioning (`position: absolute` + `left/top/width/height`); reflow is animated on the compositor. Spread it; don't override the position. |
 | `isDragging` | `true` while this tile is the active drag source — branch your styling on it. |
 | `item` | The tile's current (possibly reflowed) layout entry. |
 

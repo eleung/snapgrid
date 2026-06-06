@@ -9,6 +9,7 @@ export default {
   "cross-grid": "Cross-grid dragging",
   nesting: "Nested grids",
   "external-drop": "External drop",
+  "dnd-kit-interop": "dnd-kit interop",
   styling: "Styling",
   events: "Events & lifecycle",
   ssr: "Server-side rendering",

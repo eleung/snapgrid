@@ -145,7 +145,7 @@ Most RGL props that lived at the top level move into `gridConfig`, `dragConfig`,
 | `onResizeStart` · `onResize` · `onResizeStop` | same names | |
 | `isDroppable` · `droppingItem` · `onDrop` | `dropConfig` + `onDrop` | See [External drop](/docs/guides/external-drop). |
 | `autoSize` | `autoSize` | |
-| `useCSSTransforms` · `transformScale` · `measureBeforeMount` | — | Not needed; snapgrid uses transforms + `ResizeObserver` by default. |
+| `useCSSTransforms` · `transformScale` · `measureBeforeMount` | — | Not needed; snapgrid positions tiles with `left/top`, animates reflow on the compositor, and measures with `ResizeObserver`. |
 
 ### `<ResponsiveGridLayout>`
 
