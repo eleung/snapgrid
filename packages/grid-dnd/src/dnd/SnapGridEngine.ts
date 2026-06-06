@@ -216,6 +216,15 @@ class SnapGridEngine {
     const destCtrl = this.#resolveDest(targetId);
 
     if (!data) {
+      // No snapgrid payload: either a true external draggable, OR a grid tile whose
+      // element was swapped for a foreign one mid-drag (interop: it became a sortable
+      // card). In the latter case the source grid still holds a "move" session from the
+      // last in-grid frame — hide its placeholder so it doesn't linger while the drag is
+      // over the foreign target. (A true external drag has no `owner`, so this is a no-op.)
+      if (owner) {
+        const cur = owner.getSession();
+        if (cur?.placeholder) owner.setSession(hideActive(cur));
+      }
       // External (non-grid) draggable: preview where it would land over a grid that accepts it.
       this.#setDest(destCtrl ? this.#receiveExternalInto(destCtrl, source, pointer) : null);
       return;
