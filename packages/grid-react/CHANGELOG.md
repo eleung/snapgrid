@@ -1,5 +1,13 @@
 # @snapgridjs/react
 
+## 0.6.1
+
+### Patch Changes
+
+- Updated dependencies [e6c5cbb]
+  - @snapgridjs/dnd@0.6.1
+  - @snapgridjs/core@0.6.1
+
 ## 0.6.0
 
 ### Minor Changes

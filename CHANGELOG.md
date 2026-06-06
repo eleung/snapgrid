@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.6.1] - 2026-06-07
+
+### Fixed
+
+- `@snapgridjs/dnd`: a grid's landing placeholder could linger over the sortable when a tile was
+  dragged out to a foreign dnd-kit `useSortable` list. Once the dragged element is swapped for the
+  foreign card mid-drag, the engine's external-source path now clears the source grid's placeholder
+  too (it previously only cleared on the in-grid move path, so it surfaced intermittently).
+
 ## [0.6.0] - 2026-06-07
 
 A grid now interoperates with the wider **dnd-kit ecosystem**, not just other grids: drag a
@@ -139,6 +148,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.6.1]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.6.1
 [0.6.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.6.0
 [0.5.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.5.0
 [0.4.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.4.0
