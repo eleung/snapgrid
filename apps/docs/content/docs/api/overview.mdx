@@ -45,10 +45,19 @@ There's no overlay component to reach for: a dragged tile
 case needs nothing extra. The re-exported `DragOverlay` is the escape hatch for when the floating
 preview must differ from the tile — a clone, a ghost, or wholly custom markup.
 
+### Interop
+
+`snapMove(layout, event, ctx)` — the reducer for [dnd-kit interop](/docs/guides/dnd-kit-interop):
+place a dragged item (a foreign `useSortable` card, or a tile crossing a grid ⇄ list seam) into a
+`Layout` at the pointer cell, with compaction. Pair it with `removeItemWithCompactor` to take a tile
+back out. Types: `SnapMoveContext`, `SnapMoveEvent`.
+
 ### Utilities & compactors
 
 `DEFAULT_BREAKPOINTS`, `DEFAULT_BREAKPOINT_COLS`, and the built-in compactors
-`verticalCompactor`, `horizontalCompactor`, `noCompactor`, `getCompactor`.
+`verticalCompactor`, `horizontalCompactor`, `noCompactor`, `getCompactor`. Plus the layout-op and
+geometry helpers handy for interop, re-exported from `@snapgridjs/core`:
+`insertItemWithCompactor`, `removeItemWithCompactor`, `toPositionParams`, `defaultGridConfig`.
 
 ### Types & config
 
@@ -65,9 +74,9 @@ session state machine. Most apps never import it directly. See
 ## `@snapgridjs/dnd`
 
 The framework-agnostic dnd-kit engine `@snapgridjs/react` is built on — one per-manager
-drag/resize/cross-grid engine (`attachEngine`), the observable `GridController` render bridge, and
-the collision/sensor/payload helpers a binding wires up. Comes in automatically with
-`@snapgridjs/react`; import it directly only to build a binding for another framework.
+drag/resize/cross-grid engine (`attachEngine`), the observable `GridController` render bridge, the
+`snapMove` interop reducer, and the collision/sensor/payload helpers a binding wires up. Comes in
+automatically with `@snapgridjs/react`; import it directly only to build a binding for another framework.
 
 ## `@snapgridjs/extras`
 

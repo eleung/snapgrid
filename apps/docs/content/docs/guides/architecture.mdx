@@ -52,8 +52,8 @@ The grid is another participant in *your* dnd-kit tree — there's no parallel d
 
 Each tile is a **real `useSortable`** carrying a small payload — `{ kind, itemId, item, group }` — so it
 speaks the same protocol as any dnd-kit sortable. That's what lets a grid compose with sortable lists
-and other draggables under one provider, and what makes cross-grid and external drops fall out of
-dnd-kit's own collision system rather than bespoke code.
+and other draggables under one provider ([dnd-kit interop](/docs/guides/dnd-kit-interop)), and what
+makes cross-grid and external drops fall out of dnd-kit's own collision system rather than bespoke code.
 
 ## One engine per manager
 

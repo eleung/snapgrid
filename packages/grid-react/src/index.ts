@@ -66,6 +66,11 @@ export type {
   GridEventCallback,
   ResizeConfig,
 } from "@snapgridjs/dnd";
+// `snapMove` — interop reducer: drag a sortable card INTO a grid (lands at a real
+// cell, with compaction). Its drag-OUT counterpart is `removeItemWithCompactor`
+// (re-exported below) — remove AND re-pack, since a plain `filter` leaves a hole.
+export { snapMove } from "@snapgridjs/dnd";
+export type { SnapMoveContext, SnapMoveEvent } from "@snapgridjs/dnd";
 
 // Re-export the layout-engine surface so consumers can build compactors,
 // inspect types, and use geometry helpers without a separate import.
@@ -82,9 +87,13 @@ export type {
   ResponsiveLayouts,
 } from "@snapgridjs/core";
 export {
+  defaultGridConfig,
   getCompactor,
   horizontalCompactor,
+  insertItemWithCompactor,
   noCompactor,
+  removeItemWithCompactor,
+  toPositionParams,
   verticalCompactor,
 } from "@snapgridjs/core";
 

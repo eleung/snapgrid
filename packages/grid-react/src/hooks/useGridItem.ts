@@ -11,7 +11,7 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
-import { REFLOW_EASING, REFLOW_MS, REFLOW_TRANSITION } from "../reflow.js";
+import { REFLOW_EASING, REFLOW_MS, TILE_TRANSITION } from "../reflow.js";
 import { useResolveController } from "./useResolveController.js";
 
 // A pointer drag floats the tile via dnd-kit's default feedback; a keyboard drag gets
@@ -24,6 +24,13 @@ const ITEM_FEEDBACK = [
     dropAnimation: null,
   }),
 ];
+
+// A grid tile is never itself a drop target — the grid CONTAINER (a separate,
+// higher-priority droppable) is what a drag resolves onto. Keeping tiles out of the
+// target pool also stops dnd-kit's OptimisticSortingPlugin from reparenting a tile's
+// DOM node mid-drag (it acts only when source AND target are sortables) and then
+// fighting React's commit (`removeChild`).
+const tileNeverTarget = () => null;
 
 export interface UseGridItemResult {
   /** Attach to the element that represents this grid item. */
@@ -52,10 +59,18 @@ export interface UseGridItemResult {
  * element you render — you own the tag, className, content, and cosmetic styling.
  *
  * The dragged tile floats itself via dnd-kit's default feedback (no `<DragOverlay>`):
- * the active tile renders at its committed origin so the float offset composes, and
- * reflow is animated on the compositor via the Web Animations API — both so it stays
- * smooth in Safari, where the float's popover top-layer repaint would jank a
- * CSS-transition reflow.
+ * the active tile renders at its committed origin and dnd-kit's float follows the
+ * pointer from there, while reflow is animated on the compositor via the Web
+ * Animations API (a FLIP) — both so it stays smooth in Safari, where the float's
+ * popover top-layer repaint would jank a CSS-transition reflow.
+ *
+ * Tiles are positioned with `left`/`top` (not `transform`). dnd-kit's self-float
+ * measures the source element's rect ignoring transforms and re-applies its current
+ * transform each frame; a transform-positioned tile leans on that, but the
+ * compensation is lost the instant the dragged element is swapped for a foreign one
+ * mid-drag (grid → sortable interop — the tile becomes a flow card), which would
+ * make the float jump by the tile's grid offset. Plain left/top has nothing to lose
+ * on the swap, matching how dnd-kit's own flow-positioned sortables hand off cleanly.
  */
 export function useGridItem(id: string, group: string): UseGridItemResult {
   const controller = useResolveController(group);
@@ -97,6 +112,9 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
     group,
     type: "grid-item",
     accept: "grid-item",
+    // The tile is a sortable (so it interops + carries group/index), but never a
+    // drop target — the grid container is. See {@link tileNeverTarget}.
+    collisionDetector: tileNeverTarget,
     disabled: !config.isItemDraggable(id),
     sensors: config.itemSensors,
     modifiers: config.itemModifiers,
@@ -130,31 +148,63 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
   const posLeft = pos?.left;
   const posTop = pos?.top;
 
-  // While dragging, animate a reflowing tile to its new cell on the compositor (a
-  // FLIP from its current visual position, so a mid-flight re-target stays smooth).
-  // Compositor animations are immune to the float's popover repaint that janks a CSS
-  // transition in Safari; outside a drag the CSS transition below handles changes.
+  // Reflow a tile to its new cell via a compositor FLIP: the resting left/top has
+  // already jumped this render, so animate a `transform` delta from the tile's previous
+  // visual position back to 0. Drives in-drag reflow AND out-of-drag (responsive /
+  // programmatic) changes, and dodges the float's popover repaint that janks a CSS
+  // transition in Safari. The drag source settling after a drop is the exception (see
+  // the `settleAnchor` branch below).
   const prev = useRef<{ left: number; top: number } | null>(null);
   const reflowAnim = useRef<Animation | null>(null);
+  const settleAnchor = useRef<{ left: number; top: number } | null>(null);
   useLayoutEffect(() => {
     const cur = posLeft != null && posTop != null ? { left: posLeft, top: posTop } : null;
     const before = prev.current;
     prev.current = cur;
     const el = elRef.current;
-    if (!el || !cur || !before || active || justDropped || !dragging) return;
+    if (!el || !cur) return;
+
+    // Active: dnd-kit owns this tile's motion. Remember the cell it floats from so the
+    // post-drop settle can snap instead of FLIP.
+    if (active) {
+      settleAnchor.current = cur;
+      reflowAnim.current?.cancel();
+      return;
+    }
+    // A drag of ANOTHER tile in this grid: this tile reflows normally; drop any stale
+    // settle anchor so it FLIPs (it was never floated).
+    if (dragging) settleAnchor.current = null;
+    // Post-drop settle of the formerly-active source: it was floated, so `before` is the
+    // committed origin, not where it visually was — snap (no FLIP) until the committed
+    // move lands (cell leaves the anchor). Clearing earlier is unsafe: the drop's commit
+    // can arrive a render after `active` clears, and on that frame a pending real move
+    // and a no-op drop both read `cur === anchor`. The cost: a true no-op drop leaves the
+    // anchor set until the next drag clears it (tiny, accepted — beats reopening the slide).
+    else if (settleAnchor.current) {
+      const a = settleAnchor.current;
+      reflowAnim.current?.cancel();
+      if (cur.left !== a.left || cur.top !== a.top) settleAnchor.current = null;
+      return;
+    }
+
+    if (!before || justDropped) return;
     if (before.left === cur.left && before.top === cur.top) return;
+    // Web Animations API may be absent (jsdom / SSR / very old browsers): degrade to
+    // an instant move (the left/top below already places the tile) rather than throw.
+    if (typeof el.animate !== "function") return;
+    // Previous visual position = the prior resting cell plus any in-flight transform.
     let fromX = before.left;
     let fromY = before.top;
     if (reflowAnim.current?.playState === "running") {
       const m = new DOMMatrix(getComputedStyle(el).transform);
-      fromX = m.m41;
-      fromY = m.m42;
+      fromX = before.left + m.m41;
+      fromY = before.top + m.m42;
     }
     reflowAnim.current?.cancel();
     reflowAnim.current = el.animate(
       [
-        { transform: `translate(${fromX}px, ${fromY}px)` },
-        { transform: `translate(${cur.left}px, ${cur.top}px)` },
+        { transform: `translate(${fromX - cur.left}px, ${fromY - cur.top}px)` },
+        { transform: "translate(0px, 0px)" },
       ],
       { duration: REFLOW_MS, easing: REFLOW_EASING },
     );
@@ -164,18 +214,17 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
   // mid-drag during a cross-grid move) so a running Animation can't outlive its node.
   useEffect(() => () => reflowAnim.current?.cancel(), []);
 
+  // Tiles rest on left/top (see the hook doc above); position animates via the FLIP
+  // above, so the transition is SIZE-only (TILE_TRANSITION) — and "none" while dragging
+  // (FLIP owns motion) or just-dropped (it snaps). The active tile (⊂ dragging) hits "none".
   const style: CSSProperties = pos
     ? {
         position: "absolute",
-        left: 0,
-        top: 0,
+        left: pos.left,
+        top: pos.top,
         width: pos.width,
         height: pos.height,
-        transform: `translate(${pos.left}px, ${pos.top}px)`,
-        // During a drag the WAAPI animation owns reflow motion; a CSS transition
-        // would get janked (Safari) and double up. Outside a drag, keep it for
-        // programmatic layout changes. The active/just-dropped tile never transitions.
-        transition: active || justDropped || dragging ? "none" : REFLOW_TRANSITION,
+        transition: justDropped || dragging ? "none" : TILE_TRANSITION,
         touchAction: "none",
       }
     : { position: "absolute", touchAction: "none" };

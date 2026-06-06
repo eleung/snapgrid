@@ -63,7 +63,10 @@ export function useGridContainer(opts: UseGridControllerOptions): UseGridContain
       if (srcEl && gridElRef.current && srcEl.contains(gridElRef.current)) return false;
       if (source.type === "grid-item") return true;
       const data = source.data as { snapGridDrop?: unknown } | undefined;
-      return data?.snapGridDrop != null;
+      if (data?.snapGridDrop != null) return true;
+      // Consumer extension: accept foreign dnd-kit draggables (e.g. a sortable
+      // card) as drop targets for interop; the receive is driven via snapMove.
+      return opts.accept?.(source) ?? false;
     },
     collisionDetector: gridCollisionDetector,
   });

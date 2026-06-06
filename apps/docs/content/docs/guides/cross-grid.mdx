@@ -14,6 +14,11 @@ source grid loses the tile; the destination gains it. Each grid keeps its own co
 — so each grid hosts itself with `useGridContainer`, and a dragged tile floats itself across the seam
 (no overlay to wire).
 
+<Callout type="info">
+  Cross-grid is the managed, grid-to-grid case. To drag between a grid and a **non-grid** dnd-kit
+  sortable (a list, a kanban column), see [dnd-kit interop](/docs/guides/dnd-kit-interop).
+</Callout>
+
 ```tsx
 import { SnapGridGroup, useGridContainer, useGridItem } from "@snapgridjs/react";
 

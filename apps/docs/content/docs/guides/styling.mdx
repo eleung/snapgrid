@@ -35,7 +35,8 @@ function Tile({ id, group }) {
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 }
 /* The tile floats itself, so [data-dragging] styles the element you're dragging
-   around — give it a "lifted" cue. (Don't touch transform; it positions the tile.) */
+   around — give it a "lifted" cue. (Don't touch left/top/transform; the hook owns
+   positioning and reflow motion.) */
 .tile[data-dragging] {
   box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
 }
@@ -52,17 +53,15 @@ draggable is over it, so you can highlight the drop zone:
 
 ## Positioning styles are inline
 
-The `style` from `useGridItem` positions the tile with a **`transform: translate(…)`** (pinned at
-`left: 0 / top: 0`, sized with `width` / `height`) — a GPU transform, not animated `left`/`top`, so
-large grids stay smooth. `useGridContainer`'s `style` sets `position: relative` + the surface size.
-Spread them as-is and **don't override** these properties. Add your own visual properties alongside —
-including a `transition` on `transform` if you want non-active tiles to animate as they reflow:
+The `style` from `useGridItem` positions the tile with **`position: absolute` + `left` / `top`** (sized
+with `width` / `height`). `useGridContainer`'s `style` sets `position: relative` + the surface size.
+Spread them as-is and **don't override** these properties.
 
-```tsx
-<div ref={ref} style={{ ...style, transition: "transform 120ms ease" }}>
-  …
-</div>
-```
+You don't add a reflow transition yourself — the hook animates a tile sliding to its new cell on the
+compositor (a transform FLIP) during a drag and on out-of-drag layout changes. (Tiles rest on left/top
+rather than a `transform` so dnd-kit's float reads each tile's true rect when one is handed off to a
+sortable list — see [dnd-kit interop](/docs/guides/dnd-kit-interop).) Add your own visual properties
+alongside the spread; just leave `left` / `top` / `transform` / `transition` to the hook.
 
 ## Component-layer class names
 
@@ -127,8 +126,8 @@ shadow, a ring, a touch of brightness:
 
 Two properties are off-limits on the floating tile:
 
-- **`transform` / `translate` / `scale`** — these position the tile, and dnd-kit drives them while it
-  floats, so a `transform: scale(...)` in `[data-dragging]` is overridden mid-drag. To scale or
+- **`transform` / `translate` / `scale`** — the hook's reflow FLIP and dnd-kit's float both drive
+  `transform`, so a `transform: scale(...)` in `[data-dragging]` is overridden mid-drag. To scale or
   rotate the float, use a dnd-kit [modifier](https://next.dndkit.com) instead.
 - **`cursor`** — the floating tile is `pointer-events: none` while dragging, so set the grab cursor on
   the tile (or its `handleRef`) at rest / `:active`, not via `[data-dragging]`.

@@ -23,6 +23,7 @@ One per-manager engine, plus the pieces a binding wires up:
 - **`GridController`** — the observable per-grid render bridge. A binding writes per-grid config into it and subscribes to the rendered layout / per-tile snapshots (e.g. via `useSyncExternalStore`).
 - **`registerController` / `getController`** — resolve a grid's controller by id, scoped to a manager.
 - **Interaction helpers** — `gridCollisionDetector`, `SnapToGrid`, `buildItemSensors`, `domElement`, and the pure `dragFlow` decision functions (`classifyDrop`, `receiveCell`, …).
+- **`snapMove(layout, event, ctx)`** — the consumer-facing reducer for dnd-kit ecosystem interop (drag a `useSortable` card into a grid, or a tile between a grid and a sortable list); also re-exported from `@snapgridjs/react`.
 - **Config & event types** — `DragConfig`, `ResizeConfig`, `DropConfig`, `GridDropData`, `GridEventCallback` (also re-exported from `@snapgridjs/react`).
 
 The layout math — compaction, geometry, move/resize, and the drag-session state machine — lives in [`@snapgridjs/core`](https://www.npmjs.com/package/@snapgridjs/core); this package adds the dnd-kit interaction layer on top, and the framework bindings add rendering.

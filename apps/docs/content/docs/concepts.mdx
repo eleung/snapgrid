@@ -76,8 +76,9 @@ layout. The brains of *that* (geometry, the collision cascade, compaction) come 
 <Callout type="info">
   **Know dnd-kit and you already know 80% of snapgrid.** The headless API is dnd-kit's idiom — you
   bring a `DragDropProvider`, tiles declare a `group` the way [`useSortable`](https://next.dndkit.com)
-  declares a list, and a grid composes with sortables and other draggables under one provider. If
-  dnd-kit is new to you, a five-minute skim of its docs is the easiest possible head start.
+  declares a list, and a grid composes with sortables and other draggables under one provider (see
+  [dnd-kit interop](/docs/guides/dnd-kit-interop)). If dnd-kit is new to you, a five-minute skim of
+  its docs is the easiest possible head start.
 </Callout>
 
 → Going deeper — the layered packages, the one-per-manager engine, the observable render bridge, and

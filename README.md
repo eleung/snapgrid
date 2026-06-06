@@ -35,6 +35,7 @@ Draggable, resizable, responsive grid layouts for React, with pluggable packing 
 - **Pluggable packing**: `vertical` / `horizontal` / `none`, plus `masonry` / `gravity` / `shelf` from `@snapgridjs/extras`, or your own `Compactor`.
 - **Cross-grid dragging**: wrap grids in a `<SnapGridGroup>` and drag tiles between them.
 - **Nested grids**: drop a grid inside a tile of another grid and drag tiles between levels — or isolate a sub-grid by giving it its own provider.
+- **dnd-kit interop**: drag between a grid and a dnd-kit `useSortable` list or board — a card lands at a real cell, a tile drops back out, both reorder — under one provider (`snapMove`).
 - **Responsive**: per-breakpoint layouts with `<ResponsiveGridLayout>`.
 - **Resizable, with limits**: any edge/corner, per-item `minW/maxW/minH/maxH`, and `static` tiles.
 - **Keyboard accessible**: every tile is keyboard-draggable — Enter/Space to pick up, arrow keys to move, Esc to cancel.
@@ -51,6 +52,7 @@ snapgrid keeps the parts of [react-grid-layout](https://github.com/react-grid-la
 | Resize handles · per-item min/max · static tiles | ✅ | ✅ |
 | **Drag tiles _between_ grids** | ✅ built-in (`SnapGridGroup`) | ❌ |
 | **Nested grids** | ✅ cross-level dragging | ⚠️ manual |
+| **dnd-kit interop** (sortable lists / boards) | ✅ two-way (`snapMove`) | ❌ |
 | **Keyboard dragging / a11y** | ✅ Enter · arrows · Esc | ❌ |
 | **Headless** (bring your own markup) | ✅ provider + hooks | ❌ renders its own DOM |
 | Pluggable packing | ✅ vertical / horizontal / none **+ masonry / gravity / shelf + custom** | vertical / horizontal / none |
@@ -149,7 +151,7 @@ function Tile({ id, group }: { id: string; group: string }) {
 | --- | --- |
 | [`@snapgridjs/react`](./packages/grid-react) | React components + hooks. The main entry point. |
 | [`@snapgridjs/core`](./packages/grid-core) | Framework-agnostic layout math (geometry, move/resize, compaction, drag-session). |
-| [`@snapgridjs/dnd`](./packages/grid-dnd) | Framework-agnostic dnd-kit engine (drag/resize/cross-grid) the bindings build on. Comes in with `@snapgridjs/react`; for binding authors. |
+| [`@snapgridjs/dnd`](./packages/grid-dnd) | Framework-agnostic dnd-kit engine (drag/resize/cross-grid/interop) the bindings build on. Comes in with `@snapgridjs/react`; for binding authors. |
 | [`@snapgridjs/extras`](./packages/grid-extras) | Optional packers: masonry, gravity, shelf, wrap. |
 
 ## Development
