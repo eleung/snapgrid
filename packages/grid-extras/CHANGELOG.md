@@ -1,5 +1,11 @@
 # @snapgridjs/extras
 
+## 0.6.0
+
+### Patch Changes
+
+- @snapgridjs/core@0.6.0
+
 ## 0.5.0
 
 ### Patch Changes
