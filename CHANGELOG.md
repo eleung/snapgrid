@@ -4,6 +4,33 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.6.0] - 2026-06-07
+
+A grid now interoperates with the wider **dnd-kit ecosystem**, not just other grids: drag a
+`useSortable` card into a grid, a tile back out, or reorder the list — all in one drag, under one
+provider.
+
+### Added
+
+- **dnd-kit sortable interop.** `snapMove(layout, event, ctx)` (`@snapgridjs/dnd`, re-exported from
+  `@snapgridjs/react`) places a dragged item into a grid `Layout` at the pointer cell, with
+  compaction — call it from your own `onDragOver`. `removeItemWithCompactor` is the drag-out
+  counterpart, now re-exported from `@snapgridjs/react` alongside `insertItemWithCompactor`,
+  `toPositionParams`, and `defaultGridConfig`. See the new
+  [dnd-kit interop](https://snapgrid.dev/docs/guides/dnd-kit-interop) guide.
+- **`accept` option** on `useGridContainer` / `<GridLayout>` — opt a foreign dnd-kit sortable in as a
+  drop target (you drive the receive in `onDragOver`).
+
+### Changed
+
+- Grid tiles now position with `left`/`top` instead of a `transform`, so dnd-kit's self-float reads
+  each tile's true rect when it's handed off to a sortable list. Reflow still animates on the
+  compositor (a transform FLIP). Spread the `style` from `useGridItem` as before and don't override
+  the position.
+- Grid collision is now pointer-based: a grid claims a drag while the pointer is inside it, rather
+  than while the dragged tile's rectangle overlaps it — letting a tile leave a grid for an adjacent
+  sortable, and matching the pointer-based receive math.
+
 ## [0.5.0] - 2026-06-06
 
 The dnd-kit engine is extracted into a new package, **`@snapgridjs/dnd`** — the drag/resize/cross-grid
@@ -112,6 +139,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.6.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.6.0
 [0.5.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.5.0
 [0.4.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.4.0
 [0.3.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.3.0
