@@ -1,4 +1,4 @@
-import { type CollisionDetector, defaultCollisionDetection } from "@dnd-kit/collision";
+import { type CollisionDetector, pointerIntersection } from "@dnd-kit/collision";
 import { domElement } from "./entity.js";
 
 /**
@@ -31,14 +31,26 @@ export function gridDepth(el: Element | null | undefined): number {
 }
 
 /**
- * Collision detector for grid droppables. Runs dnd-kit's default detector, then —
- * when nested grid rects overlap (the pointer is over both an inner grid and its
- * outer one) — ranks the **innermost** grid highest by boosting priority with the
- * grid's nesting depth. Without this, overlapping grids tie on priority and the
- * winner is arbitrary. For non-nested grids depth is 0, so priority is unchanged.
+ * Collision detector for grid droppables. Uses **pointer** intersection (not
+ * dnd-kit's default, which is pointer-first but falls back to the dragged SHAPE
+ * when the pointer leaves a droppable): a grid claims a drag only while the
+ * pointer is genuinely inside it. The shape fallback was actively wrong here —
+ * the grid's priority boost (below) made a large dragged tile keep winning the
+ * grid via mere rect-overlap even after the pointer moved off onto a sibling
+ * droppable (e.g. a sortable card beside the grid), so the tile could never
+ * leave the grid for that target. Pointer-only also aligns collision with the
+ * receive math, which maps the pointer (not the tile rect) to a cell.
+ *
+ * When the pointer IS inside, rank the grid above the dragged tile's own
+ * sortable droppable (so an in-grid move resolves to the container, letting RGL
+ * drive it — not dnd-kit's sortable reorder) and above a sibling droppable the
+ * pointer also happens to be over. For nested grids whose rects overlap (the
+ * pointer is over both an inner grid and its outer one), boost priority by the
+ * grid's nesting depth so the **innermost** grid wins; for non-nested grids
+ * depth is 0, so priority is unchanged.
  */
 export const gridCollisionDetector: CollisionDetector = (input) => {
-  const collision = defaultCollisionDetection(input);
+  const collision = pointerIntersection(input);
   if (!collision) return null;
   return {
     ...collision,

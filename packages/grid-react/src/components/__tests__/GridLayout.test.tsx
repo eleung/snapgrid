@@ -31,13 +31,15 @@ describe("GridLayout rendering", () => {
     expect(container.querySelectorAll(".snapgrid-item")).toHaveLength(2);
   });
 
-  it("positions each tile at its grid cell (transform translate + size in px)", () => {
+  it("positions each tile at its grid cell (left/top + size in px)", () => {
     const { container } = renderGrid();
     const a = container.querySelector<HTMLElement>('[data-grid-id="a"]');
     const posA = calcGridItemPosition(pp, 0, 0, 2, 2);
-    // Positioned with a compositor transform (not left/top) so large grids stay
-    // smooth in WebKit — see useGridItem.
-    expect(a?.style.transform).toBe(`translate(${posA.left}px, ${posA.top}px)`);
+    // Resting position is left/top (not a transform) so dnd-kit's self-float reads
+    // the tile's true rect and a grid→sortable hand-off doesn't jump; reflow still
+    // animates on the compositor via a transform FLIP — see useGridItem.
+    expect(a?.style.left).toBe(`${posA.left}px`);
+    expect(a?.style.top).toBe(`${posA.top}px`);
     expect(a?.style.width).toBe(`${posA.width}px`);
     expect(a?.style.height).toBe(`${posA.height}px`);
   });

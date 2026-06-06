@@ -11,6 +11,7 @@ import {
 } from "@snapgridjs/core";
 import {
   type DragConfig,
+  type DragSourceInfo,
   type DropConfig,
   GridController,
   type GridEventCallback,
@@ -44,6 +45,13 @@ export interface UseGridControllerOptions {
   dragConfig?: DragConfig;
   resizeConfig?: ResizeConfig;
   dropConfig?: DropConfig;
+  /**
+   * Accept additional (non-grid) dnd-kit draggables as drop targets — e.g. a
+   * `useSortable` card from a sibling list, for interop. Extends the built-in
+   * acceptance (grid tiles + `snapGridDrop` externals); the ancestry guard still
+   * applies. You drive the actual receive in your own `onDragOver` with `snapMove`.
+   */
+  accept?: (source: DragSourceInfo) => boolean;
   compactor?: Compactor;
   isDraggable?: boolean;
   isResizable?: boolean;

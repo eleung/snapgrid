@@ -59,7 +59,10 @@ describe("headless API (useGridContainer + hooks, custom markup)", () => {
     const { container } = renderBoard();
     const a = container.querySelector<HTMLElement>('[data-tile="a"]');
     const posA = calcGridItemPosition(pp, 0, 0, 2, 2);
-    expect(a?.style.transform).toBe(`translate(${posA.left}px, ${posA.top}px)`);
+    // Tiles rest on left/top (not transform) so dnd-kit's self-float reads the
+    // true rect and a grid→sortable hand-off doesn't jump (see useGridItem).
+    expect(a?.style.left).toBe(`${posA.left}px`);
+    expect(a?.style.top).toBe(`${posA.top}px`);
     expect(a?.style.position).toBe("absolute");
   });
 

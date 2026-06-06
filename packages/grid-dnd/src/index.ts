@@ -37,6 +37,12 @@ export { getController, registerController } from "./controller/registry.js";
 // The engine: attach it to a dnd-kit manager (ref-counted; one per manager).
 export { attachEngine } from "./dnd/SnapGridEngine.js";
 
+// Consumer reducer for interop with the wider dnd-kit ecosystem (the 2-D analog
+// of dnd-kit's `move`): place a dragged item into a grid Layout from an onDragOver
+// event. See the dnd-kit interop guide.
+export { snapMove } from "./snapMove.js";
+export type { SnapMoveContext, SnapMoveEvent } from "./snapMove.js";
+
 // dnd-kit interaction pieces a binding wires onto its droppables/draggables.
 export { SNAPGRID_GRID_ATTR, gridCollisionDetector } from "./dnd/collision.js";
 export { SnapToGrid } from "./dnd/snapToGrid.js";
