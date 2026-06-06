@@ -91,6 +91,33 @@ test("grid tile → tray: pulls out into the tray, no removeChild", async ({ pag
   expect(errors, errors.join("\n")).toEqual([]);
 });
 
+test("grid tile → tray: grid placeholder clears while held over the tray", async ({ page }) => {
+  const demo = await gotoInterop(page);
+  const grid = demo.locator(".dg-grid");
+  const tile = grid.locator(":scope > .dg-cell").filter({ hasText: "chart" });
+  const card = demo.locator(".dg-tray .dg-tray__card").filter({ hasText: "users" });
+  const tb = (await tile.boundingBox())!;
+  const ub = (await card.boundingBox())!;
+
+  // Drag the tile onto a tray card and HOLD there.
+  await page.mouse.move(tb.x + tb.width / 2, tb.y + tb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(tb.x + 12, tb.y + 12, { steps: 4 });
+  await page.mouse.move(ub.x + ub.width / 2, ub.y + ub.height / 2, { steps: 14 });
+  await page.mouse.move(ub.x + ub.width / 2 + 3, ub.y + ub.height / 2, { steps: 3 });
+
+  // The tile has left the grid, so the grid's landing placeholder must not linger
+  // (regression: the engine's external-source path skipped hiding it after the
+  // dragged element swapped to a foreign sortable mid-drag).
+  let maxSeen = 0;
+  for (let i = 0; i < 6; i++) {
+    maxSeen = Math.max(maxSeen, await grid.locator(":scope > .dg-placeholder").count());
+    await page.waitForTimeout(20);
+  }
+  await page.mouse.up();
+  expect(maxSeen, "grid placeholder should not render while the tile is over the tray").toBe(0);
+});
+
 test("grid tile → tray: re-packs the hole the tile leaves (no gap)", async ({ page }) => {
   const errors = trackErrors(page);
   const demo = await gotoInterop(page);
