@@ -1,6 +1,6 @@
 {
   "name": "@snapgridjs/extras",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Extra packing styles (masonry, gravity, shelf) and re-exported wrap/fast compactors for snapgrid.",
   "license": "MIT",
   "author": "Edmond Leung",
