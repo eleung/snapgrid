@@ -1,5 +1,18 @@
 # @snapgridjs/react
 
+## 0.7.0
+
+### Minor Changes
+
+- ebf0622: **Breaking:** `useGridItem` and `useGridResizeHandle` take an options object instead of positional arguments — `useGridItem({ id, group })` and `useGridResizeHandle({ id, handle, group })` — matching `useSortable`. `useGridItem` and `useGridContainer` gain an optional `type` (default `"grid-item"` / `"grid"`) to namespace tiles and grids for ecosystem interop; the grid identifies its tiles by payload, so a custom type still drags and crosses grids.
+- ebf0622: `snapMove` resolves the destination grid from `event.operation.target` and reads its geometry, compactor, and default item size from the grid the pointer is over — interop `onDragOver` handlers no longer rebuild `PositionParams` by hand. Every `SnapMoveContext` field is an optional override, and a foreign source's `snapGridDrop` spec (size + id) is honored, matching the managed external-drop path.
+
+### Patch Changes
+
+- Updated dependencies [ebf0622]
+  - @snapgridjs/dnd@0.7.0
+  - @snapgridjs/core@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes

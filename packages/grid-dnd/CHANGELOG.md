@@ -1,5 +1,15 @@
 # @snapgridjs/dnd
 
+## 0.7.0
+
+### Minor Changes
+
+- ebf0622: `snapMove` resolves the destination grid from `event.operation.target` and reads its geometry, compactor, and default item size from the grid the pointer is over — interop `onDragOver` handlers no longer rebuild `PositionParams` by hand. Every `SnapMoveContext` field is an optional override, and a foreign source's `snapGridDrop` spec (size + id) is honored, matching the managed external-drop path.
+
+### Patch Changes
+
+- @snapgridjs/core@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes
