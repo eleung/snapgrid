@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.7.0] - 2026-06-10
+
+The tile hooks now speak the dnd-kit options-object idiom, and `snapMove` reads the destination
+grid's geometry for you — interop `onDragOver` handlers get noticeably smaller.
+
+### Changed
+
+- **`useGridItem` / `useGridResizeHandle` take an options object** (`@snapgridjs/react`, BREAKING) —
+  `useGridItem({ id, group })`, `useGridResizeHandle({ id, handle, group })` — mirroring dnd-kit's
+  `useSortable`. Move positional call sites to objects.
+- **`snapMove` resolves the destination grid** (`@snapgridjs/dnd`, re-exported from
+  `@snapgridjs/react`). It reads `positionParams`, the compactor, and the default item size from the
+  grid under the pointer (`event.operation.target`), so an interop `onDragOver` no longer rebuilds
+  `PositionParams` by hand — every `SnapMoveContext` field is now an optional override. A foreign
+  source's `snapGridDrop` spec (size + id) is honored, matching the external-drop path.
+
+### Added
+
+- **Customizable `type`** on `useGridItem` (the tile's sortable `type`) and `useGridContainer` (the
+  surface's droppable `type`) — default `"grid-item"` / `"grid"` — to namespace tiles and grids for
+  ecosystem interop. The grid identifies its own tiles by their payload, not the type string, so a
+  custom type still drags and crosses grids.
+
 ## [0.6.1] - 2026-06-07
 
 ### Fixed
@@ -148,6 +171,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.7.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.7.0
 [0.6.1]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.6.1
 [0.6.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.6.0
 [0.5.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.5.0
