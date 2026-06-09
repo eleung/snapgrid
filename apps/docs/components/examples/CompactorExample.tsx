@@ -85,7 +85,7 @@ function Board({
 }
 
 function Tile({ id, group }: { id: string; group: string }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}

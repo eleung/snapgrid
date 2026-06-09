@@ -38,7 +38,7 @@ function OuterBoard() {
 }
 
 function Tile({ id, group }: { id: string; group: string }) {
-  const { ref, handleRef, style } = useGridItem(id, group);
+  const { ref, handleRef, style } = useGridItem({ id, group });
   if (id === "panel") {
     // Per-tile drag handle: the panel drags only from its header, so grabbing an
     // inner tile never drags the whole panel. Using `handleRef` (not a grid-wide

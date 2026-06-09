@@ -19,7 +19,7 @@ const layout: Layout = [
 
 // A consumer rendering entirely their own markup (semantic tags, own classes).
 function Tile({ id, group }: { id: string; group: string }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return (
     <article ref={ref} style={style} className="my-card" data-tile={id}>
       {id}

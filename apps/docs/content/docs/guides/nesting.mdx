@@ -42,7 +42,7 @@ function OuterBoard({ outer, width, setOuter }) {
 }
 
 function Tile({ id, group }) {
-  const { ref, handleRef, style } = useGridItem(id, group);
+  const { ref, handleRef, style } = useGridItem({ id, group });
   if (id === "panel") {
     return (
       <div ref={ref} style={style} className="panel">

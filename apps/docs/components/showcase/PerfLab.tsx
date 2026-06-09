@@ -303,7 +303,7 @@ function PerfGrid({
 // One positioned avatar tile: useGridItem supplies the ref + transform style; the
 // `.sg-perf__tile` content fills it and floats itself while dragging.
 function PerfTile({ id, group, src }: { id: string; group: string; src: string }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="sg-perf__tile">
       <img src={src} alt="" loading="lazy" />

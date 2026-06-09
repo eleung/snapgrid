@@ -66,6 +66,7 @@ The controlled state plus the per-grid config. These are exactly `<GridLayout>`'
 | `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
 | `autoSize` | `boolean` | `true` | Grow the surface height to fit content. |
 | `id` | `string` | auto (`useId`) | Stable id for the droppable surface; surfaced back as `group`. |
+| `type` | `string` | `"grid"` | The droppable surface's dnd-kit `type`. Override to namespace grids for [interop](/docs/guides/dnd-kit-interop) (branch `onDragOver` on it, or have a foreign draggable `accept` only this grid). Grids resolve by id, so any value still receives tiles + cross-grid drops. |
 | `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/docs/guides/events) `(layout, oldItem, newItem, placeholder, event, node)`. |
 | `onResizeStart` `onResize` `onResizeStop` | `GridEventCallback` | — | Resize lifecycle, same signature. |
 | `onDrop` | `(layout, item, event) => void` | — | Fired when an external draggable is dropped in — instead of `onLayoutChange`. |
@@ -81,13 +82,20 @@ The controlled state plus the per-grid config. These are exactly `<GridLayout>`'
 
 ## useGridItem
 
-Wires a single tile: drag activation, positioning style, and drag state. `group` is the value its
-grid's `useGridContainer` returned.
+Wires a single tile: drag activation, positioning style, and drag state. Takes an options object,
+mirroring `useSortable`: `id`, `group` (the value its `useGridContainer` returned), and an optional
+`type`.
 
 ```tsx
-const { ref, style, isDragging, item } = useGridItem(id, group);
+const { ref, style, isDragging, item } = useGridItem({ id, group });
 return <div ref={ref} style={style}>{item?.i}</div>;
 ```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `id` | `string` | — | **Required.** Matches the layout item's `i`. |
+| `group` | `string` | — | **Required.** The owning grid's id (from its `useGridContainer`). |
+| `type` | `string` | `"grid-item"` | The dnd-kit sortable `type` the tile carries. Override to namespace tiles for [interop](/docs/guides/dnd-kit-interop) — e.g. so a foreign sortable list `accept`s only one grid's tiles. The grid identifies its own tiles by their payload, not this string, so any value still drags and crosses grids. |
 
 | → | Type | Description |
 | --- | --- | --- |
@@ -103,7 +111,7 @@ Models a resize handle as its own draggable. Position and style it however you l
 grid's id.
 
 ```tsx
-const { ref, handleProps, isResizing } = useGridResizeHandle(itemId, "se", group);
+const { ref, handleProps, isResizing } = useGridResizeHandle({ id: itemId, handle: "se", group });
 return <span ref={ref} {...handleProps} />;
 ```
 

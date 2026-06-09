@@ -50,19 +50,20 @@ export function useGridContainer(opts: UseGridControllerOptions): UseGridContain
 
   const { ref, isDropTarget } = useDroppable({
     id: controller.id,
-    type: "grid",
+    type: opts.type ?? "grid",
     // Accept grid tiles plus external draggables carrying a `snapGridDrop`
-    // payload. The latter have no type, so `accept: "grid-item"` would reject
-    // them and they'd never resolve as a drop target. (The provider still
-    // decides whether to actually receive an external source via dropConfig.)
+    // payload. (The provider still decides whether to actually receive an
+    // external source via dropConfig.)
     accept: (source) => {
       // Reject a source whose element CONTAINS this grid — an ancestor tile that
       // hosts this nested grid. Prevents dropping a host tile into the grid it
       // contains (a paradox) now that nested grids can share one manager.
       const srcEl = domElement(source);
       if (srcEl && gridElRef.current && srcEl.contains(gridElRef.current)) return false;
-      if (source.type === "grid-item") return true;
-      const data = source.data as { snapGridDrop?: unknown } | undefined;
+      const data = source.data as { snapGrid?: unknown; snapGridDrop?: unknown } | undefined;
+      // A grid tile is identified by its `snapGrid` payload, not its `type`, so a
+      // tile with a custom `useGridItem` type still resolves + crosses grids.
+      if (data?.snapGrid != null) return true;
       if (data?.snapGridDrop != null) return true;
       // Consumer extension: accept foreign dnd-kit draggables (e.g. a sortable
       // card) as drop targets for interop; the receive is driven via snapMove.

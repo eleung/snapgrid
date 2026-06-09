@@ -45,10 +45,8 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
 import {
-  defaultGridConfig,
   removeItemWithCompactor,
   snapMove,
-  toPositionParams,
   useGridContainer,
   useGridItem,
   verticalCompactor,
@@ -101,8 +99,6 @@ the grid; `removeItemWithCompactor` takes one **out**; dnd-kit's `move` reorders
 moves fall through to the managed engine.
 
 ```tsx
-const positionParams = toPositionParams({ ...defaultGridConfig, ...GRID }, width);
-
 <DragDropProvider
   onDragOver={(event) => {
     const { source, target } = event.operation;
@@ -110,15 +106,11 @@ const positionParams = toPositionParams({ ...defaultGridConfig, ...GRID }, width
     const id = String(source.id);
 
     // Tray card → grid: drop it out of the tray, into the layout at the hovered cell.
-    if (source.type === "tray-card" && (target.type === "grid" || target.type === "grid-item")) {
+    // snapMove resolves the grid's geometry + compactor from the target grid itself.
+    // (The grid CONTAINER is the drop target — tiles never are — so branch on "grid".)
+    if (source.type === "tray-card" && target.type === "grid") {
       setTray((t) => t.filter((x) => x !== id));
-      setGrid((g) =>
-        snapMove(g, event, {
-          positionParams,
-          compactor: verticalCompactor,
-          defaultItem: { w: 2, h: 2 },
-        }),
-      );
+      setGrid((g) => snapMove(g, event, { defaultItem: { w: 2, h: 2 } }));
     }
     // Grid tile → tray: remove it AND re-pack the hole, then insert into the tray.
     else if (source.type === "grid-item" && target.type === "tray-card") {
@@ -151,20 +143,26 @@ const positionParams = toPositionParams({ ...defaultGridConfig, ...GRID }, width
 (or `onDragEnd`) to place the dragged item into a `Layout` at the cell under the pointer, with
 compaction, and get the new layout back.
 
+By default it resolves the **destination grid** from `event.operation.target` (the grid the pointer
+is over) and reads that grid's geometry, compactor, and default item size from what it already
+renders with — so there's nothing to rebuild or keep in sync. Every context field is optional and
+overrides the resolved value.
+
 ```ts
-function snapMove(layout: Layout, event: SnapMoveEvent, ctx: SnapMoveContext): Layout;
+function snapMove(layout: Layout, event: SnapMoveEvent, ctx?: SnapMoveContext): Layout;
 
 interface SnapMoveContext {
-  positionParams: PositionParams; // the grid's geometry — build with toPositionParams
-  compactor: Compactor; // e.g. verticalCompactor
-  defaultItem?: { w: number; h: number }; // size for a foreign source (default 1×1)
-  gridRect?: { left: number; top: number }; // override the grid's client rect (else read from the target)
+  positionParams?: PositionParams; // omit → the target grid's geometry
+  compactor?: Compactor; // omit → the target grid's compactor
+  defaultItem?: { w: number; h: number }; // foreign-source size; omit → grid's dropConfig.defaultItem, then 1×1
+  gridRect?: { left: number; top: number }; // override the grid's client rect (else its element)
+  manager?: object; // rarely needed — the target entity already references its manager
 }
 ```
 
 The item's size comes from a dragged grid tile's payload when present (so a tile keeps its size as
-it crosses), else from `defaultItem` for a foreign card. Build `positionParams` from the **same**
-width and config the grid renders at, so the dropped cell lines up with what the reader sees.
+it crosses), else `defaultItem` for a foreign card. Pass `positionParams` / `compactor` explicitly
+only to drive a grid that isn't mounted (e.g. in tests) or to override what the target grid uses.
 
 ## The drag preview
 

@@ -16,6 +16,23 @@ export function dragData(event: {
   return data?.snapGrid;
 }
 
+/**
+ * Resolve a foreign/external source's drop size from its `snapGridDrop` spec,
+ * falling back through `dropConfig.defaultItem` to react-grid-layout's 1×1
+ * (`defaultDropConfig.defaultItem`) for parity. Shared by the managed external-drop
+ * path ({@link externalDropSpec}) and the consumer `snapMove` interop reducer, so
+ * both honor the same "external source default size" policy.
+ */
+export function dropItemSize(
+  spec: GridDropData | undefined,
+  defaultItem: { w: number; h: number } | undefined,
+): { w: number; h: number } {
+  return {
+    w: spec?.w ?? defaultItem?.w ?? 1,
+    h: spec?.h ?? defaultItem?.h ?? 1,
+  };
+}
+
 /** Size/id spec for an external (non-grid) draggable the grid may accept, or null. */
 export function externalDropSpec(
   source: { id: string | number; type?: unknown; data?: unknown } | null | undefined,
@@ -26,12 +43,7 @@ export function externalDropSpec(
   if (data?.snapGrid) return null; // a grid item, not external
   if (dropConfig.accept && !dropConfig.accept(source)) return null;
   const spec = data?.snapGridDrop;
-  return {
-    i: spec?.i,
-    // Fall back to react-grid-layout's `defaultDropConfig.defaultItem` (1×1) for parity.
-    w: spec?.w ?? dropConfig.defaultItem?.w ?? 1,
-    h: spec?.h ?? dropConfig.defaultItem?.h ?? 1,
-  };
+  return { i: spec?.i, ...dropItemSize(spec, dropConfig.defaultItem) };
 }
 
 /**

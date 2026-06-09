@@ -51,7 +51,7 @@ function DropGrid({ layout, width, onLayoutChange }) {
 }
 
 function Tile({ id, group }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}

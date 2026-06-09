@@ -5,10 +5,8 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import {
   type Layout,
-  defaultGridConfig,
   removeItemWithCompactor,
   snapMove,
-  toPositionParams,
   useContainerWidth,
   useGridContainer,
   useGridItem,
@@ -22,57 +20,43 @@ const TRAY_W = 120; // the tray column's fixed width
 const GAP = 16; // the flex gap between tray and grid
 
 export function SortableGridExample() {
-  const { width, containerRef } = useContainerWidth();
   const [grid, setGrid] = useState<Layout>([
     { i: "chart", x: 0, y: 0, w: 4, h: 2 },
     { i: "stats", x: 4, y: 0, w: 2, h: 2 },
   ]);
   const [tray, setTray] = useState<string[]>(["users", "sales", "tasks"]);
 
-  // The grid renders narrower than the measured container — the tray takes a fixed
-  // column. Use that same gridWidth for the host AND snapMove's cell math, so the
-  // dropped cell lines up with what's rendered.
-  const gridWidth = Math.max(160, width - TRAY_W - GAP);
-  const positionParams = toPositionParams({ ...defaultGridConfig, ...GRID }, gridWidth);
-
   return (
     // One DragDropProvider hosts the grid AND the sortable tray. Cross-parent moves
     // are reduced LIVE in onDragOver: dnd-kit reparents the dragged node mid-drag, so
     // reducing only on drop would desync React (removeChild). In-grid moves fall
     // through — the grid's own engine drives them.
-    <div ref={containerRef}>
-      <DragDropProvider
-        onDragOver={(event) => {
-          const { source, target } = event.operation;
-          if (!source || !target) return;
-          const id = String(source.id);
+    <DragDropProvider
+      onDragOver={(event) => {
+        const { source, target } = event.operation;
+        if (!source || !target) return;
+        const id = String(source.id);
 
-          if (source.type === "tray-card" && target.type === "grid") {
-            // Tray card → grid: out of the tray, into the layout at the hovered cell.
-            setTray((t) => t.filter((x) => x !== id));
-            setGrid((g) =>
-              snapMove(g, event, {
-                positionParams,
-                compactor: verticalCompactor,
-                defaultItem: { w: 2, h: 2 },
-              }),
-            );
-          } else if (source.type === "grid-item" && target.type === "tray-card") {
-            // Grid tile → tray: remove it AND re-pack the hole (a plain filter would
-            // leave a gap), then drop it into the tray before the hovered card.
-            setGrid((g) =>
-              removeItemWithCompactor(g, id, { compactor: verticalCompactor, cols: GRID.cols }),
-            );
-            setTray((t) => (t.includes(id) ? t : insertBefore(t, id, String(target.id))));
-          } else if (source.type === "tray-card" && target.type === "tray-card") {
-            // Reorder within the tray — dnd-kit's own list helper.
-            setTray((t) => move(t, event));
-          }
-        }}
-      >
-        <Body grid={grid} setGrid={setGrid} tray={tray} width={gridWidth} />
-      </DragDropProvider>
-    </div>
+        if (source.type === "tray-card" && target.type === "grid") {
+          // Tray card → grid: out of the tray, into the layout at the hovered cell.
+          // snapMove resolves the grid's geometry + compactor from the target grid.
+          setTray((t) => t.filter((x) => x !== id));
+          setGrid((g) => snapMove(g, event, { defaultItem: { w: 2, h: 2 } }));
+        } else if (source.type === "grid-item" && target.type === "tray-card") {
+          // Grid tile → tray: remove it AND re-pack the hole (a plain filter would
+          // leave a gap), then drop it into the tray before the hovered card.
+          setGrid((g) =>
+            removeItemWithCompactor(g, id, { compactor: verticalCompactor, cols: GRID.cols }),
+          );
+          setTray((t) => (t.includes(id) ? t : insertBefore(t, id, String(target.id))));
+        } else if (source.type === "tray-card" && target.type === "tray-card") {
+          // Reorder within the tray — dnd-kit's own list helper.
+          setTray((t) => move(t, event));
+        }
+      }}
+    >
+      <Body grid={grid} setGrid={setGrid} tray={tray} />
+    </DragDropProvider>
   );
 }
 
@@ -81,13 +65,16 @@ function Body({
   grid,
   setGrid,
   tray,
-  width,
 }: {
   grid: Layout;
   setGrid: (next: Layout) => void;
   tray: string[];
-  width: number;
 }) {
+  // Measure the grid's own slot — the flex child beside the fixed-width tray — so its
+  // width feeds useGridContainer directly, instead of measuring the whole row and
+  // subtracting the tray. The tray width + gap stay pure CSS. Seed initialWidth near
+  // the grid's rendered width so the first paint doesn't flash before the measure.
+  const { width, containerRef } = useContainerWidth({ initialWidth: 560 });
   const { containerProps, group } = useGridContainer({
     layout: grid,
     width,
@@ -105,11 +92,14 @@ function Body({
           <TrayCard key={id} id={id} index={i} />
         ))}
       </div>
-      <div {...containerProps} style={{ ...containerProps.style, flex: "1 1 auto" }}>
-        {grid.map((it) => (
-          <GridTile key={it.i} id={it.i} group={group} />
-        ))}
-        {placeholder ? <div className="placeholder" style={placeholder.style} /> : null}
+      {/* Measure this flex slot; the grid surface fills it. */}
+      <div ref={containerRef} style={{ flex: "1 1 auto", minWidth: 0 }}>
+        <div {...containerProps}>
+          {grid.map((it) => (
+            <GridTile key={it.i} id={it.i} group={group} />
+          ))}
+          {placeholder ? <div className="placeholder" style={placeholder.style} /> : null}
+        </div>
       </div>
     </div>
   );
@@ -118,7 +108,7 @@ function Body({
 // A grid tile — positioned by snapgrid; a real useSortable under the hood, so it
 // interoperates with the tray.
 function GridTile({ id, group }: { id: string; group: string }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}

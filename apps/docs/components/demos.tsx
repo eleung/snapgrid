@@ -4,7 +4,6 @@ import { Feedback } from "@dnd-kit/dom";
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider, useDraggable } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { defaultGridConfig, toPositionParams } from "@snapgridjs/core";
 import { gravityCompactor, masonryCompactor, shelfCompactor } from "@snapgridjs/extras";
 import {
   type Compactor,
@@ -30,7 +29,6 @@ import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -155,7 +153,7 @@ function GridTile({
   resizable?: boolean;
   children: ReactNode;
 }) {
-  const { ref, style, item } = useGridItem(id, group);
+  const { ref, style, item } = useGridItem({ id, group });
   // Match the library's per-item gating: static or isResizable:false → no handle.
   const showHandle = resizable && !!item && !item.static && item.isResizable !== false;
   return (
@@ -170,7 +168,7 @@ function GridTile({
 // useGridResizeHandle. `handleProps` keeps a pointer-down on it from starting an
 // item drag; CSS (`.dg-rh`) places + styles it.
 function ResizeHandle({ id, group }: { id: string; group: string }) {
-  const { ref, handleProps } = useGridResizeHandle(id, "se", group);
+  const { ref, handleProps } = useGridResizeHandle({ id, handle: "se", group });
   return <span ref={ref} {...handleProps} className="dg-rh dg-rh--se" />;
 }
 
@@ -393,7 +391,7 @@ function DragHandleTile({
   likes: number;
   onLike: () => void;
 }) {
-  const { ref, style, handleRef } = useGridItem(id, group);
+  const { ref, style, handleRef } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="dg-cell">
       <div className="dg-tile dg-tile--barred" style={{ width: "100%", height: "100%" }}>
@@ -475,7 +473,7 @@ function AnchorTile({
   pinned: boolean;
   onTogglePin: () => void;
 }) {
-  const { ref, handleRef, style } = useGridItem(id, group);
+  const { ref, handleRef, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="dg-cell">
       <div className={`dg-tile dg-tile--static dg-anchor${pinned ? " dg-anchor--pinned" : ""}`}>
@@ -1007,7 +1005,7 @@ function NestedPanelTile({
   inner: Layout;
   onInnerChange: (next: Layout) => void;
 }) {
-  const { ref, handleRef, style } = useGridItem(id, group);
+  const { ref, handleRef, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="dg-cell">
       <div className="dg-nest">
@@ -1058,7 +1056,7 @@ const INTEROP_GRID = {
   cols: 6,
   rowHeight: 60,
   margin: [10, 10] as [number, number],
-  containerPadding: [10, 10] as [number, number],
+  containerPadding: [0, 0] as [number, number],
 };
 const INTEROP_TRAY_W = 132;
 const INTEROP_GAP = 16;
@@ -1077,19 +1075,8 @@ function insertBefore(list: string[], id: string, beforeId: string): string[] {
 }
 
 export function SortableGridDemo() {
-  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
   const [grid, setGrid] = useState<Layout>(INTEROP_GRID_INIT);
   const [tray, setTray] = useState<string[]>(INTEROP_TRAY_INIT);
-
-  // The grid's own width (the tray takes a fixed column) — used for both the host
-  // and snapMove's cell math, so the dropped cell lines up with what's rendered.
-  const gridWidth = Math.max(160, width - INTEROP_TRAY_W - INTEROP_GAP);
-  // Memoized so the per-frame re-renders during a drag (setGrid/setTray) don't
-  // reallocate the config + PositionParams every dragover.
-  const positionParams = useMemo(
-    () => toPositionParams({ ...defaultGridConfig, ...INTEROP_GRID }, gridWidth),
-    [gridWidth],
-  );
 
   return (
     <DemoFrame
@@ -1097,44 +1084,37 @@ export function SortableGridDemo() {
       hint="drag a widget into the grid · drag a tile out to the tray · reorder the tray"
       code={EXAMPLE_CODE.sortableGrid}
     >
-      <div ref={containerRef}>
-        <DragDropProvider
-          onDragOver={(event) => {
-            const { source, target } = event.operation;
-            if (!source || !target) return;
-            const id = String(source.id);
-            const st = source.type;
-            const tt = target.type;
-            if (st === "tray-card" && tt === "grid") {
-              // Tray card → grid: drop it out of the tray and into the layout.
-              setTray((t) => t.filter((x) => x !== id));
-              setGrid((g) =>
-                snapMove(g, event, {
-                  positionParams,
-                  compactor: verticalCompactor,
-                  defaultItem: { w: 2, h: 2 },
-                }),
-              );
-            } else if (st === "grid-item" && tt === "tray-card") {
-              // Grid tile → tray: pull it out of the grid (re-packing the hole it
-              // leaves — a plain filter would leave a gap) and into the tray.
-              setGrid((g) =>
-                removeItemWithCompactor(g, id, {
-                  compactor: verticalCompactor,
-                  cols: positionParams.cols,
-                }),
-              );
-              setTray((t) => (t.includes(id) ? t : insertBefore(t, id, String(target.id))));
-            } else if (st === "tray-card" && tt === "tray-card") {
-              // Reorder within the tray.
-              setTray((t) => move(t, event));
-            }
-            // In-grid moves fall through — the grid's engine drives them.
-          }}
-        >
-          <SortableGridBody grid={grid} setGrid={setGrid} tray={tray} width={gridWidth} />
-        </DragDropProvider>
-      </div>
+      <DragDropProvider
+        onDragOver={(event) => {
+          const { source, target } = event.operation;
+          if (!source || !target) return;
+          const id = String(source.id);
+          const st = source.type;
+          const tt = target.type;
+          if (st === "tray-card" && tt === "grid") {
+            // Tray card → grid: drop it out of the tray and into the layout.
+            // snapMove resolves the grid's geometry + compactor from the target grid.
+            setTray((t) => t.filter((x) => x !== id));
+            setGrid((g) => snapMove(g, event, { defaultItem: { w: 2, h: 2 } }));
+          } else if (st === "grid-item" && tt === "tray-card") {
+            // Grid tile → tray: pull it out of the grid (re-packing the hole it
+            // leaves — a plain filter would leave a gap) and into the tray.
+            setGrid((g) =>
+              removeItemWithCompactor(g, id, {
+                compactor: verticalCompactor,
+                cols: INTEROP_GRID.cols,
+              }),
+            );
+            setTray((t) => (t.includes(id) ? t : insertBefore(t, id, String(target.id))));
+          } else if (st === "tray-card" && tt === "tray-card") {
+            // Reorder within the tray.
+            setTray((t) => move(t, event));
+          }
+          // In-grid moves fall through — the grid's engine drives them.
+        }}
+      >
+        <SortableGridBody grid={grid} setGrid={setGrid} tray={tray} />
+      </DragDropProvider>
     </DemoFrame>
   );
 }
@@ -1144,13 +1124,18 @@ function SortableGridBody({
   grid,
   setGrid,
   tray,
-  width,
 }: {
   grid: Layout;
   setGrid: (next: Layout) => void;
   tray: string[];
-  width: number;
 }) {
+  // Measure the grid's OWN slot — the flex child beside the fixed-width tray — so its
+  // width feeds useGridContainer directly. No measuring the whole row and subtracting
+  // the tray; the tray width + gap stay pure CSS. initialWidth seeds the slot's
+  // resting size (stage minus tray + gap) to avoid a first-paint reflow.
+  const { width, containerRef } = useContainerWidth({
+    initialWidth: STAGE_WIDTH - INTEROP_TRAY_W - INTEROP_GAP,
+  });
   const { containerProps, group } = useGridContainer({
     layout: grid,
     width,
@@ -1182,17 +1167,16 @@ function SortableGridBody({
           <TrayCard key={id} id={id} index={i} />
         ))}
       </div>
-      <div
-        {...containerProps}
-        className="dg-grid"
-        style={{ ...containerProps.style, flex: "1 1 auto" }}
-      >
-        {grid.map((it) => (
-          <GridTile key={it.i} id={it.i} group={group}>
-            <div className="dg-nest__tile">{it.i}</div>
-          </GridTile>
-        ))}
-        <Placeholder placeholder={placeholder} />
+      {/* Measure this flex slot; the grid surface fills it. */}
+      <div ref={containerRef} style={{ flex: "1 1 auto", minWidth: 0 }}>
+        <div {...containerProps} className="dg-grid">
+          {grid.map((it) => (
+            <GridTile key={it.i} id={it.i} group={group}>
+              <div className="dg-nest__tile">{it.i}</div>
+            </GridTile>
+          ))}
+          <Placeholder placeholder={placeholder} />
+        </div>
       </div>
     </div>
   );

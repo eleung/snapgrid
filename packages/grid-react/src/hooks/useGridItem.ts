@@ -32,6 +32,20 @@ const ITEM_FEEDBACK = [
 // fighting React's commit (`removeChild`).
 const tileNeverTarget = () => null;
 
+export interface UseGridItemOptions {
+  /** Matches the layout item's `i`. */
+  id: string;
+  /** The owning grid's id, from its {@link useGridContainer} (dnd-kit's `group`). */
+  group: string;
+  /**
+   * The dnd-kit sortable `type` this tile carries. Defaults to `"grid-item"`.
+   * Override to namespace tiles for ecosystem interop — e.g. so a foreign
+   * sortable list `accept`s only one grid's tiles. The grid recognizes its own
+   * tiles by their payload, not this string, so any value still drags + crosses grids.
+   */
+  type?: string;
+}
+
 export interface UseGridItemResult {
   /** Attach to the element that represents this grid item. */
   ref: (element: Element | null) => void;
@@ -72,7 +86,11 @@ export interface UseGridItemResult {
  * make the float jump by the tile's grid offset. Plain left/top has nothing to lose
  * on the swap, matching how dnd-kit's own flow-positioned sortables hand off cleanly.
  */
-export function useGridItem(id: string, group: string): UseGridItemResult {
+export function useGridItem({
+  id,
+  group,
+  type = "grid-item",
+}: UseGridItemOptions): UseGridItemResult {
   const controller = useResolveController(group);
   // Subscribe to just this item's slice → a drag elsewhere doesn't re-render it.
   const snap = useSyncExternalStore(
@@ -110,8 +128,8 @@ export function useGridItem(id: string, group: string): UseGridItemResult {
     id,
     index: controller.itemIndex(id),
     group,
-    type: "grid-item",
-    accept: "grid-item",
+    type,
+    accept: type,
     // The tile is a sortable (so it interops + carries group/index), but never a
     // drop target — the grid container is. See {@link tileNeverTarget}.
     collisionDetector: tileNeverTarget,

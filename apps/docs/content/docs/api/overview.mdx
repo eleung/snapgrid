@@ -47,10 +47,11 @@ preview must differ from the tile — a clone, a ghost, or wholly custom markup.
 
 ### Interop
 
-`snapMove(layout, event, ctx)` — the reducer for [dnd-kit interop](/docs/guides/dnd-kit-interop):
+`snapMove(layout, event)` — the reducer for [dnd-kit interop](/docs/guides/dnd-kit-interop):
 place a dragged item (a foreign `useSortable` card, or a tile crossing a grid ⇄ list seam) into a
-`Layout` at the pointer cell, with compaction. Pair it with `removeItemWithCompactor` to take a tile
-back out. Types: `SnapMoveContext`, `SnapMoveEvent`.
+`Layout` at the pointer cell, with compaction. It resolves the destination grid's geometry and
+compactor from the grid under the pointer, so the optional context is override-only. Pair it with
+`removeItemWithCompactor` to take a tile back out. Types: `SnapMoveContext`, `SnapMoveEvent`.
 
 ### Utilities & compactors
 

@@ -19,7 +19,7 @@ the element, the class names, and which state to reflect in the DOM:
 
 ```tsx
 function Tile({ id, group }) {
-  const { ref, style, isDragging } = useGridItem(id, group);
+  const { ref, style, isDragging } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile" data-dragging={isDragging || undefined}>
       {id}
