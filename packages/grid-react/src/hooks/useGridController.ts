@@ -36,6 +36,14 @@ function itemGateOpen(flag: boolean | undefined, isStatic: boolean | undefined):
 export interface UseGridControllerOptions {
   /** Stable id for the grid's droppable surface (auto-generated if omitted). */
   id?: string;
+  /**
+   * The dnd-kit `type` the grid's droppable surface carries. Defaults to `"grid"`.
+   * Override to namespace grids for ecosystem interop — e.g. so a foreign draggable
+   * `accept`s only one grid, or you branch `onDragOver` on a specific grid type.
+   * Nothing internal depends on this string (grids resolve by id), so any value
+   * still receives tiles and cross-grid drops.
+   */
+  type?: string;
   /** Container width in pixels (e.g. from {@link useContainerWidth}). */
   width: number;
   /** Controlled layout. Never mutated. */

@@ -38,7 +38,7 @@ function Board() {
 }
 
 function Tile({ id, group }: { id: string; group: string }) {
-  const { ref, style, handleRef } = useGridItem(id, group);
+  const { ref, style, handleRef } = useGridItem({ id, group });
   // Attach handleRef to the grip — only a pointer-down there starts a drag, so
   // the button stays clickable. (Keyboard pickup still works on the focused tile.)
   return (

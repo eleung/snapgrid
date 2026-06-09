@@ -110,7 +110,7 @@ function Surface({ layout, width, onLayoutChange }) {
 }
 
 function Tile({ id, group }) {
-  const { ref, style } = useGridItem(id, group); // resolves its grid by `group`
+  const { ref, style } = useGridItem({ id, group }); // resolves its grid by `group`
   return <div ref={ref} style={style}>{id}</div>;
 }
 ```
@@ -135,7 +135,7 @@ function Tile({ id, group }) {
 
 There's no per-grid React context. A tile resolves its grid by a **`group`** key — exactly like a
 dnd-kit sortable item declares which list it's in. `useGridContainer` returns the grid's `group` (its
-id); you pass it to each `useGridItem(id, group)`, `useGridResizeHandle(id, axis, group)`, and
+id); you pass it to each `useGridItem({ id, group })`, `useGridResizeHandle({ id, handle, group })`, and
 `useGridPlaceholder(group)`. This is what lets several grids share one provider and still keep their
 items straight — so **ids must be unique across grids that share a provider.**
 

@@ -4,6 +4,15 @@ import { NO_FEEDBACK, RESIZE_HANDLE_ATTR } from "@snapgridjs/dnd";
 import { useSyncExternalStore } from "react";
 import { useResolveController } from "./useResolveController.js";
 
+export interface UseGridResizeHandleOptions {
+  /** Matches the layout item's `i` — the item this handle resizes. */
+  id: string;
+  /** Which edge/corner this handle drives. */
+  handle: ResizeHandleAxis;
+  /** The owning grid's id, from its {@link useGridContainer}. */
+  group: string;
+}
+
 export interface UseGridResizeHandleResult {
   /** Attach to your resize-handle element. */
   ref: (element: Element | null) => void;
@@ -19,22 +28,22 @@ export interface UseGridResizeHandleResult {
  * grid's id (from its {@link useGridContainer}). Spread `ref` and `handleProps`
  * onto the handle element you position/style.
  */
-export function useGridResizeHandle(
-  itemId: string,
-  handle: ResizeHandleAxis,
-  group: string,
-): UseGridResizeHandleResult {
+export function useGridResizeHandle({
+  id,
+  handle,
+  group,
+}: UseGridResizeHandleOptions): UseGridResizeHandleResult {
   const controller = useResolveController(group);
   const { ref } = useDraggable({
-    id: `${itemId}::resize::${handle}`,
-    disabled: !controller.config?.isItemResizable(itemId),
+    id: `${id}::resize::${handle}`,
+    disabled: !controller.config?.isItemResizable(id),
     plugins: NO_FEEDBACK,
-    data: { snapGrid: { kind: "resize", itemId, handle, group } },
+    data: { snapGrid: { kind: "resize", itemId: id, handle, group } },
   });
   const { isResizing } = useSyncExternalStore(
     controller.subscribe,
-    () => controller.resizeSnapshot(itemId),
-    () => controller.resizeSnapshot(itemId),
+    () => controller.resizeSnapshot(id),
+    () => controller.resizeSnapshot(id),
   );
   return { ref, handleProps: { [RESIZE_HANDLE_ATTR]: true }, isResizing };
 }

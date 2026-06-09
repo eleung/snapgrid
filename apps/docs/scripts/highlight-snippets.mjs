@@ -48,7 +48,7 @@ function Surface({ layout, width, onLayoutChange }) {
 
 function Tile({ id, group }) {
   // each tile resolves its grid by \`group\` — like a dnd-kit sortable
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return <div ref={ref} style={style} className="tile">{id}</div>;
 }`;
 

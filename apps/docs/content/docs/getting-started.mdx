@@ -124,14 +124,14 @@ function Surface({ layout, width, onLayoutChange }) {
 
 ### Render a tile with `useGridItem`
 
-Each tile calls `useGridItem(id, group)` for its `ref` and positioning `style` — the way a dnd-kit
+Each tile calls `useGridItem({ id, group })` for its `ref` and positioning `style` — the way a dnd-kit
 sortable item declares its list. You bring the element, classes, and content.
 
 ```tsx
 import { useGridItem } from "@snapgridjs/react";
 
 function Tile({ id, group }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}
@@ -215,7 +215,7 @@ function Surface({ layout, width, onLayoutChange }) {
 }
 
 function Tile({ id, group }: { id: string; group: string }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}

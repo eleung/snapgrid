@@ -45,8 +45,8 @@ function Board() {
 }
 
 function Tile({ id, group }: { id: string; group: string }) {
-  const { ref, style } = useGridItem(id, group);
-  const resize = useGridResizeHandle(id, "se", group);
+  const { ref, style } = useGridItem({ id, group });
+  const resize = useGridResizeHandle({ id, handle: "se", group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}

@@ -28,7 +28,7 @@ const renders: Record<string, number> = {};
 // (its auto-height tracks the preview), so a tile must re-render only via its
 // own slice subscription, not because the parent re-rendered.
 const Tile = memo(function Tile({ id, group }: { id: string; group: string }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   renders[id] = (renders[id] ?? 0) + 1;
   return <div ref={ref} style={style} data-tile={id} />;
 });

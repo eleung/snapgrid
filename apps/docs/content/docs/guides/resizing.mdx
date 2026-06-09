@@ -44,14 +44,14 @@ the grid's columns (and `maxRows`, if set).
 
 ## Rendering handles (headless) [#rendering-handles-headless]
 
-`useGridResizeHandle(itemId, axis, group)` models a handle as its own draggable. Spread its `ref` and
+`useGridResizeHandle({ id, handle, group })` models a handle as its own draggable. Spread its `ref` and
 `handleProps` onto an element you position and style — `handleProps` marks the element so a
 pointer-down resizes instead of starting an item drag:
 
 ```tsx
 function Tile({ id, group }) {
-  const { ref, style } = useGridItem(id, group);
-  const resize = useGridResizeHandle(id, "se", group);
+  const { ref, style } = useGridItem({ id, group });
+  const resize = useGridResizeHandle({ id, handle: "se", group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}

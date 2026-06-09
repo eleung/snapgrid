@@ -108,7 +108,7 @@ function Body({
 // A grid tile — positioned by snapgrid; a real useSortable under the hood, so it
 // interoperates with the tray.
 function GridTile({ id, group }: { id: string; group: string }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}

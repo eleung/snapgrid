@@ -55,7 +55,7 @@ function DefaultResizeHandle({
   handle,
   group,
 }: { itemId: string; handle: ResizeHandleAxis; group: string }) {
-  const { ref, handleProps } = useGridResizeHandle(itemId, handle, group);
+  const { ref, handleProps } = useGridResizeHandle({ id: itemId, handle, group });
   return (
     <span
       ref={ref}
@@ -79,7 +79,7 @@ function DefaultResizeHandle({
  */
 function GridItemImpl({ id, group, children, className, style }: GridItemProps) {
   const controller = useResolveController(group);
-  const { ref, style: positionStyle, isDragging } = useGridItem(id, group);
+  const { ref, style: positionStyle, isDragging } = useGridItem({ id, group });
   const config = controller.config;
   const handles = config?.isItemResizable(id) ? config.resizeHandlesFor(id) : [];
   return (

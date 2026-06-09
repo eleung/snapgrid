@@ -20,11 +20,14 @@ export type {
 } from "./hooks/useGridContainer.js";
 export type { UseGridControllerOptions } from "./hooks/useGridController.js";
 export { useGridItem } from "./hooks/useGridItem.js";
-export type { UseGridItemResult } from "./hooks/useGridItem.js";
+export type { UseGridItemOptions, UseGridItemResult } from "./hooks/useGridItem.js";
 export { useGridPlaceholder } from "./hooks/useGridPlaceholder.js";
 export type { GridPlaceholderInfo } from "./hooks/useGridPlaceholder.js";
 export { useGridResizeHandle } from "./hooks/useGridResizeHandle.js";
-export type { UseGridResizeHandleResult } from "./hooks/useGridResizeHandle.js";
+export type {
+  UseGridResizeHandleOptions,
+  UseGridResizeHandleResult,
+} from "./hooks/useGridResizeHandle.js";
 
 export {
   DEFAULT_BREAKPOINTS,

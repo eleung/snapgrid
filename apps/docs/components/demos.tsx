@@ -153,7 +153,7 @@ function GridTile({
   resizable?: boolean;
   children: ReactNode;
 }) {
-  const { ref, style, item } = useGridItem(id, group);
+  const { ref, style, item } = useGridItem({ id, group });
   // Match the library's per-item gating: static or isResizable:false → no handle.
   const showHandle = resizable && !!item && !item.static && item.isResizable !== false;
   return (
@@ -168,7 +168,7 @@ function GridTile({
 // useGridResizeHandle. `handleProps` keeps a pointer-down on it from starting an
 // item drag; CSS (`.dg-rh`) places + styles it.
 function ResizeHandle({ id, group }: { id: string; group: string }) {
-  const { ref, handleProps } = useGridResizeHandle(id, "se", group);
+  const { ref, handleProps } = useGridResizeHandle({ id, handle: "se", group });
   return <span ref={ref} {...handleProps} className="dg-rh dg-rh--se" />;
 }
 
@@ -391,7 +391,7 @@ function DragHandleTile({
   likes: number;
   onLike: () => void;
 }) {
-  const { ref, style, handleRef } = useGridItem(id, group);
+  const { ref, style, handleRef } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="dg-cell">
       <div className="dg-tile dg-tile--barred" style={{ width: "100%", height: "100%" }}>
@@ -473,7 +473,7 @@ function AnchorTile({
   pinned: boolean;
   onTogglePin: () => void;
 }) {
-  const { ref, handleRef, style } = useGridItem(id, group);
+  const { ref, handleRef, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="dg-cell">
       <div className={`dg-tile dg-tile--static dg-anchor${pinned ? " dg-anchor--pinned" : ""}`}>
@@ -1005,7 +1005,7 @@ function NestedPanelTile({
   inner: Layout;
   onInnerChange: (next: Layout) => void;
 }) {
-  const { ref, handleRef, style } = useGridItem(id, group);
+  const { ref, handleRef, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="dg-cell">
       <div className="dg-nest">

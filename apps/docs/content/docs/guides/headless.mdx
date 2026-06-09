@@ -22,7 +22,7 @@ Two pieces, both under a dnd-kit `DragDropProvider` that **you** supply:
 
 1. **`useGridContainer(options)`** — the grid *host*. Returns `containerProps` for your surface and
    the grid's **`group`**.
-2. **`useGridItem(id, group)`** — one tile. Returns a `ref` and positioning `style`.
+2. **`useGridItem({ id, group })`** — one tile. Returns a `ref` and positioning `style`.
 
 There's no third piece for the drag preview: a dragged tile [floats itself](#floating).
 
@@ -50,7 +50,7 @@ function Surface({ layout, width, onLayoutChange }) {
 }
 
 function Tile({ id, group }) {
-  const { ref, style } = useGridItem(id, group);
+  const { ref, style } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}
@@ -84,7 +84,7 @@ function Tile({ id, group }) {
 
 ## `useGridItem` — a tile
 
-`useGridItem(id, group)` wires one tile:
+`useGridItem({ id, group })` wires one tile:
 
 | Field | What it is |
 | --- | --- |
@@ -109,7 +109,7 @@ Because the tile *is* the preview, you style its dragging state right where you 
 
 ```tsx
 function Tile({ id, group }) {
-  const { ref, style, isDragging } = useGridItem(id, group);
+  const { ref, style, isDragging } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile" data-dragging={isDragging || undefined}>
       {id}
@@ -137,7 +137,7 @@ Headless tiles carry nothing extra — no class names, no resize handles, no pla
 and a `style`. The host and tile above are already a complete, working grid; everything else is yours
 to render. Two affordances are common enough that snapgrid gives you a hook for each:
 
-1. **`useGridResizeHandle(id, axis, group)`** — render resize handles on a tile.
+1. **`useGridResizeHandle({ id, handle, group })`** — render resize handles on a tile.
 2. **`useGridPlaceholder(group)`** — mark the cell a dragged tile will land in.
 
 ## `useGridResizeHandle` — render your own resize handles [#usegridresizehandle]
@@ -146,7 +146,7 @@ to render. Two affordances are common enough that snapgrid gives you a hook for 
 *which* edges are resizable; you render the handle elements. (The [`<GridItem>`](/docs/guides/component-layer)
 shell does this for you — this is what it does under the hood.)
 
-`useGridResizeHandle(itemId, axis, group)` models a handle as its own draggable and returns:
+`useGridResizeHandle({ id, handle, group })` models a handle as its own draggable and returns:
 
 | Field | What it is |
 | --- | --- |
@@ -158,8 +158,8 @@ You position and style the handle however you like:
 
 ```tsx
 function Tile({ id, group }) {
-  const { ref, style } = useGridItem(id, group);
-  const resize = useGridResizeHandle(id, "se", group);
+  const { ref, style } = useGridItem({ id, group });
+  const resize = useGridResizeHandle({ id, handle: "se", group });
   return (
     <div ref={ref} style={style} className="tile">
       {id}
@@ -215,7 +215,7 @@ most of the app and the hooks for the one grid that needs custom markup. See
 | --- | --- | --- |
 | `useContainerWidth(options?)` | `{ width, mounted, containerRef }` | Nothing — measures an element. |
 | `useGridContainer(options)` | `{ containerProps, group, isDropTarget, controller }` | The surface; registers the droppable + owns the grid. |
-| `useGridItem(id, group)` | `{ ref, handleRef, style, isDragging, item }` | One positioned tile. |
-| `useGridResizeHandle(id, axis, group)` | `{ ref, handleProps, isResizing }` | One resize handle. |
+| `useGridItem({ id, group })` | `{ ref, handleRef, style, isDragging, item }` | One positioned tile. |
+| `useGridResizeHandle({ id, handle, group })` | `{ ref, handleProps, isResizing }` | One resize handle. |
 | `useGridPlaceholder(group)` | `{ item, style } \| null` | The landing-cell marker (null when idle). |
 | `useResponsiveLayout(options)` | `{ breakpoint, cols, layout, onLayoutChange }` | Nothing — resolves the active breakpoint. See [Responsive](/docs/guides/responsive). |

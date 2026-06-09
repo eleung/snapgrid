@@ -42,7 +42,7 @@ element; only a pointer-down there starts a drag.
 
 ```tsx
 function Tile({ id, group }) {
-  const { ref, style, handleRef } = useGridItem(id, group);
+  const { ref, style, handleRef } = useGridItem({ id, group });
   return (
     <div ref={ref} style={style} className="tile">
       <span ref={handleRef} className="grip">⠿</span> {/* drag starts here */}
