@@ -16,6 +16,15 @@ export const metadata: Metadata = {
   applicationName: "snapgrid",
   appleWebApp: { title: "snapgrid" },
   manifest: "/site.webmanifest",
+  // Default to indexable, and opt into large image previews + untruncated text
+  // snippets in results (pure upside; the 404 overrides this to noindex).
+  robots: {
+    index: true,
+    follow: true,
+    "max-image-preview": "large",
+    "max-snippet": -1,
+    "max-video-preview": -1,
+  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
