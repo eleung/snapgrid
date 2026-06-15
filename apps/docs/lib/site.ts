@@ -10,7 +10,9 @@ export const OG_IMAGE = "/og.png";
 export const OG_ALT = "snapgrid: draggable grid layouts that drag between grids";
 // Declared once so the OG/Twitter image (with alt) stays consistent across the
 // layout defaults, per-page metadata, and the homepage.
-export const OG_IMAGES = [{ url: OG_IMAGE, width: 1200, height: 630, alt: OG_ALT }];
+export const OG_IMAGES = [
+  { url: OG_IMAGE, width: 1200, height: 630, alt: OG_ALT, type: "image/png" },
+];
 export const TWITTER_IMAGES = [{ url: OG_IMAGE, alt: OG_ALT }];
 // Keyword-rich homepage title (also the layout's `title.default`).
 export const HOME_TITLE = "snapgrid — react-grid-layout alternative on dnd-kit";
