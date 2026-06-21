@@ -16,7 +16,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # Full history so the "Promote docs to production" step can fast-forward
           # `release` to the publish commit — a shallow clone can't prove `release`
