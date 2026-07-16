@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.8.0] - 2026-07-16
+
+A consumer's own drop target — a trash slot, an archive panel, a sub-list — can now live inside a
+grid tile and win the drop, extending the **innermost-wins** rule beyond nested grids.
+
+### Added
+
+- **Nested non-grid drop zones.** `nestedDropCollisionDetector` + `SNAPGRID_DROPPABLE_ATTR`
+  (`@snapgridjs/dnd`, re-exported from `@snapgridjs/react`). Pass the detector to a plain dnd-kit
+  `useDroppable` nested in a grid tile and the zone outranks the grid it sits in, so the drop resolves
+  to your zone instead of the grid — the grid backs off (it reverts the tile) and you handle the drop
+  on the shared `DragDropProvider`. Depth counts every marked boundary, not just grids, so a zone
+  inside a zone resolves innermost-first; mark the element with `data-snapgrid-droppable` to rank
+  droppables nested inside it. See the
+  [nested drop zones](https://snapgrid.dev/docs/guides/nesting) guide.
+
 ## [0.7.0] - 2026-06-10
 
 The tile hooks now speak the dnd-kit options-object idiom, and `snapMove` reads the destination
@@ -171,6 +187,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.8.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.8.0
 [0.7.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.7.0
 [0.6.1]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.6.1
 [0.6.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.6.0

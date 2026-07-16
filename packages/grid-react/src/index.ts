@@ -108,3 +108,7 @@ export {
 // peer dependencies, so your installed copy is the one used here.
 export { useDraggable, useDroppable } from "@dnd-kit/react";
 export { Feedback, KeyboardSensor, PointerSensor } from "@dnd-kit/dom";
+// Nest a non-grid drop zone inside a grid: pass `nestedDropCollisionDetector` to
+// your `useDroppable` and mark the element with `SNAPGRID_DROPPABLE_ATTR`, so the
+// zone outranks the grid it sits in (innermost-wins). See the nesting guide.
+export { SNAPGRID_DROPPABLE_ATTR, nestedDropCollisionDetector } from "@snapgridjs/dnd";

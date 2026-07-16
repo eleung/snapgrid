@@ -6,12 +6,12 @@
       "packages/grid-dnd/dist/index.mjs",
       "packages/grid-core/dist/index.mjs"
     ],
-    "limit": "17.5 kB"
+    "limit": "17.9 kB"
   },
   {
     "name": "@snapgridjs/dnd (brotli)",
     "path": "packages/grid-dnd/dist/index.mjs",
-    "limit": "7.5 kB"
+    "limit": "7.9 kB"
   },
   {
     "name": "@snapgridjs/core (brotli)",

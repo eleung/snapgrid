@@ -4,7 +4,7 @@ description: Put a grid inside a tile of another grid. Nested grids share one pr
 ---
 
 import { Callout } from "nextra/components";
-import { NestedDemo } from "@/components/demos";
+import { NestedDemo, NestedDropZoneDemo } from "@/components/demos";
 
 # Nested grids
 
@@ -74,6 +74,66 @@ pointer-down on an inner tile from arming the panel's own drag.
 
 A tile that crosses levels is **removed from one grid's layout and added to the other's** — wire both
 grids' `onLayoutChange`, exactly like [cross-grid dragging](/docs/guides/cross-grid) between siblings.
+
+## Nested drop zones (a non-grid droppable inside a grid)
+
+The same innermost-wins rule extends to **your own** drop targets. Put a plain dnd-kit `useDroppable` —
+a trash slot, an "archive" panel, a sub-list — inside a grid tile and, by default, it can never win: a
+grid claims a drag with a boosted collision priority, so the grid underneath always outranks a plain
+droppable sitting on top of it. To opt your drop zone into the grid's depth ranking:
+
+1. Pass **`nestedDropCollisionDetector`** to your `useDroppable`. This alone makes the zone outrank the
+   grid it sits inside — the grid is a marked ancestor, so the zone ranks one level deeper.
+2. Mark the element with **`data-snapgrid-droppable`** (or the exported `SNAPGRID_DROPPABLE_ATTR`). This
+   is only needed if you nest **another** droppable inside this zone, so that inner target counts this
+   boundary and outranks it in turn. It's harmless and future-proofs nesting, so the demo below sets it.
+
+<NestedDropZoneDemo />
+
+```tsx
+import {
+  useDroppable,
+  nestedDropCollisionDetector,
+  SNAPGRID_DROPPABLE_ATTR,
+} from "@snapgridjs/react";
+
+function ArchiveZone() {
+  const { ref, isDropTarget } = useDroppable({
+    id: "archive",
+    accept: (source) => source.type === "grid-item",
+    collisionDetector: nestedDropCollisionDetector,
+  });
+  // The detector already ranks this zone above its grid. The marker makes this a
+  // nesting boundary — only matters for droppables you nest INSIDE the zone.
+  return (
+    <div ref={ref} {...{ [SNAPGRID_DROPPABLE_ATTR]: "" }} data-drop-target={isDropTarget || undefined}>
+      Archive
+    </div>
+  );
+}
+```
+
+When the pointer is over the zone, the zone wins the collision: the **grid backs off** — it shows no
+placeholder and leaves its layout untouched (its engine treats a target it doesn't own as a revert, so
+the dragged tile stays put) — and your zone becomes the resolved target. Handle the drop yourself on the
+shared `DragDropProvider`:
+
+```tsx
+<DragDropProvider
+  onDragEnd={(event) => {
+    const { source, target } = event.operation;
+    if (target?.id === "archive" && source?.type === "grid-item") {
+      // your drop logic — the grid already reverted the tile
+    }
+  }}
+>
+```
+
+<Callout type="info">
+  Depth counts **every** marked boundary, not just grids. A drop zone nested inside another **marked**
+  drop zone outranks its parent, so arbitrary nesting resolves innermost-first — the same rule that ranks
+  an inner grid above its outer one. Mark each intermediate zone: two zones at the same depth tie.
+</Callout>
 
 ## Contain a nested grid (opt out of cross-layer)
 
