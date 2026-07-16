@@ -13,10 +13,13 @@ import {
   type ResponsiveLayouts,
   SnapGridGroup,
   horizontalCompactor,
+  insertItemWithCompactor,
+  nestedDropCollisionDetector,
   noCompactor,
   removeItemWithCompactor,
   snapMove,
   useContainerWidth,
+  useDroppable,
   useGridContainer,
   useGridItem,
   useGridPlaceholder,
@@ -1041,6 +1044,176 @@ function NestedInner({
         options={{ gridConfig: NESTED_INNER_GRID, isResizable: false }}
         renderContent={(it) => <div className="dg-nest__tile">{it.i}</div>}
       />
+    </div>
+  );
+}
+
+/* ── Nested drop zone (a non-grid droppable inside a grid) ───────────────── */
+// A grid whose right-hand "Archive" panel is a plain dnd-kit useDroppable — NOT
+// a grid. It opts into snapgrid's depth ranking (nestedDropCollisionDetector +
+// the data-snapgrid-droppable marker), so a tile dragged over it resolves to the
+// zone, not the grid underneath: the grid backs off (no placeholder, and it
+// reverts the tile) and the zone lights up. The drop is handled by the consumer's
+// own onDragEnd — here it archives the tile (removes it from the grid, re-packing
+// the hole) and shows it as a chip you can click to restore.
+const DROPZONE_INIT: Layout = [
+  { i: "a", x: 0, y: 0, w: 4, h: 2 },
+  { i: "b", x: 4, y: 0, w: 4, h: 2 },
+  { i: "c", x: 0, y: 2, w: 4, h: 2 },
+  { i: "d", x: 4, y: 2, w: 4, h: 2 },
+  // The panel that hosts the drop zone: static, so it never drags — grabbing it
+  // (or anything in it) doesn't move a tile.
+  { i: "archive", x: 8, y: 0, w: 4, h: 4, static: true },
+];
+const ARCHIVE_ZONE_ID = "archive-zone";
+
+export function NestedDropZoneDemo() {
+  const { width, containerRef } = useContainerWidth({ initialWidth: STAGE_WIDTH });
+  const [layout, setLayout] = useState<Layout>(DROPZONE_INIT);
+  const [archived, setArchived] = useState<string[]>([]);
+
+  // Restore an archived tile: drop it back into the grid (re-packing) and remove
+  // its chip. All the demo's tiles are 4×2, so restore at that size.
+  const restore = (id: string) => {
+    setLayout((g) =>
+      insertItemWithCompactor(g, { i: id, x: 0, y: 0, w: 4, h: 2 }, 0, 0, {
+        compactor: verticalCompactor,
+        cols: GRID.cols,
+      }),
+    );
+    setArchived((a) => a.filter((x) => x !== id));
+  };
+
+  return (
+    <DemoFrame
+      title="Drop zone inside a grid"
+      hint="drag a tile onto the Archive panel — the nested drop zone wins over the grid"
+    >
+      <div ref={containerRef}>
+        <DragDropProvider
+          onDragEnd={(event) => {
+            // The zone won the collision, so it's the resolved target; the grid
+            // reverted the tile. We archive it: pull it out of the grid (re-packing
+            // the hole a plain filter would leave) and add its chip.
+            const { source, target } = event.operation;
+            if (target?.id === ARCHIVE_ZONE_ID && source?.type === "grid-item") {
+              const id = String(source.id);
+              setLayout((g) =>
+                removeItemWithCompactor(g, id, { compactor: verticalCompactor, cols: GRID.cols }),
+              );
+              setArchived((a) => (a.includes(id) ? a : [...a, id]));
+            }
+          }}
+        >
+          <HeadlessGridHost
+            layout={layout}
+            width={width}
+            onLayoutChange={setLayout}
+            options={{ gridConfig: GRID, isResizable: false }}
+            renderTile={(it, group) =>
+              it.i === "archive" ? (
+                <ArchivePanelTile
+                  key={it.i}
+                  id={it.i}
+                  group={group}
+                  archived={archived}
+                  onRestore={restore}
+                />
+              ) : null
+            }
+          />
+        </DragDropProvider>
+      </div>
+    </DemoFrame>
+  );
+}
+
+// The static grid tile that hosts the (non-grid) Archive drop zone.
+function ArchivePanelTile({
+  id,
+  group,
+  archived,
+  onRestore,
+}: {
+  id: string;
+  group: string;
+  archived: string[];
+  onRestore: (id: string) => void;
+}) {
+  const { ref, style } = useGridItem({ id, group });
+  return (
+    <div ref={ref} style={style} className="dg-cell">
+      <ArchiveZone archived={archived} onRestore={onRestore} />
+    </div>
+  );
+}
+
+// The nested drop zone: a plain useDroppable that outranks the grid it sits in.
+// The collision detector is what makes it win; the marker attribute is only for
+// droppables you'd nest INSIDE it (harmless here, and future-proofs nesting).
+function ArchiveZone({
+  archived,
+  onRestore,
+}: {
+  archived: string[];
+  onRestore: (id: string) => void;
+}) {
+  const { ref, isDropTarget } = useDroppable({
+    id: ARCHIVE_ZONE_ID,
+    accept: (s) => s.type === "grid-item",
+    collisionDetector: nestedDropCollisionDetector,
+  });
+  return (
+    <div
+      ref={ref}
+      data-snapgrid-droppable=""
+      style={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        textAlign: "center",
+        borderRadius: 10,
+        border: `2px dashed ${isDropTarget ? "var(--dg-accent)" : "var(--dg-line-strong)"}`,
+        background: isDropTarget ? "var(--dg-accent-soft)" : "transparent",
+        color: isDropTarget ? "var(--dg-accent)" : "var(--dg-muted)",
+        transition: "background 120ms, border-color 120ms, color 120ms",
+      }}
+    >
+      <span style={{ fontWeight: 600 }}>Archive</span>
+      <span style={{ fontSize: 12 }}>
+        {isDropTarget
+          ? "release to archive"
+          : archived.length
+            ? "click a tile to restore"
+            : "drag a tile here"}
+      </span>
+      {archived.length ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
+          {archived.map((tileId) => (
+            <button
+              key={tileId}
+              type="button"
+              onClick={() => onRestore(tileId)}
+              style={{
+                font: "inherit",
+                fontSize: 11,
+                fontWeight: 600,
+                padding: "3px 9px",
+                borderRadius: 999,
+                cursor: "pointer",
+                color: "var(--dg-accent)",
+                background: "var(--dg-accent-soft)",
+                border: "1px solid var(--dg-accent)",
+              }}
+            >
+              {tileId.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

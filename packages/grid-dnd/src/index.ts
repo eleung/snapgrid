@@ -44,7 +44,12 @@ export { snapMove } from "./snapMove.js";
 export type { SnapMoveContext, SnapMoveEvent } from "./snapMove.js";
 
 // dnd-kit interaction pieces a binding wires onto its droppables/draggables.
-export { SNAPGRID_GRID_ATTR, gridCollisionDetector } from "./dnd/collision.js";
+export {
+  SNAPGRID_DROPPABLE_ATTR,
+  SNAPGRID_GRID_ATTR,
+  gridCollisionDetector,
+  nestedDropCollisionDetector,
+} from "./dnd/collision.js";
 export { SnapToGrid } from "./dnd/snapToGrid.js";
 export { domElement } from "./dnd/entity.js";
 export { NO_FEEDBACK, RESIZE_HANDLE_ATTR, buildItemSensors } from "./dndShared.js";
