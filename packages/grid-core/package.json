@@ -1,6 +1,6 @@
 {
   "name": "@snapgridjs/core",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Framework-agnostic layout-engine adapter for snapgrid (thin layer over react-grid-layout/core).",
   "license": "MIT",
   "author": "Edmond Leung",
