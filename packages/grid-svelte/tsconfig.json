@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    // Svelte owns its own template typing (svelte2tsx); don't apply the repo-wide
+    // `react-jsx` transform to this package's TS/Svelte sources.
+    "jsx": "preserve",
+    // Typecheck against the live core + engine source (mirrors the React package),
+    // so cross-package type errors surface without a prior build.
+    "paths": {
+      "@snapgridjs/core": ["../grid-core/src/index.ts"],
+      "@snapgridjs/dnd": ["../grid-dnd/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte", "svelte.config.js"]
+}

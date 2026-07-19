@@ -1,0 +1,69 @@
+{
+  "name": "@snapgridjs/svelte",
+  "version": "0.8.0",
+  "description": "Svelte 5 grid-layout components built on dnd-kit — a react-grid-layout v2 alternative.",
+  "license": "MIT",
+  "author": "Edmond Leung",
+  "homepage": "https://snapgrid.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eleung/snapgrid.git",
+    "directory": "packages/grid-svelte"
+  },
+  "bugs": "https://github.com/eleung/snapgrid/issues",
+  "keywords": [
+    "svelte",
+    "grid",
+    "grid-layout",
+    "react-grid-layout",
+    "drag-and-drop",
+    "draggable",
+    "resizable",
+    "responsive",
+    "dashboard",
+    "kanban",
+    "dnd-kit",
+    "snapgrid"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "files": ["dist"],
+  "svelte": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "svelte-package -i src -o dist && node -e \"require('fs').rmSync('dist/__tests__',{recursive:true,force:true})\"",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@snapgridjs/core": "workspace:*",
+    "@snapgridjs/dnd": "workspace:*"
+  },
+  "peerDependencies": {
+    "svelte": "^5.29.0",
+    "@dnd-kit/dom": "^0.4.0",
+    "@dnd-kit/svelte": "^0.4.0"
+  },
+  "devDependencies": {
+    "@dnd-kit/abstract": "^0.4.0",
+    "@dnd-kit/collision": "^0.4.0",
+    "@dnd-kit/dom": "^0.4.0",
+    "@dnd-kit/state": "^0.4.0",
+    "@dnd-kit/svelte": "^0.4.0",
+    "@sveltejs/package": "^2.3.7",
+    "@sveltejs/vite-plugin-svelte": "^4.0.4",
+    "svelte": "^5.29.0",
+    "svelte-check": "^4.1.4"
+  }
+}
