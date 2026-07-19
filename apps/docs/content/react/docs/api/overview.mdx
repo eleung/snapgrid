@@ -16,22 +16,22 @@ types. Headless grids render inside a dnd-kit `DragDropProvider`; `<GridLayout>`
 
 | Export | Returns |
 | --- | --- |
-| [`useGridContainer`](/docs/api/hooks#usegridcontainer) | `{ containerProps, group, isDropTarget, controller }` — the grid host |
-| [`useGridItem`](/docs/api/hooks#usegriditem) | `{ ref, handleRef, style, isDragging, item }` |
-| [`useGridResizeHandle`](/docs/api/hooks#usegridresizehandle) | `{ ref, handleProps, isResizing }` |
-| [`useGridPlaceholder`](/docs/api/hooks#usegridplaceholder) | `{ item, style } \| null` |
-| [`useContainerWidth`](/docs/api/hooks#usecontainerwidth) | `{ width, mounted, containerRef }` |
-| [`useResponsiveLayout`](/docs/api/hooks#useresponsivelayout) | `{ breakpoint, cols, layout, onLayoutChange }` |
+| [`useGridContainer`](/react/docs/api/hooks#usegridcontainer) | `{ containerProps, group, isDropTarget, controller }` — the grid host |
+| [`useGridItem`](/react/docs/api/hooks#usegriditem) | `{ ref, handleRef, style, isDragging, item }` |
+| [`useGridResizeHandle`](/react/docs/api/hooks#usegridresizehandle) | `{ ref, handleProps, isResizing }` |
+| [`useGridPlaceholder`](/react/docs/api/hooks#usegridplaceholder) | `{ item, style } \| null` |
+| [`useContainerWidth`](/react/docs/api/hooks#usecontainerwidth) | `{ width, mounted, containerRef }` |
+| [`useResponsiveLayout`](/react/docs/api/hooks#useresponsivelayout) | `{ breakpoint, cols, layout, onLayoutChange }` |
 
 ### Components (turnkey)
 
 | Export | Purpose |
 | --- | --- |
-| [`GridLayout`](/docs/api/components#gridlayout) | Drop-in controlled grid with keyed children (bundles the provider). |
-| [`ResponsiveGridLayout`](/docs/api/components#responsivegridlayout) | Per-breakpoint layouts. |
-| [`GridItem`](/docs/api/components#griditem) | A positioned tile with default markup + handles. |
-| [`GridPlaceholder`](/docs/api/components#gridplaceholder) | Default landing-cell marker. |
-| [`SnapGridGroup`](/docs/api/components#snapgridgroup) | Shares one provider across sibling grids (cross-grid). |
+| [`GridLayout`](/react/docs/api/components#gridlayout) | Drop-in controlled grid with keyed children (bundles the provider). |
+| [`ResponsiveGridLayout`](/react/docs/api/components#responsivegridlayout) | Per-breakpoint layouts. |
+| [`GridItem`](/react/docs/api/components#griditem) | A positioned tile with default markup + handles. |
+| [`GridPlaceholder`](/react/docs/api/components#gridplaceholder) | Default landing-cell marker. |
+| [`SnapGridGroup`](/react/docs/api/components#snapgridgroup) | Shares one provider across sibling grids (cross-grid). |
 
 ### Re-exported dnd-kit primitives
 
@@ -41,13 +41,13 @@ reach for with a grid: `DragOverlay` (an optional separate floating preview), `u
 `DragDropProvider` is *not* re-exported — import it from `@dnd-kit/react`.
 
 There's no overlay component to reach for: a dragged tile
-[floats itself](/docs/guides/headless#floating) (dnd-kit lifts it into the top layer), so the common
+[floats itself](/react/docs/guides/headless#floating) (dnd-kit lifts it into the top layer), so the common
 case needs nothing extra. The re-exported `DragOverlay` is the escape hatch for when the floating
 preview must differ from the tile — a clone, a ghost, or wholly custom markup.
 
 ### Interop
 
-`snapMove(layout, event)` — the reducer for [dnd-kit interop](/docs/guides/dnd-kit-interop):
+`snapMove(layout, event)` — the reducer for [dnd-kit interop](/react/docs/guides/dnd-kit-interop):
 place a dragged item (a foreign `useSortable` card, or a tile crossing a grid ⇄ list seam) into a
 `Layout` at the pointer cell, with compaction. It resolves the destination grid's geometry and
 compactor from the grid under the pointer, so the optional context is override-only. Pair it with
@@ -64,13 +64,13 @@ geometry helpers handy for interop, re-exported from `@snapgridjs/core`:
 
 `Layout`, `LayoutItem`, `GridConfig`, `DragConfig`, `ResizeConfig`, `DropConfig`, `GridDropData`,
 `GridEventCallback`, `Compactor`, `CompactType`, `Breakpoints`, `BreakpointCols`,
-`ResponsiveLayouts`, `PositionParams`, `ResizeHandleAxis`. See [Types & config](/docs/api/types).
+`ResponsiveLayouts`, `PositionParams`, `ResizeHandleAxis`. See [Types & config](/react/docs/api/types).
 
 ## `@snapgridjs/core`
 
 The framework-agnostic layout math: geometry, move/resize/insert/remove operations, and the drag
 session state machine. Most apps never import it directly. See
-[Core engine & extras](/docs/api/core).
+[Core engine & extras](/react/docs/api/core).
 
 ## `@snapgridjs/dnd`
 
@@ -83,4 +83,4 @@ automatically with `@snapgridjs/react`; import it directly only to build a bindi
 
 Optional packers: `masonryCompactor`, `gravityCompactor`, `shelfCompactor`, plus `wrapCompactor`
 and the fast O(n log n) compactors re-exported from react-grid-layout. See
-[Core engine & extras](/docs/api/core#snapgridjsextras).
+[Core engine & extras](/react/docs/api/core#snapgridjsextras).

@@ -18,8 +18,8 @@ into the grid (it lands at a real cell, with compaction), drag a tile back out, 
 ## Managed vs. `onDragOver`
 
 For pure snapgrid grids you don't write any drag handlers — the grid's **managed engine** drives
-in-grid moves, [cross-grid](/docs/guides/cross-grid) hand-off, and [resizing](/docs/guides/resizing),
-and reports results through [`onLayoutChange`](/docs/guides/events). That still applies here: an
+in-grid moves, [cross-grid](/react/docs/guides/cross-grid) hand-off, and [resizing](/react/docs/guides/resizing),
+and reports results through [`onLayoutChange`](/react/docs/guides/events). That still applies here: an
 in-grid move falls through to the engine untouched.
 
 Interop with a **foreign** dnd-kit container (a sortable list, a kanban column) is different. The two
@@ -36,7 +36,7 @@ the source/target types you care about.
 ## One provider
 
 The grid and the foreign sortable must share a single dnd-kit manager, so they live under one
-`DragDropProvider` (or snapgrid's [`SnapGridGroup`](/docs/guides/cross-grid), a thin wrapper). Import
+`DragDropProvider` (or snapgrid's [`SnapGridGroup`](/react/docs/guides/cross-grid), a thin wrapper). Import
 the dnd-kit primitives from `@snapgridjs/react` so everything resolves the *same* dnd-kit instance —
 a second copy of `@dnd-kit/react` is a separate provider context and its drags never reach the grid.
 
@@ -55,7 +55,7 @@ import {
 
 ## The grid accepts foreign sortables
 
-By default a grid only accepts grid tiles and [external-drop](/docs/guides/external-drop)
+By default a grid only accepts grid tiles and [external-drop](/react/docs/guides/external-drop)
 draggables. Opt a foreign sortable in with the `accept` option on `useGridContainer` — it widens
 which sources resolve the grid as a **drop target** (the built-in checks and the nested-grid
 ancestry guard still apply). You drive the actual receive yourself with `snapMove` (below).

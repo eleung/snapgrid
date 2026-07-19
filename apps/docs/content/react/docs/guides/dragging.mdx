@@ -10,7 +10,7 @@ import { DragHandleDemo, SnapDemo } from "@/components/demos";
 
 Items drag by default. Configure how with `dragConfig`, and toggle it per item with `isDraggable` /
 `static` on the layout item. `dragConfig` is an option on `useGridContainer` (and, identically, a
-prop on the [`<GridLayout>`](/docs/guides/component-layer) shell):
+prop on the [`<GridLayout>`](/react/docs/guides/component-layer) shell):
 
 ```tsx
 const { containerProps, group } = useGridContainer({
@@ -104,10 +104,10 @@ pointer dragging, a packed axis can pull the tile back (e.g. moving down under v
 - `isDraggable: false` on a `LayoutItem` disables dragging for that item only.
 - `static: true` anchors an item — others flow around it, and by default it can't be dragged or
   resized (opt back in per item with `isDraggable` / `isResizable: true` for a "pinned" tile). See
-  [Static items](/docs/guides/static-items).
+  [Static items](/react/docs/guides/static-items).
 - The grid-level `isDraggable` option overrides everything when set to `false`.
 
 ## Lifecycle
 
 `onDragStart`, `onDrag`, and `onDragStop` fire with the react-grid-layout-compatible signature
-`(layout, oldItem, newItem, placeholder, event, node)`. See [Events & lifecycle](/docs/guides/events).
+`(layout, oldItem, newItem, placeholder, event, node)`. See [Events & lifecycle](/react/docs/guides/events).

@@ -1,0 +1,97 @@
+---
+title: Examples
+description: Live, interactive examples of every snapgrid feature, including drag, resize, packing, responsive, cross-grid, external drop, and the turnkey component layer.
+---
+
+import {
+  BasicGridDemo,
+  CompactorDemo,
+  ResizeDemo,
+  DragHandleDemo,
+  SnapDemo,
+  StaticItemDemo,
+  ResponsiveDemo,
+  CrossGridDemo,
+  NestedDemo,
+  ExternalDropDemo,
+  SortableGridDemo,
+  ComponentLayerDemo,
+} from "@/components/demos";
+
+# Examples
+
+Every demo below is the real library running in your browser: drag, resize, and play. Each links
+to the guide that explains it.
+
+## Drag & resize
+
+The basics: drag a tile, resize it from the corner, watch the rest compact upward. → [Getting Started](/react/docs/getting-started)
+
+<BasicGridDemo />
+
+## Compaction & packing
+
+Swap the packing algorithm at runtime: vertical, horizontal, masonry, gravity, shelf, or free. → [Compaction guide](/react/docs/guides/compaction)
+
+<CompactorDemo />
+
+## Resize constraints
+
+Every edge and corner, with per-item `minW` / `maxW` / `minH` / `maxH` enforced. → [Resizing guide](/react/docs/guides/resizing)
+
+<ResizeDemo />
+
+## Drag handles
+
+Drag only by the grip; the rest of the tile stays interactive. → [Dragging guide](/react/docs/guides/dragging)
+
+<DragHandleDemo />
+
+## Snap to grid
+
+Toggle whether the dragged tile glides with the pointer or snaps to cells. → [Dragging guide](/react/docs/guides/dragging#snap-to-grid)
+
+<SnapDemo />
+
+## Static items
+
+Toggle a tile between **locked** and **pinned** (anchored, but still draggable). Others flow around it either way. → [Static items guide](/react/docs/guides/static-items)
+
+<StaticItemDemo />
+
+## Responsive
+
+Columns and layout change as the width crosses breakpoints. → [Responsive guide](/react/docs/guides/responsive)
+
+<ResponsiveDemo />
+
+## Cross-grid dragging
+
+Two grids in a `SnapGridGroup`. Drag tiles between them. → [Cross-grid guide](/react/docs/guides/cross-grid)
+
+<CrossGridDemo />
+
+## Nested grids
+
+A grid inside another grid's tile. Drag the panel by its header, rearrange the inner tiles, or drag a tile between the inner and outer grids. → [Nesting guide](/react/docs/guides/nesting)
+
+<NestedDemo />
+
+## External drop
+
+Drag a chip from a palette into the grid; the grid synthesizes a new item. → [External drop guide](/react/docs/guides/external-drop)
+
+<ExternalDropDemo />
+
+## Sortable ↔ grid
+
+The grid interoperates with the wider dnd-kit ecosystem: drag a card from a `useSortable` tray into the grid (it lands at a real cell), drag a tile back out, or reorder the tray — all under one provider. → [dnd-kit interop guide](/react/docs/guides/dnd-kit-interop)
+
+<SortableGridDemo />
+
+## Component layer
+
+Every example above is headless. This is the turnkey shell: `<GridLayout>` wires the
+`DragDropProvider`, tiles, handles, and placeholder for you. → [Component layer guide](/react/docs/guides/component-layer)
+
+<ComponentLayerDemo />

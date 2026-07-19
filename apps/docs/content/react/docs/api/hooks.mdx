@@ -8,7 +8,7 @@ import { Callout } from "nextra/components";
 # Hooks
 
 snapgrid's primary API. Each returns refs, styles, and state to spread onto your own elements. See
-[Headless usage](/docs/guides/headless) for the full picture.
+[Headless usage](/react/docs/guides/headless) for the full picture.
 
 <Callout type="info">
   Headless grids render inside a dnd-kit [`DragDropProvider`](https://next.dndkit.com) that you
@@ -56,18 +56,18 @@ The controlled state plus the per-grid config. These are exactly `<GridLayout>`'
 | `layout` | `Layout` | — | **Required.** Controlled array of items. Never mutated. |
 | `width` | `number` | — | **Required.** Container width in px (from [`useContainerWidth`](#usecontainerwidth)). |
 | `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. The grid is controlled — apply it, or nothing moves. |
-| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. Unset fields use defaults. |
-| `dragConfig` | `DragConfig` | — | [Drag behaviour](/docs/guides/dragging): `handle` (CSS selector — headless prefers [`handleRef`](#usegriditem)), `cancel`, `threshold`, `bounded`, `snapToGrid`. |
-| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/docs/guides/resizing): which handle axes are allowed. |
-| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/docs/guides/external-drop): `enabled`, `defaultItem`, `accept`. |
-| `accept` | `(source) => boolean` | — | [dnd-kit interop](/docs/guides/dnd-kit-interop): also accept a foreign sortable (e.g. a tray card) as a drop target. You drive the receive yourself in `onDragOver` with [`snapMove`](/docs/guides/dnd-kit-interop#snapmove). |
-| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/docs/guides/compaction). Swap at runtime. |
+| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/react/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. Unset fields use defaults. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/react/docs/guides/dragging): `handle` (CSS selector — headless prefers [`handleRef`](#usegriditem)), `cancel`, `threshold`, `bounded`, `snapToGrid`. |
+| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/react/docs/guides/resizing): which handle axes are allowed. |
+| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/react/docs/guides/external-drop): `enabled`, `defaultItem`, `accept`. |
+| `accept` | `(source) => boolean` | — | [dnd-kit interop](/react/docs/guides/dnd-kit-interop): also accept a foreign sortable (e.g. a tray card) as a drop target. You drive the receive yourself in `onDragOver` with [`snapMove`](/react/docs/guides/dnd-kit-interop#snapmove). |
+| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/react/docs/guides/compaction). Swap at runtime. |
 | `isDraggable` | `boolean` | `true` | Grid-level drag toggle (overrides per-item when `false`). |
 | `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
 | `autoSize` | `boolean` | `true` | Grow the surface height to fit content. |
 | `id` | `string` | auto (`useId`) | Stable id for the droppable surface; surfaced back as `group`. |
-| `type` | `string` | `"grid"` | The droppable surface's dnd-kit `type`. Override to namespace grids for [interop](/docs/guides/dnd-kit-interop) (branch `onDragOver` on it, or have a foreign draggable `accept` only this grid). Grids resolve by id, so any value still receives tiles + cross-grid drops. |
-| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/docs/guides/events) `(layout, oldItem, newItem, placeholder, event, node)`. |
+| `type` | `string` | `"grid"` | The droppable surface's dnd-kit `type`. Override to namespace grids for [interop](/react/docs/guides/dnd-kit-interop) (branch `onDragOver` on it, or have a foreign draggable `accept` only this grid). Grids resolve by id, so any value still receives tiles + cross-grid drops. |
+| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/react/docs/guides/events) `(layout, oldItem, newItem, placeholder, event, node)`. |
 | `onResizeStart` `onResize` `onResizeStop` | `GridEventCallback` | — | Resize lifecycle, same signature. |
 | `onDrop` | `(layout, item, event) => void` | — | Fired when an external draggable is dropped in — instead of `onLayoutChange`. |
 
@@ -95,7 +95,7 @@ return <div ref={ref} style={style}>{item?.i}</div>;
 | --- | --- | --- | --- |
 | `id` | `string` | — | **Required.** Matches the layout item's `i`. |
 | `group` | `string` | — | **Required.** The owning grid's id (from its `useGridContainer`). |
-| `type` | `string` | `"grid-item"` | The dnd-kit sortable `type` the tile carries. Override to namespace tiles for [interop](/docs/guides/dnd-kit-interop) — e.g. so a foreign sortable list `accept`s only one grid's tiles. The grid identifies its own tiles by their payload, not this string, so any value still drags and crosses grids. |
+| `type` | `string` | `"grid-item"` | The dnd-kit sortable `type` the tile carries. Override to namespace tiles for [interop](/react/docs/guides/dnd-kit-interop) — e.g. so a foreign sortable list `accept`s only one grid's tiles. The grid identifies its own tiles by their payload, not this string, so any value still drags and crosses grids. |
 
 | → | Type | Description |
 | --- | --- | --- |
@@ -159,7 +159,7 @@ There's no `useGridDragOverlay` — and no overlay component either. While you d
 dnd-kit lifts the active tile into the browser's top layer, so the tile you already rendered
 **floats itself** above everything and crosses between grids unclipped; on drop it settles into its
 new cell. Nothing extra to wire. Style the floating state through the tile's own `isDragging`. See
-[The dragged tile floats itself](/docs/guides/headless#floating).
+[The dragged tile floats itself](/react/docs/guides/headless#floating).
 
 If you need a *separate* floating element — a clone, a ghost, different markup — dnd-kit's
 [`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/react`. It's a component,

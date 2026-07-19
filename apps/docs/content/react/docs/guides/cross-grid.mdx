@@ -16,7 +16,7 @@ source grid loses the tile; the destination gains it. Each grid keeps its own co
 
 <Callout type="info">
   Cross-grid is the managed, grid-to-grid case. To drag between a grid and a **non-grid** dnd-kit
-  sortable (a list, a kanban column), see [dnd-kit interop](/docs/guides/dnd-kit-interop).
+  sortable (a list, a kanban column), see [dnd-kit interop](/react/docs/guides/dnd-kit-interop).
 </Callout>
 
 ```tsx
@@ -72,12 +72,12 @@ Both updates happen in the same gesture, each against its own layout state.
 <Callout type="info">
   `<SnapGridGroup>` is exactly dnd-kit's `<DragDropProvider>` — use whichever you like; grids under
   one provider exchange tiles either way. Prefer the turnkey shell? Swap each `<Grid>` for a
-  [`<GridLayout>`](/docs/guides/component-layer) with keyed children inside the same group; it
+  [`<GridLayout>`](/react/docs/guides/component-layer) with keyed children inside the same group; it
   bundles the container and items for you.
 </Callout>
 
 <Callout type="info">
-  **No overlay to wire.** A dragged tile [floats itself](/docs/guides/headless#floating) — it lifts
+  **No overlay to wire.** A dragged tile [floats itself](/react/docs/guides/headless#floating) — it lifts
   into the top layer and crosses the gap between grids unclipped, carrying its own content with it. So
   the preview always shows the right tile, from whichever grid it came, with nothing extra to render.
 </Callout>
@@ -95,6 +95,6 @@ If a tile is dropped outside every grid in the group, the move reverts. The sour
 
 <Callout type="info">
   Want a grid **inside a tile** of another rather than side-by-side siblings? See
-  [Nested grids](/docs/guides/nesting) — they also cross levels by default, and you can give a
+  [Nested grids](/react/docs/guides/nesting) — they also cross levels by default, and you can give a
   sub-grid its own provider to keep it self-contained.
 </Callout>

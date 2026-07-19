@@ -44,7 +44,7 @@ const CELLS: Cell[] = [
     h: 1,
     static: true,
     label: "Docs",
-    href: `${SITE}/docs/getting-started`,
+    href: `${SITE}/react/docs/getting-started`,
   },
   {
     i: "examples",
@@ -54,7 +54,7 @@ const CELLS: Cell[] = [
     h: 1,
     static: true,
     label: "Examples",
-    href: `${SITE}/examples`,
+    href: `${SITE}/react/examples`,
   },
 ];
 const BY_ID = new Map(CELLS.map((c) => [c.i, c]));

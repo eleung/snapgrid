@@ -13,7 +13,7 @@ non-React binding (or a direct dnd-kit integration) would build on.
 
 <Callout type="info">
   You don't need any of this to use snapgrid. `<GridLayout>` and the [headless
-  hooks](/docs/guides/headless) are the whole API for building grids. This page is for the curious —
+  hooks](/react/docs/guides/headless) are the whole API for building grids. This page is for the curious —
   and for anyone evaluating how extensible the library really is.
 </Callout>
 
@@ -52,7 +52,7 @@ The grid is another participant in *your* dnd-kit tree — there's no parallel d
 
 Each tile is a **real `useSortable`** carrying a small payload — `{ kind, itemId, item, group }` — so it
 speaks the same protocol as any dnd-kit sortable. That's what lets a grid compose with sortable lists
-and other draggables under one provider ([dnd-kit interop](/docs/guides/dnd-kit-interop)), and what
+and other draggables under one provider ([dnd-kit interop](/react/docs/guides/dnd-kit-interop)), and what
 makes cross-grid and external drops fall out of dnd-kit's own collision system rather than bespoke code.
 
 ## One engine per manager

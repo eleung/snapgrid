@@ -10,9 +10,9 @@ import { BasicGridDemo } from "@/components/demos";
 
 The hooks are snapgrid's primary API. They hand you refs, positioning styles, and drag state — you
 bring the markup, classes, and content. Reach for them when you want full control, or to compose with
-the dnd-kit draggables and sortables you already have ([dnd-kit interop](/docs/guides/dnd-kit-interop)).
+the dnd-kit draggables and sortables you already have ([dnd-kit interop](/react/docs/guides/dnd-kit-interop)).
 (`<GridLayout>` is a thin shell over these same hooks — see
-[Component layer](/docs/guides/component-layer) when you'd rather not wire it yourself.)
+[Component layer](/react/docs/guides/component-layer) when you'd rather not wire it yourself.)
 
 <BasicGridDemo />
 
@@ -80,7 +80,7 @@ function Tile({ id, group }) {
 
 `options` is the controlled state — `layout`, `width`, `onLayoutChange` — plus any of `gridConfig`,
 `dragConfig`, `resizeConfig`, `dropConfig`, `compactor`, `isDraggable`, `isResizable`, `autoSize`,
-`id`, and the [lifecycle callbacks](/docs/guides/events). Each is documented in its feature guide.
+`id`, and the [lifecycle callbacks](/react/docs/guides/events). Each is documented in its feature guide.
 
 ## `useGridItem` — a tile
 
@@ -89,7 +89,7 @@ function Tile({ id, group }) {
 | Field | What it is |
 | --- | --- |
 | `ref` | Attach to the tile element. |
-| `handleRef` | Optional drag handle — attach to a child to restrict pointer dragging to it (see [Dragging](/docs/guides/dragging#drag-handles)). Leave it off and the whole tile drags. |
+| `handleRef` | Optional drag handle — attach to a child to restrict pointer dragging to it (see [Dragging](/react/docs/guides/dragging#drag-handles)). Leave it off and the whole tile drags. |
 | `style` | Absolute positioning (`position: absolute` + `left/top/width/height`); reflow is animated on the compositor. Spread it; don't override the position. |
 | `isDragging` | `true` while this tile is the active drag source — branch your styling on it. |
 | `item` | The tile's current (possibly reflowed) layout entry. |
@@ -128,7 +128,7 @@ function Tile({ id, group }) {
   **Need a *separate* floating element?** For a custom preview — a clone, a ghost, different markup —
   dnd-kit's [`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/react`. You
   rarely need it, since the tile already floats itself; reach for it only when the floating preview
-  must differ from the tile. See [Styling](/docs/guides/styling#custom-placeholder).
+  must differ from the tile. See [Styling](/react/docs/guides/styling#custom-placeholder).
 </Callout>
 
 ## Optional affordances
@@ -143,7 +143,7 @@ to render. Two affordances are common enough that snapgrid gives you a hook for 
 ## `useGridResizeHandle` — render your own resize handles [#usegridresizehandle]
 
 **Why you need it:** a headless tile has no resize handles. `resizeConfig.handles` only declares
-*which* edges are resizable; you render the handle elements. (The [`<GridItem>`](/docs/guides/component-layer)
+*which* edges are resizable; you render the handle elements. (The [`<GridItem>`](/react/docs/guides/component-layer)
 shell does this for you — this is what it does under the hood.)
 
 `useGridResizeHandle({ id, handle, group })` models a handle as its own draggable and returns:
@@ -171,7 +171,7 @@ function Tile({ id, group }) {
 ```
 
 Render one handle per axis you want (`"n" | "e" | "s" | "w" | "ne" | "nw" | "se" | "sw"`). See
-[Resizing](/docs/guides/resizing) for the config and per-item limits.
+[Resizing](/react/docs/guides/resizing) for the config and per-item limits.
 
 ## `useGridPlaceholder` — the landing marker
 
@@ -207,7 +207,7 @@ so a memoized neighbour stays put. (`<GridItem>` is already memoized.)
 They share one engine, so nothing is all-or-nothing. Drop `<GridItem id group>` /
 `<GridPlaceholder group>` into a surface you host with `useGridContainer`, or use `<GridLayout>` for
 most of the app and the hooks for the one grid that needs custom markup. See
-[Component layer](/docs/guides/component-layer).
+[Component layer](/react/docs/guides/component-layer).
 
 ## The hooks at a glance
 
@@ -218,4 +218,4 @@ most of the app and the hooks for the one grid that needs custom markup. See
 | `useGridItem({ id, group })` | `{ ref, handleRef, style, isDragging, item }` | One positioned tile. |
 | `useGridResizeHandle({ id, handle, group })` | `{ ref, handleProps, isResizing }` | One resize handle. |
 | `useGridPlaceholder(group)` | `{ item, style } \| null` | The landing-cell marker (null when idle). |
-| `useResponsiveLayout(options)` | `{ breakpoint, cols, layout, onLayoutChange }` | Nothing — resolves the active breakpoint. See [Responsive](/docs/guides/responsive). |
+| `useResponsiveLayout(options)` | `{ breakpoint, cols, layout, onLayoutChange }` | Nothing — resolves the active breakpoint. See [Responsive](/react/docs/guides/responsive). |

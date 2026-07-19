@@ -8,7 +8,7 @@ import { ComponentLayerDemo } from "@/components/demos";
 
 # Component layer
 
-snapgrid is [headless-first](/docs/guides/headless), but you don't have to wire the hooks yourself.
+snapgrid is [headless-first](/react/docs/guides/headless), but you don't have to wire the hooks yourself.
 The **component layer** is a thin shell in the react-grid-layout style over those exact hooks: `<GridLayout>`
 bundles the dnd-kit `DragDropProvider`, the container, the items, and the placeholder, so you never
 touch dnd-kit directly.
@@ -16,7 +16,7 @@ touch dnd-kit directly.
 <Callout type="info">
   **This is the escape hatch.** If the headless provider/host/tile wiring is more than you
   want, reach for `<GridLayout>` — it mirrors react-grid-layout v2, so it's the gentlest on-ramp.
-  When one grid later needs custom markup, drop just that grid down to the [hooks](/docs/guides/headless).
+  When one grid later needs custom markup, drop just that grid down to the [hooks](/react/docs/guides/headless).
   Same engine; the two layers mix freely.
 </Callout>
 
@@ -65,24 +65,24 @@ It supplies its own `DragDropProvider`; nest several (or wrap them in
 ## Config props map 1:1 to the hook options
 
 Every behaviour prop on `<GridLayout>` is the same option you'd pass to
-[`useGridContainer`](/docs/guides/headless) — only the spelling differs (a JSX prop vs. an object
+[`useGridContainer`](/react/docs/guides/headless) — only the spelling differs (a JSX prop vs. an object
 key). So each feature guide applies to both layers:
 
 | Prop | What it does | Guide |
 | --- | --- | --- |
-| `gridConfig` | Columns, row height, margins, padding, maxRows. | [Concepts](/docs/concepts) |
-| `dragConfig` | Handle, cancel, threshold, bounds, snap. | [Dragging](/docs/guides/dragging) |
-| `resizeConfig` | Which handles to show. | [Resizing](/docs/guides/resizing) |
-| `compactor` | Packing algorithm. | [Compaction](/docs/guides/compaction) |
-| `dropConfig` / `onDrop` | Accept external draggables. | [External drop](/docs/guides/external-drop) |
+| `gridConfig` | Columns, row height, margins, padding, maxRows. | [Concepts](/react/docs/concepts) |
+| `dragConfig` | Handle, cancel, threshold, bounds, snap. | [Dragging](/react/docs/guides/dragging) |
+| `resizeConfig` | Which handles to show. | [Resizing](/react/docs/guides/resizing) |
+| `compactor` | Packing algorithm. | [Compaction](/react/docs/guides/compaction) |
+| `dropConfig` / `onDrop` | Accept external draggables. | [External drop](/react/docs/guides/external-drop) |
 | `isDraggable` / `isResizable` / `autoSize` | Grid-level toggles. | — |
-| `onDragStart` … `onResizeStop` | Lifecycle callbacks. | [Events](/docs/guides/events) |
+| `onDragStart` … `onResizeStop` | Lifecycle callbacks. | [Events](/react/docs/guides/events) |
 
-See [Components → GridLayout](/docs/api/components#gridlayout) for the complete prop table.
+See [Components → GridLayout](/react/docs/api/components#gridlayout) for the complete prop table.
 
 ## `<ResponsiveGridLayout>`
 
-The turnkey wrapper over [`useResponsiveLayout`](/docs/guides/responsive). Give it a per-breakpoint `layouts`
+The turnkey wrapper over [`useResponsiveLayout`](/react/docs/guides/responsive). Give it a per-breakpoint `layouts`
 map instead of a single `layout`; it switches column count and layout as `width` crosses breakpoints.
 
 ```tsx
@@ -106,7 +106,7 @@ const [layouts, setLayouts] = useState<ResponsiveLayouts>({ lg: [/* … */] });
 
 ## Cross-grid with components
 
-Wrap sibling grids in [`<SnapGridGroup>`](/docs/guides/cross-grid) — the shared provider — and tiles
+Wrap sibling grids in [`<SnapGridGroup>`](/react/docs/guides/cross-grid) — the shared provider — and tiles
 drag between them. (Nested `<GridLayout>`s share a provider automatically.)
 
 ```tsx
@@ -144,11 +144,11 @@ const { containerProps, group } = useGridContainer({ layout, width, onLayoutChan
 ```
 
 `<GridItem>` applies the stable `.snapgrid-item` class and `data-grid-id` / `data-dragging` attributes
-(see [Styling](/docs/guides/styling)) and is memoized, so re-rendering the surface doesn't re-render
+(see [Styling](/react/docs/guides/styling)) and is memoized, so re-rendering the surface doesn't re-render
 every tile.
 
 <Callout type="info">
   There's no drag overlay to manage at either layer — a dragged tile
-  [floats itself](/docs/guides/headless#floating). See [Components](/docs/api/components) for the full
-  prop tables and [Headless usage](/docs/guides/headless) for the hooks.
+  [floats itself](/react/docs/guides/headless#floating). See [Components](/react/docs/api/components) for the full
+  prop tables and [Headless usage](/react/docs/guides/headless) for the hooks.
 </Callout>

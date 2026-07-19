@@ -7,13 +7,13 @@ import { Callout } from "nextra/components";
 
 # Components
 
-The component layer — a thin shell in the react-grid-layout style over the [hooks](/docs/api/hooks).
+The component layer — a thin shell in the react-grid-layout style over the [hooks](/react/docs/api/hooks).
 `<GridLayout>` bundles the dnd-kit `DragDropProvider`, the container, the items, and the placeholder,
 so you never touch dnd-kit directly. For full control of the markup, or to compose with other dnd-kit
-draggables, use the hooks. See the [Component layer guide](/docs/guides/component-layer) for usage;
+draggables, use the hooks. See the [Component layer guide](/react/docs/guides/component-layer) for usage;
 this page is the prop reference.
 
-A dragged tile [floats itself](/docs/guides/headless#floating), so there's no overlay component to
+A dragged tile [floats itself](/react/docs/guides/headless#floating), so there's no overlay component to
 render at either layer. If you need a *separate* floating preview, dnd-kit's
 [`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/react`.
 
@@ -44,17 +44,17 @@ one.
 | `layout` | `Layout` | — | **Required.** Controlled array of items. Never mutated. |
 | `width` | `number` | — | **Required.** Container width in px (from `useContainerWidth`). |
 | `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. |
-| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. |
-| `dragConfig` | `DragConfig` | — | [Drag behaviour](/docs/guides/dragging). |
-| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/docs/guides/resizing). |
-| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/docs/guides/external-drop). |
-| `accept` | `(source) => boolean` | — | [dnd-kit interop](/docs/guides/dnd-kit-interop): also accept a foreign sortable as a drop target. |
-| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/docs/guides/compaction). |
+| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/react/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/react/docs/guides/dragging). |
+| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/react/docs/guides/resizing). |
+| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/react/docs/guides/external-drop). |
+| `accept` | `(source) => boolean` | — | [dnd-kit interop](/react/docs/guides/dnd-kit-interop): also accept a foreign sortable as a drop target. |
+| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/react/docs/guides/compaction). |
 | `isDraggable` | `boolean` | `true` | Grid-level drag toggle. |
 | `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
 | `autoSize` | `boolean` | `true` | Grow the container height to fit content. |
 | `id` | `string` | auto (`useId`) | Stable id for the droppable surface. |
-| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/docs/guides/events). |
+| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/react/docs/guides/events). |
 | `onResizeStart` `onResize` `onResizeStop` | `GridEventCallback` | — | Resize lifecycle. |
 | `onDrop` | `(layout, item, event) => void` | — | Fired when an external draggable is dropped in. |
 | `className` | `string` | — | Appended to `snapgrid`. |
@@ -63,7 +63,7 @@ one.
 ## ResponsiveGridLayout
 
 Switches columns and layout by breakpoint as `width` changes. See
-[Responsive layouts](/docs/guides/responsive).
+[Responsive layouts](/react/docs/guides/responsive).
 
 ### Props
 
@@ -97,7 +97,7 @@ it inside your own surface, or let `GridLayout` create them.
 ## GridPlaceholder
 
 Renders the landing-cell marker, or nothing when idle. Takes the grid's `group`. Customize with
-`className` / `style`, or use [`useGridPlaceholder`](/docs/api/hooks#usegridplaceholder) for full
+`className` / `style`, or use [`useGridPlaceholder`](/react/docs/api/hooks#usegridplaceholder) for full
 control.
 
 | Prop | Type | Description |
@@ -110,7 +110,7 @@ control.
 
 Shares one dnd-kit `DragDropProvider` across several sibling grids so tiles can be dragged between
 them. Takes only `children` — a thin wrapper over `DragDropProvider` (nesting `GridLayout`s already
-shares a provider, so this is just explicit). See [Cross-grid dragging](/docs/guides/cross-grid).
+shares a provider, so this is just explicit). See [Cross-grid dragging](/react/docs/guides/cross-grid).
 
 <Callout type="warning">
   Item ids must be unique across all grids that share a provider.

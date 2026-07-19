@@ -18,7 +18,7 @@ snapgrid deliberately keeps react-grid-layout's mental model: a controlled array
   [home page](/). But it's **not a literal drop-in**. Two things still need real work, both covered
   below: you **re-author styling** (snapgrid ships no CSS and uses its own class names), and any code
   built on v2's **hooks** (`useGridLayout` / `useResponsiveLayout`) moves to snapgrid's
-  [headless API](/docs/guides/headless) — there's no hook-for-hook swap. Skip to
+  [headless API](/react/docs/guides/headless) — there's no hook-for-hook swap. Skip to
   [Coming from v2](#coming-from-v2). The rest of the guide is the **v1** prop-mapping.
 </Callout>
 
@@ -78,14 +78,14 @@ snapgrid ships **no CSS**. v2's stylesheet and class names (`react-grid-item`,
 `react-grid-placeholder`, the resize-handle classes) don't carry over: delete the stylesheet import
 and restyle against snapgrid's own hooks — `.snapgrid-item`, `.snapgrid-placeholder`,
 `.snapgrid-resize-handle--{axis}` (or your own classes in the headless layer). See
-[Styling](/docs/guides/styling). For most apps this is the bulk of the migration.
+[Styling](/react/docs/guides/styling). For most apps this is the bulk of the migration.
 
 ### Hooks → headless usage
 
 snapgrid's hooks are its **own headless API**, not a re-implementation of v2's. Some names overlap
 (`useContainerWidth`, `useResponsiveLayout`) but the contracts differ, and snapgrid's grid *host* is
 **`useGridContainer`**, not v2's `useGridLayout`. So there's **no hook-for-hook swap**: if you built
-directly on v2's hooks, migrate that grid to snapgrid's [headless usage](/docs/guides/headless)
+directly on v2's hooks, migrate that grid to snapgrid's [headless usage](/react/docs/guides/headless)
 outright (provider → `useGridContainer` → `useGridItem`; a dragged tile floats itself, so there's no
 overlay to wire). If you only used the `<GridLayout>` / `<ResponsiveGridLayout>` components, you can
 skip this.
@@ -115,7 +115,7 @@ pnpm add @snapgridjs/react @dnd-kit/react @dnd-kit/dom
 <Callout type="warning">
   snapgrid ships **no stylesheet**. Delete the `react-grid-layout/css/styles.css` and
   `react-resizable/css/styles.css` imports and style `.snapgrid-item`, the resize handles, and the
-  placeholder yourself. See [Styling](/docs/guides/styling).
+  placeholder yourself. See [Styling](/react/docs/guides/styling).
 </Callout>
 
 ## 2. Map the props
@@ -126,7 +126,7 @@ Most RGL props that lived at the top level move into `gridConfig`, `dragConfig`,
 
 | react-grid-layout | snapgrid | Notes |
 | --- | --- | --- |
-| `width` / `WidthProvider` | `width` | From [`useContainerWidth()`](/docs/api/hooks#usecontainerwidth). |
+| `width` / `WidthProvider` | `width` | From [`useContainerWidth()`](/react/docs/api/hooks#usecontainerwidth). |
 | `layout` | `layout` | **Same item shape** (`i, x, y, w, h, minW, maxW, minH, maxH, static`). |
 | `onLayoutChange` | `onLayoutChange` | Same `(layout) => void`. |
 | `cols` | `gridConfig.cols` | Default `12`. |
@@ -143,7 +143,7 @@ Most RGL props that lived at the top level move into `gridConfig`, `dragConfig`,
 | `resizeHandles` | `resizeConfig.handles` | e.g. `["se", "e", "s"]`. Default `["se"]`. |
 | `onDragStart` · `onDrag` · `onDragStop` | same names | |
 | `onResizeStart` · `onResize` · `onResizeStop` | same names | |
-| `isDroppable` · `droppingItem` · `onDrop` | `dropConfig` + `onDrop` | See [External drop](/docs/guides/external-drop). |
+| `isDroppable` · `droppingItem` · `onDrop` | `dropConfig` + `onDrop` | See [External drop](/react/docs/guides/external-drop). |
 | `autoSize` | `autoSize` | |
 | `useCSSTransforms` · `transformScale` · `measureBeforeMount` | — | Not needed; snapgrid positions tiles with `left/top`, animates reflow on the compositor, and measures with `ResizeObserver`. |
 
@@ -172,7 +172,7 @@ and `{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }`.
 | `null` | `noCompactor` |
 
 `@snapgridjs/extras` adds `masonryCompactor`, `gravityCompactor`, and `shelfCompactor`, or you can
-write your own. See [Compaction & packing](/docs/guides/compaction).
+write your own. See [Compaction & packing](/react/docs/guides/compaction).
 
 ## 3. Side-by-side
 
