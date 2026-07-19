@@ -2,7 +2,15 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.4/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [["@snapgridjs/core", "@snapgridjs/dnd", "@snapgridjs/react", "@snapgridjs/extras"]],
+  "fixed": [
+    [
+      "@snapgridjs/core",
+      "@snapgridjs/dnd",
+      "@snapgridjs/react",
+      "@snapgridjs/extras",
+      "@snapgridjs/svelte"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",

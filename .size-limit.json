@@ -22,5 +22,10 @@
     "name": "@snapgridjs/extras (brotli)",
     "path": "packages/grid-extras/dist/index.mjs",
     "limit": "1.6 kB"
+  },
+  {
+    "name": "@snapgridjs/svelte shipped source (brotli)",
+    "path": ["packages/grid-svelte/dist/**/*.js", "packages/grid-svelte/dist/**/*.svelte"],
+    "limit": "20 kB"
   }
 ]

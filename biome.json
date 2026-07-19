@@ -13,7 +13,9 @@
       "generated",
       "_pagefind",
       "test-results",
-      "playwright-report"
+      "playwright-report",
+      "*.svelte",
+      ".svelte-kit"
     ]
   },
   "formatter": {
