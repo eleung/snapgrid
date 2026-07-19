@@ -53,16 +53,16 @@
   "peerDependencies": {
     "svelte": "^5.29.0",
     "@dnd-kit/dom": "^0.4.0",
-    "@dnd-kit/svelte": "^0.4.0"
+    "@dnd-kit/svelte": "^0.5.0"
   },
   "devDependencies": {
-    "@dnd-kit/abstract": "^0.4.0",
-    "@dnd-kit/collision": "^0.4.0",
+    "@dnd-kit/abstract": "^0.5.0",
+    "@dnd-kit/collision": "^0.5.0",
     "@dnd-kit/dom": "^0.4.0",
-    "@dnd-kit/state": "^0.4.0",
-    "@dnd-kit/svelte": "^0.4.0",
+    "@dnd-kit/state": "^0.5.0",
+    "@dnd-kit/svelte": "^0.5.0",
     "@sveltejs/package": "^2.3.7",
-    "@sveltejs/vite-plugin-svelte": "^4.0.4",
+    "@sveltejs/vite-plugin-svelte": "^7.2.0",
     "svelte": "^5.29.0",
     "svelte-check": "^4.1.4"
   }
