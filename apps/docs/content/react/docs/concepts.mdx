@@ -66,7 +66,7 @@ line). The grid is just another participant in *your* dnd-kit tree:
 | `useDroppable` | the grid surface (created by `useGridContainer`) |
 | collision detection | resolves which grid the pointer is over — the drop target |
 | `Feedback` plugin | floats the dragged tile itself in the top layer (default feedback); set to `none` for keyboard, so the tile steps in place |
-| `<DragOverlay>` | optional — a *separate* floating preview; snapgrid doesn't need one (the tile [floats itself](/docs/guides/headless#floating)), but it's re-exported as an escape hatch |
+| `<DragOverlay>` | optional — a *separate* floating preview; snapgrid doesn't need one (the tile [floats itself](/react/docs/guides/headless#floating)), but it's re-exported as an escape hatch |
 
 snapgrid's own job is the **grid** part on top: the coordinate space, the packing, and the controlled
 layout. The brains of *that* (geometry, the collision cascade, compaction) come from
@@ -77,12 +77,12 @@ layout. The brains of *that* (geometry, the collision cascade, compaction) come 
   **Know dnd-kit and you already know 80% of snapgrid.** The headless API is dnd-kit's idiom — you
   bring a `DragDropProvider`, tiles declare a `group` the way [`useSortable`](https://next.dndkit.com)
   declares a list, and a grid composes with sortables and other draggables under one provider (see
-  [dnd-kit interop](/docs/guides/dnd-kit-interop)). If dnd-kit is new to you, a five-minute skim of
+  [dnd-kit interop](/react/docs/guides/dnd-kit-interop)). If dnd-kit is new to you, a five-minute skim of
   its docs is the easiest possible head start.
 </Callout>
 
 → Going deeper — the layered packages, the one-per-manager engine, the observable render bridge, and
-the seam for driving a grid without React: [**Architecture & dnd-kit**](/docs/guides/architecture).
+the seam for driving a grid without React: [**Architecture & dnd-kit**](/react/docs/guides/architecture).
 
 ## 4. Headless first, with a turnkey escape hatch
 
@@ -125,7 +125,7 @@ function Tile({ id, group }) {
 
 <Callout type="info">
   **Two idioms, on purpose.** The **headless** hooks speak dnd-kit — reach for them to compose with
-  the dnd-kit ecosystem or to own every element. The **turnkey** [`<GridLayout>`](/docs/guides/component-layer)
+  the dnd-kit ecosystem or to own every element. The **turnkey** [`<GridLayout>`](/react/docs/guides/component-layer)
   speaks react-grid-layout — a controlled, ready-made component for when the headless wiring is more
   than you need. They share one engine, so you can start turnkey and drop any single grid down to
   the hooks. If the hooks ever feel like too much, that component *is* your escape hatch.
@@ -151,7 +151,7 @@ While you drag (with a pointer):
 
 On drop, the previewed layout becomes the committed layout and flows back through `onLayoutChange`.
 The full lifecycle (`onDragStart` → `onDrag` → `onDragStop`, and the resize equivalents) fires
-throughout — see [Events & lifecycle](/docs/guides/events).
+throughout — see [Events & lifecycle](/react/docs/guides/events).
 
 <Callout type="info">
   **Keyboard drags have no floating preview:** the tile stays visible and steps cell-by-cell with the
@@ -168,7 +168,7 @@ After every move, resize, insert, or remove, the layout is **re-packed** by a `C
 - `noCompactor` — free positioning; items stay put and may overlap;
 - `masonry` / `gravity` / `shelf` / `wrap` / fast variants — from `@snapgridjs/extras`.
 
-It's just a value you pass and can swap at runtime. See [Compaction & packing](/docs/guides/compaction).
+It's just a value you pass and can swap at runtime. See [Compaction & packing](/react/docs/guides/compaction).
 
 ## Gotchas cheat-sheet
 
@@ -176,10 +176,10 @@ The handful of things that trip people up. Each is spelled out in its guide; thi
 
 | Gotcha | In short | More |
 | --- | --- | --- |
-| **Provider wraps the host** | `useGridContainer` must run *inside* `<DragDropProvider>` (in a child), or you get `no grid found for group`. | [Headless](/docs/guides/headless) |
-| **The tile floats itself** | No overlay to render — a dragged tile lifts into the top layer on its own. Style its drag look via the tile's `[data-dragging]`. | [Headless](/docs/guides/headless#floating) · [Styling](/docs/guides/styling) |
-| **Headless tiles have no affordances** | No resize handles, placeholder, or classes — render them with `useGridResizeHandle` / `useGridPlaceholder` and bring your own classes. | [Headless](/docs/guides/headless) · [Styling](/docs/guides/styling) |
+| **Provider wraps the host** | `useGridContainer` must run *inside* `<DragDropProvider>` (in a child), or you get `no grid found for group`. | [Headless](/react/docs/guides/headless) |
+| **The tile floats itself** | No overlay to render — a dragged tile lifts into the top layer on its own. Style its drag look via the tile's `[data-dragging]`. | [Headless](/react/docs/guides/headless#floating) · [Styling](/react/docs/guides/styling) |
+| **Headless tiles have no affordances** | No resize handles, placeholder, or classes — render them with `useGridResizeHandle` / `useGridPlaceholder` and bring your own classes. | [Headless](/react/docs/guides/headless) · [Styling](/react/docs/guides/styling) |
 | **Always controlled** | Apply every `onLayoutChange` or nothing moves; never mutate the layout. | above |
-| **Feed a clean initial layout** | snapgrid renders your layout verbatim and only re-packs *during* a drag — pre-compact gaps/overlaps. | [Migrating](/docs/guides/migrating-from-rgl) |
-| **Nested grids share one provider** | A grid nested in another shares the outer's `<DragDropProvider>`; innermost-wins collision resolves the inner grid, so tiles cross levels. Give a sub-grid its **own** provider to contain it. | [Nesting](/docs/guides/nesting) |
-| **Mind the defaults** | `rowHeight` is 150; `width` is `initialWidth` (1280) until measured — gate on `mounted` to avoid a first-paint reflow under SSR. | [SSR](/docs/guides/ssr) |
+| **Feed a clean initial layout** | snapgrid renders your layout verbatim and only re-packs *during* a drag — pre-compact gaps/overlaps. | [Migrating](/react/docs/guides/migrating-from-rgl) |
+| **Nested grids share one provider** | A grid nested in another shares the outer's `<DragDropProvider>`; innermost-wins collision resolves the inner grid, so tiles cross levels. Give a sub-grid its **own** provider to contain it. | [Nesting](/react/docs/guides/nesting) |
+| **Mind the defaults** | `rowHeight` is 150; `width` is `initialWidth` (1280) until measured — gate on `mounted` to avoid a first-paint reflow under SSR. | [SSR](/react/docs/guides/ssr) |

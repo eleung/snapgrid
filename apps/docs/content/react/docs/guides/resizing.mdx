@@ -11,7 +11,7 @@ import { ResizeDemo } from "@/components/demos";
 A grid item resizes from **handles** at its edges and corners. You declare *which* axes are resizable
 with `resizeConfig`, and clamp each item's size with `minW` / `maxW` / `minH` / `maxH`. `resizeConfig`
 is an option on `useGridContainer` (and, identically, a prop on the
-[`<GridLayout>`](/docs/guides/component-layer) shell):
+[`<GridLayout>`](/react/docs/guides/component-layer) shell):
 
 ```tsx
 const { containerProps, group } = useGridContainer({
@@ -63,7 +63,7 @@ function Tile({ id, group }) {
 ```
 
 Render one handle per axis you configured. `useGridResizeHandle` also returns `isResizing` for
-styling. See [Headless usage](/docs/guides/headless#usegridresizehandle) for the full picture.
+styling. See [Headless usage](/react/docs/guides/headless#usegridresizehandle) for the full picture.
 
 ## Per-item constraints
 

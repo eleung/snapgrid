@@ -8,7 +8,7 @@ import { Callout } from "nextra/components";
 # Styling
 
 snapgrid ships **no CSS**. The headless hooks hand you inline positioning styles plus drag/resize
-state; you bring every class name and the entire look. The [component layer](/docs/guides/component-layer)
+state; you bring every class name and the entire look. The [component layer](/react/docs/guides/component-layer)
 adds a few stable class names and data attributes on top, so you have predictable hooks to target
 when you use `<GridLayout>`.
 
@@ -60,12 +60,12 @@ Spread them as-is and **don't override** these properties.
 You don't add a reflow transition yourself — the hook animates a tile sliding to its new cell on the
 compositor (a transform FLIP) during a drag and on out-of-drag layout changes. (Tiles rest on left/top
 rather than a `transform` so dnd-kit's float reads each tile's true rect when one is handed off to a
-sortable list — see [dnd-kit interop](/docs/guides/dnd-kit-interop).) Add your own visual properties
+sortable list — see [dnd-kit interop](/react/docs/guides/dnd-kit-interop).) Add your own visual properties
 alongside the spread; just leave `left` / `top` / `transform` / `transition` to the hook.
 
 ## Component-layer class names
 
-When you use the turnkey [`<GridLayout>`](/docs/guides/component-layer), it (and `<GridItem>` /
+When you use the turnkey [`<GridLayout>`](/react/docs/guides/component-layer), it (and `<GridItem>` /
 `<GridPlaceholder>`) applies these stable hooks for you — the headless hooks apply **none** of them:
 
 | Element | Class | Notes |
@@ -113,7 +113,7 @@ const placeholder = useGridPlaceholder(group);
 
 ## Styling the floating tile
 
-While you drag with a pointer, the tile [floats itself](/docs/guides/headless#floating) in the
+While you drag with a pointer, the tile [floats itself](/react/docs/guides/headless#floating) in the
 browser's top layer — there's **no separate overlay element**. So `[data-dragging]` styles the tile
 you're dragging *around*, not a ghost left behind in the grid. Use it for a **lift cue** — a deeper
 shadow, a ring, a touch of brightness:

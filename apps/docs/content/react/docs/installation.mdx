@@ -87,7 +87,7 @@ import { DragOverlay, useDraggable } from "@dnd-kit/react";
 
 snapgrid ships **zero CSS**. Components return positioning styles inline plus a few stable class
 names and data attributes for you to target. There is no `import "@snapgridjs/react/styles.css"`
-step. See [Styling](/docs/guides/styling) for what's exposed.
+step. See [Styling](/react/docs/guides/styling) for what's exposed.
 
 ## Framework notes
 
@@ -95,5 +95,5 @@ step. See [Styling](/docs/guides/styling) for what's exposed.
 - **Next.js / Remix (SSR)** — fully supported. `useContainerWidth` is SSR-safe: it renders at an
   initial width on the server, then measures on the client. The file that renders a grid must be a
   client component (`"use client"`), since dnd-kit attaches sensors in effects. See
-  [Server-side rendering](/docs/guides/ssr).
+  [Server-side rendering](/react/docs/guides/ssr).
 - **TypeScript** — snapgrid is written in TypeScript and ships its own types. No `@types/*` needed.

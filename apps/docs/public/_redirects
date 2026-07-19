@@ -1,0 +1,6 @@
+# Cloudflare Pages redirects. The framework path-prefix split moved the old
+# unprefixed docs + examples URLs under /react; 301 so indexed links and
+# bookmarks follow to the React binding. (trailingSlash: true — targets end in /.)
+/docs/* /react/docs/:splat 301
+/examples /react/examples/ 301
+/examples/ /react/examples/ 301

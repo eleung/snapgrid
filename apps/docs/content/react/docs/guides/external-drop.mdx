@@ -74,7 +74,7 @@ function Board() {
 
 Each draggable is its **own** floating preview — there's no shared overlay to wire up:
 
-- A **grid tile** being relocated (within or across grids) [floats itself](/docs/guides/headless#floating).
+- A **grid tile** being relocated (within or across grids) [floats itself](/react/docs/guides/headless#floating).
 - A **palette item** floats a **clone** of itself — that's the `CLONE` plugin
   (`Feedback.configure({ feedback: "clone" })`) on its `useDraggable` above.
 
@@ -120,4 +120,4 @@ state and any side data keyed by id (titles, content, etc.) in one place.
 
 External drop is a **one-way** drop of a plain dnd-kit `Draggable` into a grid. For **two-way**
 movement with a `useSortable` list or board — cards in, tiles back out, both reordering live — see
-[dnd-kit interop](/docs/guides/dnd-kit-interop).
+[dnd-kit interop](/react/docs/guides/dnd-kit-interop).

@@ -105,49 +105,49 @@ interface Feature {
 const FEATURES: Feature[] = [
   {
     icon: Component,
-    href: "/docs/guides/headless",
+    href: "/react/docs/guides/headless",
     title: "Headless-first, dnd-kit-native",
     body: "Hooks you wire to your own markup, under your dnd-kit provider — tiles declare a group, like useSortable. <GridLayout> is the turnkey shell on top.",
   },
   {
     icon: SlidersHorizontal,
-    href: "/docs/concepts",
+    href: "/react/docs/concepts",
     title: "Controlled & predictable",
     body: "You own the layout array. Every drag, resize, and cross-grid move comes back through onLayoutChange. No hidden internal state.",
   },
   {
     icon: Boxes,
-    href: "/docs/guides/compaction",
+    href: "/react/docs/guides/compaction",
     title: "Pluggable packing",
     body: "Vertical, horizontal, or free. Plus masonry, gravity, and shelf packers, or bring your own Compactor.",
   },
   {
     icon: Puzzle,
-    href: "/docs/guides/dnd-kit-interop",
+    href: "/react/docs/guides/dnd-kit-interop",
     title: "Cross-grid & dnd-kit interop",
     body: "Drag tiles between grids, or between a grid and a dnd-kit sortable list or board — cards land at a real cell, tiles drop back out, all under one provider.",
   },
   {
     icon: Layers,
-    href: "/docs/guides/nesting",
+    href: "/react/docs/guides/nesting",
     title: "Nested grids",
     body: "Drop a grid inside a tile of another and drag tiles between levels — or give a sub-grid its own provider to keep it contained.",
   },
   {
     icon: MonitorSmartphone,
-    href: "/docs/guides/responsive",
+    href: "/react/docs/guides/responsive",
     title: "Responsive",
     body: "Per-breakpoint layouts via the useResponsiveLayout hook, or the turnkey <ResponsiveGridLayout>.",
   },
   {
     icon: Scaling,
-    href: "/docs/guides/resizing",
+    href: "/react/docs/guides/resizing",
     title: "Resizable, with limits",
     body: "Any edge or corner, with per-item minW/maxW/minH/maxH honored and static tiles that never move.",
   },
   {
     icon: Keyboard,
-    href: "/docs/guides/dragging#keyboard-accessibility",
+    href: "/react/docs/guides/dragging#keyboard-accessibility",
     title: "Keyboard accessible",
     body: "Every tile is keyboard-draggable: focus, pick up with Enter, move with the arrow keys, drop or cancel with Escape. No extra wiring.",
   },
@@ -176,10 +176,10 @@ export function Home() {
               component layer makes react-grid-layout users feel right at home too.
             </p>
             <div className="dg-hero__cta">
-              <Link className="dg-cta dg-cta--primary" href="/docs/getting-started">
+              <Link className="dg-cta dg-cta--primary" href="/react/docs/getting-started">
                 Get started →
               </Link>
-              <Link className="dg-cta dg-cta--ghost" href="/examples">
+              <Link className="dg-cta dg-cta--ghost" href="/react/examples">
                 See examples
               </Link>
             </div>
@@ -208,10 +208,10 @@ export function Home() {
       <CodeExample />
 
       <div className="dg-hero__cta" style={{ marginTop: "1.5rem" }}>
-        <Link className="dg-cta dg-cta--primary" href="/docs/getting-started">
+        <Link className="dg-cta dg-cta--primary" href="/react/docs/getting-started">
           Read the guide →
         </Link>
-        <Link className="dg-cta dg-cta--ghost" href="/docs/api/overview">
+        <Link className="dg-cta dg-cta--ghost" href="/react/docs/api/overview">
           API reference
         </Link>
       </div>
@@ -237,16 +237,16 @@ export function Home() {
           <li>
             <strong>v2 hooks aren&apos;t mirrored.</strong> <code>useGridLayout</code> /{" "}
             <code>useResponsiveLayout</code> code moves to the{" "}
-            <Link href="/docs/guides/headless">headless API</Link>.
+            <Link href="/react/docs/guides/headless">headless API</Link>.
           </li>
           <li>
             <strong>On v1?</strong> No one-import shim — its <code>WidthProvider</code> / flat-prop
             API is dated enough that it&apos;s worth modernising. The{" "}
-            <Link href="/docs/guides/migrating-from-rgl">migration guide</Link> maps it prop by
-            prop.
+            <Link href="/react/docs/guides/migrating-from-rgl">migration guide</Link> maps it prop
+            by prop.
           </li>
         </ul>
-        <Link className="dg-cta dg-cta--ghost" href="/docs/guides/migrating-from-rgl">
+        <Link className="dg-cta dg-cta--ghost" href="/react/docs/guides/migrating-from-rgl">
           Full comparison &amp; migration guide →
         </Link>
       </section>
