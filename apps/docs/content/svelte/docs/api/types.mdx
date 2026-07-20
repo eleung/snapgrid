@@ -1,0 +1,154 @@
+---
+title: Types & config
+description: LayoutItem, GridConfig, DragConfig, ResizeConfig, DropConfig, Compactor, PositionParams, and the responsive types.
+---
+
+# Types & config
+
+All exported from `@snapgridjs/svelte`.
+
+## Layout & LayoutItem
+
+```ts
+type Layout = LayoutItem[];
+
+interface LayoutItem {
+  i: string;            // unique id — matches the child's key
+  x: number;            // column (0-based)
+  y: number;            // row (0-based)
+  w: number;            // width in columns
+  h: number;            // height in rows
+  minW?: number;        // resize limits (columns)
+  maxW?: number;
+  minH?: number;        // resize limits (rows)
+  maxH?: number;
+  static?: boolean;     // pinned: never moves/resizes; others flow around it
+  isDraggable?: boolean; // per-item override of the grid default
+  isResizable?: boolean;
+  isBounded?: boolean;   // per-item override of dragConfig.bounded
+  resizeHandles?: ResizeHandleAxis[]; // per-item handle set
+}
+```
+
+Two more fields are inherited from the layout engine and rarely needed: `constraints?` (an
+array of advanced per-item position constraints — the `LayoutConstraint` type isn't part of
+snapgrid's public surface) and an `@internal` `moved?` flag the engine sets during a drag. Don't
+set either by hand.
+
+## GridConfig
+
+```ts
+interface GridConfig {
+  cols: number;                              // default 12
+  rowHeight: number;                         // default 150 (px)
+  margin: [number, number];                  // default [10, 10] — [x, y] gap
+  containerPadding: [number, number] | null; // default null → falls back to margin
+  maxRows: number;                           // default Infinity
+}
+```
+
+Pass a `Partial<GridConfig>` to `<GridLayout gridConfig={…}>`; unset fields use the defaults above.
+
+## DragConfig
+
+```ts
+interface DragConfig {
+  enabled?: boolean;    // default true
+  bounded?: boolean;    // default false — keep within the container
+  handle?: string;      // CSS selector for a drag handle — headless: prefer createGridItem's attachHandle
+  cancel?: string;      // CSS selector for regions that cancel a drag
+  threshold?: number;   // default 3 — px before a drag starts
+  snapToGrid?: boolean; // default false — snap the dragged tile itself
+}
+```
+
+## ResizeConfig
+
+```ts
+interface ResizeConfig {
+  enabled?: boolean;             // default true
+  handles?: ResizeHandleAxis[];  // default ["se"]
+}
+
+type ResizeHandleAxis = "s" | "w" | "e" | "n" | "sw" | "nw" | "se" | "ne";
+```
+
+## DropConfig & GridDropData
+
+```ts
+interface DropConfig {
+  enabled?: boolean;                          // default false
+  defaultItem?: { w: number; h: number };     // default { w: 1, h: 1 }
+  accept?: (source: DragSourceInfo) => boolean;
+}
+
+interface GridDropData {  // carried on the external draggable's data.snapGridDrop
+  i?: string;
+  w?: number;
+  h?: number;
+}
+
+interface DragSourceInfo {  // passed to DropConfig.accept
+  id: string | number;
+  type?: unknown;
+  data?: unknown;
+}
+```
+
+## Compactor & CompactType
+
+```ts
+type CompactType = "vertical" | "horizontal" | "wrap" | null;
+
+interface Compactor {
+  type: CompactType;                          // compaction-mode identifier
+  allowOverlap: boolean;                      // items may stack; compaction is skipped
+  preventCollision?: boolean;                 // block colliding moves (ignored when allowOverlap)
+  compact(layout: Layout, cols: number): Layout;
+}
+```
+
+Built-in compactors `verticalCompactor`, `horizontalCompactor`, and `noCompactor` are exported
+from `@snapgridjs/svelte`, along with `getCompactor(type)` to resolve one by its `CompactType`. See
+[Compaction & packing](/svelte/docs/guides/compaction#writing-a-custom-compactor) for writing your own.
+
+## Responsive types
+
+```ts
+type Breakpoints = Record<string, number>;       // name → min width (px)
+type BreakpointCols = Record<string, number>;     // name → column count
+type ResponsiveLayouts = Partial<Record<string, Layout>>; // breakpoint → layout
+```
+
+`DEFAULT_BREAKPOINTS` = `{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }`,
+`DEFAULT_BREAKPOINT_COLS` = `{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }`.
+
+## GridEventCallback
+
+```ts
+type GridEventCallback = (
+  layout: Layout,
+  oldItem: LayoutItem | null,
+  newItem: LayoutItem | null,
+  placeholder: LayoutItem | null,
+  event: Event | null,
+  node: HTMLElement | null,
+) => void;
+```
+
+## PositionParams
+
+The resolved grid geometry, re-exported from the layout engine for the px↔grid-unit helpers
+(`calcXY`, `calcGridItemPosition`, …). You rarely build one by hand — it's the shape those
+functions consume.
+
+```ts
+interface PositionParams {
+  margin: [number, number];
+  containerPadding: [number, number];
+  containerWidth: number;
+  cols: number;
+  rowHeight: number;
+  maxRows: number;
+}
+```

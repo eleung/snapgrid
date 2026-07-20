@@ -1,0 +1,273 @@
+---
+title: Headless usage
+description: The primary API — compose snapgrid's factories with dnd-kit's DragDropProvider and render your own markup. The grid host, tiles, resize handles, and the placeholder.
+---
+
+import { Callout } from "nextra/components";
+import { BasicGridDemo } from "@/components/demos-svelte";
+
+# Headless usage
+
+The factories are snapgrid's primary API. They hand you attachments, positioning styles, and drag
+state — you bring the markup, classes, and content. Reach for them when you want full control, or to
+compose with the dnd-kit draggables and sortables you already have ([dnd-kit interop](/svelte/docs/guides/dnd-kit-interop)).
+(`<GridLayout>` is a thin shell over these same factories — see
+[Component layer](/svelte/docs/guides/component-layer) when you'd rather not wire it yourself.)
+
+<BasicGridDemo />
+
+## The shape of a headless grid
+
+Two pieces, both under a dnd-kit `DragDropProvider` that **you** supply:
+
+1. **`createGridContainer(() => options)`** — the grid *host*. Returns an `attach` attachment for your
+   surface and the grid's **`group`**.
+2. **`createGridItem({ id, group })`** — one tile. Returns an `attach` attachment and positioning `style`.
+
+There's no third piece for the drag preview: a dragged tile [floats itself](#floating).
+
+```svelte
+<!-- Board.svelte -->
+<script lang="ts">
+  import { DragDropProvider } from "@dnd-kit/svelte";
+  import type { Layout } from "@snapgridjs/svelte";
+  import Surface from "./Surface.svelte";
+
+  let { layout, width, onLayoutChange }: {
+    layout: Layout;
+    width: number;
+    onLayoutChange: (next: Layout) => void;
+  } = $props();
+</script>
+
+<DragDropProvider>
+  <Surface {layout} {width} {onLayoutChange} />
+</DragDropProvider>
+```
+
+```svelte
+<!-- Surface.svelte -->
+<script lang="ts">
+  import { createGridContainer, type Layout } from "@snapgridjs/svelte";
+  import Tile from "./Tile.svelte";
+
+  let { layout, width, onLayoutChange }: {
+    layout: Layout;
+    width: number;
+    onLayoutChange: (next: Layout) => void;
+  } = $props();
+
+  const container = createGridContainer(() => ({ layout, width, onLayoutChange }));
+</script>
+
+<div {@attach container.attach} style={container.style}>
+  {#each layout as it (it.i)}
+    <Tile id={it.i} group={container.group} />
+  {/each}
+</div>
+```
+
+```svelte
+<!-- Tile.svelte -->
+<script lang="ts">
+  import { createGridItem } from "@snapgridjs/svelte";
+
+  let { id, group }: { id: string; group: string } = $props();
+  // svelte-ignore state_referenced_locally
+  const tile = createGridItem({ id, group });
+</script>
+
+<div {@attach tile.attach} style={tile.style} class="tile">
+  {id}
+</div>
+```
+
+<Callout type="warning">
+  **`createGridContainer` must run *inside* the provider.** It registers the grid on dnd-kit's manager,
+  so the host has to be a child component rendered inside `<DragDropProvider>` (like `Surface`) — not
+  the component that renders the provider. Calling it in the same component that renders
+  `<DragDropProvider>` puts the factory *outside* the provider's tree, and tiles throw
+  `no grid found for group`. (`SnapGridGroup` is dnd-kit's provider too, so the same rule applies.)
+</Callout>
+
+## `createGridContainer` — the grid host
+
+`createGridContainer(() => options)` creates the grid's controller + drag monitor and returns:
+
+| Field | What it is |
+| --- | --- |
+| `attach` | Svelte attachment for your surface element: `<div {@attach container.attach}>`. |
+| `style` | Reactive inline-style string (`position: relative` + width + auto-sized height). Bind it: `style={container.style}` — don't spread it. |
+| `group` | This grid's id. Pass it to every tile-level factory. |
+| `isDropTarget` | `true` while a compatible draggable is over the grid (handy for highlighting). |
+| `controller` | The grid's controller, for advanced composition. |
+
+`options` is the controlled state — `layout`, `width`, `onLayoutChange` — plus any of `gridConfig`,
+`dragConfig`, `resizeConfig`, `dropConfig`, `compactor`, `isDraggable`, `isResizable`, `autoSize`,
+`id`, and the [lifecycle callbacks](/svelte/docs/guides/events). They're passed as a **getter** —
+`createGridContainer(() => ({ … }))` — so the grid always reads their latest values. Each is
+documented in its feature guide.
+
+## `createGridItem` — a tile
+
+`createGridItem({ id, group })` wires one tile:
+
+| Field | What it is |
+| --- | --- |
+| `attach` | Svelte attachment for the tile element. |
+| `attachHandle` | Optional drag handle — attach to a child to restrict pointer dragging to it (see [Dragging](/svelte/docs/guides/dragging#drag-handles)). Leave it off and the whole tile drags. |
+| `style` | Absolute-positioning string (`position: absolute` + `left/top/width/height`); reflow is animated on the compositor. Bind it with `style={tile.style}`; don't override the position. |
+| `isDragging` | `true` while this tile is the active drag source — branch your styling on it. |
+| `item` | The tile's current (possibly reflowed) layout entry. |
+
+You choose the tag, classes, and content. snapgrid only supplies position + state.
+
+## The dragged tile floats itself [#floating]
+
+There's no overlay to render. While you drag with a pointer, dnd-kit lifts the active tile into the
+browser's **top layer**, so it floats above everything and crosses between grids **unclipped** — the
+same element you rendered, now floating. The other tiles reflow to open the landing cell, and on drop
+the tile settles into place. This is dnd-kit's default drag feedback; snapgrid only disables the drop
+animation so the tile lands on the cell instead of springing back to where it started.
+
+Because the tile *is* the preview, you style its dragging state right where you render it — branch on
+`isDragging`:
+
+```svelte
+<!-- Tile.svelte -->
+<script lang="ts">
+  import { createGridItem } from "@snapgridjs/svelte";
+
+  let { id, group }: { id: string; group: string } = $props();
+  // svelte-ignore state_referenced_locally
+  const tile = createGridItem({ id, group });
+</script>
+
+<div
+  {@attach tile.attach}
+  style={tile.style}
+  class="tile"
+  data-dragging={tile.isDragging || undefined}
+>
+  {id}
+</div>
+```
+
+<Callout type="info">
+  **Keyboard drags don't float.** With the keyboard sensor the tile stays in place and steps
+  cell-by-cell (Enter/Space to pick up and drop, arrows to move, Escape to cancel) — so the floating
+  behaviour is purely for pointer drags.
+</Callout>
+
+<Callout type="info">
+  **Need a *separate* floating element?** For a custom preview — a clone, a ghost, different markup —
+  dnd-kit's [`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/svelte`. You
+  rarely need it, since the tile already floats itself; reach for it only when the floating preview
+  must differ from the tile. See [Styling](/svelte/docs/guides/styling#custom-placeholder).
+</Callout>
+
+## Optional affordances
+
+Headless tiles carry nothing extra — no class names, no resize handles, no placeholder, just an
+`attach` and a `style`. The host and tile above are already a complete, working grid; everything else
+is yours to render. Two affordances are common enough that snapgrid gives you a factory for each:
+
+1. **`createGridResizeHandle({ id, handle, group })`** — render resize handles on a tile.
+2. **`createGridPlaceholder(group)`** — mark the cell a dragged tile will land in.
+
+## `createGridResizeHandle` — render your own resize handles [#usegridresizehandle]
+
+**Why you need it:** a headless tile has no resize handles. `resizeConfig.handles` only declares
+*which* edges are resizable; you render the handle elements. (The [`<GridItem>`](/svelte/docs/guides/component-layer)
+shell does this for you — this is what it does under the hood.)
+
+`createGridResizeHandle({ id, handle, group })` models a handle as its own draggable and returns:
+
+| Field | What it is |
+| --- | --- |
+| `attach` | Svelte attachment for your handle element. |
+| `handleProps` | Spread onto the handle — marks it so a pointer-down resizes instead of starting an item drag. |
+| `isResizing` | `true` while this item is being resized. |
+
+You position and style the handle however you like:
+
+```svelte
+<!-- Tile.svelte -->
+<script lang="ts">
+  import { createGridItem, createGridResizeHandle } from "@snapgridjs/svelte";
+
+  let { id, group }: { id: string; group: string } = $props();
+  // svelte-ignore state_referenced_locally
+  const tile = createGridItem({ id, group });
+  // svelte-ignore state_referenced_locally
+  const resize = createGridResizeHandle({ id, handle: "se", group });
+</script>
+
+<div {@attach tile.attach} style={tile.style} class="tile">
+  {id}
+  <!-- a bottom-right grip; CSS places + styles `.resize-handle` -->
+  <span {@attach resize.attach} {...resize.handleProps} class="resize-handle"></span>
+</div>
+```
+
+Render one handle per axis you want (`"n" | "e" | "s" | "w" | "ne" | "nw" | "se" | "sw"`). See
+[Resizing](/svelte/docs/guides/resizing) for the config and per-item limits.
+
+## `createGridPlaceholder` — the landing marker
+
+**Why you'd use it:** during a drag, the placeholder shows the cell the tile will land in — the gap
+that reflows live as you move. It's optional; render it for the familiar "ghost cell" affordance.
+
+`createGridPlaceholder(group)` returns `{ current }` — a `{ item, style }` object while a drag is
+active, or `null` when idle. Read `current` and bind its `style`:
+
+```svelte
+<!-- Surface.svelte -->
+<script lang="ts">
+  import { createGridContainer, createGridPlaceholder, type Layout } from "@snapgridjs/svelte";
+  import Tile from "./Tile.svelte";
+
+  let { layout, width, onLayoutChange }: {
+    layout: Layout;
+    width: number;
+    onLayoutChange: (next: Layout) => void;
+  } = $props();
+
+  const container = createGridContainer(() => ({ layout, width, onLayoutChange }));
+  const placeholder = createGridPlaceholder(container.group);
+</script>
+
+<div {@attach container.attach} style={container.style}>
+  {#each layout as it (it.i)}
+    <Tile id={it.i} group={container.group} />
+  {/each}
+  {#if placeholder.current}
+    <div class="placeholder" style={placeholder.current.style}></div>
+  {/if}
+</div>
+```
+
+## Fine-grained updates — no memo needed
+
+The surface's auto-height tracks the drag, but Svelte's reactivity is fine-grained: each
+`createGridItem` reads only its own slice of the controller, so only the tile whose cell actually
+changed re-renders. There's no React-style `memo` to reach for — the runes-based factories already
+subscribe narrowly, and a neighbour whose cell didn't move stays put. (`<GridItem>` works the same way.)
+
+## Mixing the two layers
+
+They share one engine, so nothing is all-or-nothing. Drop `<GridItem id group>` /
+`<GridPlaceholder group>` into a surface you host with `createGridContainer`, or use `<GridLayout>` for
+most of the app and the factories for the one grid that needs custom markup. See
+[Component layer](/svelte/docs/guides/component-layer).
+
+## The factories at a glance
+
+| Factory | Returns | Renders |
+| --- | --- | --- |
+| `createContainerWidth(options?)` | `{ width, mounted, attach }` | Nothing — measures an element. |
+| `createGridContainer(() => options)` | `{ attach, style, group, isDropTarget, controller }` | The surface; registers the droppable + owns the grid. |
+| `createGridItem({ id, group })` | `{ attach, attachHandle, style, isDragging, item }` | One positioned tile. |
+| `createGridResizeHandle({ id, handle, group })` | `{ attach, handleProps, isResizing }` | One resize handle. |
+| `createGridPlaceholder(group)` | `{ current: { item, style } \| null }` | The landing-cell marker (null when idle). |
+| `createResponsiveLayout(() => options)` | `{ breakpoint, cols, layout, onLayoutChange }` | Nothing — resolves the active breakpoint. See [Responsive](/svelte/docs/guides/responsive). |

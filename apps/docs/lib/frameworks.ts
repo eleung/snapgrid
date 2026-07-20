@@ -3,7 +3,7 @@
 // SEO gate (page.tsx), so the two can't drift when a binding is added.
 export const FRAMEWORKS = [
   { id: "react", label: "React", available: true },
-  { id: "svelte", label: "Svelte", available: false },
+  { id: "svelte", label: "Svelte", available: true },
 ] as const;
 
 export type Framework = (typeof FRAMEWORKS)[number]["id"];

@@ -1,0 +1,133 @@
+---
+title: Responsive layouts
+description: Per-breakpoint layouts with the createResponsiveLayout factory (and the turnkey ResponsiveGridLayout component).
+---
+
+import { Callout } from "nextra/components";
+import { ResponsiveDemo } from "@/components/demos-svelte";
+
+# Responsive layouts
+
+A responsive grid switches **column count and layout** as the container width crosses breakpoints.
+The headless engine is `createResponsiveLayout`: give it a map of per-breakpoint layouts and the
+measured `width`, and it resolves the active breakpoint's `cols` and `layout` plus an
+`onLayoutChange` that writes back to the right breakpoint. Feed those into `createGridContainer`.
+
+```svelte
+<!-- ResponsiveBoard.svelte -->
+<script lang="ts">
+  import { DragDropProvider } from "@dnd-kit/svelte";
+  import {
+    type ResponsiveLayouts,
+    createContainerWidth,
+    createResponsiveLayout,
+  } from "@snapgridjs/svelte";
+  import Grid from "./Grid.svelte";
+
+  const width = createContainerWidth();
+  let layouts = $state<ResponsiveLayouts>({
+    lg: [
+      { i: "a", x: 0, y: 0, w: 4, h: 2 },
+      { i: "b", x: 4, y: 0, w: 4, h: 2 },
+      { i: "c", x: 8, y: 0, w: 4, h: 2 },
+    ],
+  });
+
+  // Resolve the active breakpoint's column count + layout from the width. Options are
+  // passed as a getter so the result tracks the live width and layouts.
+  const responsive = createResponsiveLayout(() => ({
+    width: width.width,
+    layouts,
+    onLayoutChange: (_active, all) => (layouts = all),
+    onBreakpointChange: (bp, cols) => console.log("now at", bp, cols),
+  }));
+</script>
+
+<div {@attach width.attach}>
+  <DragDropProvider>
+    <Grid
+      layout={responsive.layout}
+      width={width.width}
+      cols={responsive.cols}
+      onLayoutChange={responsive.onLayoutChange}
+    />
+  </DragDropProvider>
+</div>
+```
+
+```svelte
+<!-- Grid.svelte — the column count tracks the active breakpoint, so the grid reflows with it. -->
+<script lang="ts">
+  import { type Layout, createGridContainer } from "@snapgridjs/svelte";
+  import Tile from "./Tile.svelte";
+
+  let {
+    layout,
+    width,
+    cols,
+    onLayoutChange,
+  }: {
+    layout: Layout;
+    width: number;
+    cols: number;
+    onLayoutChange: (next: Layout) => void;
+  } = $props();
+
+  const container = createGridContainer(() => ({ layout, width, onLayoutChange, gridConfig: { cols } }));
+</script>
+
+<div {@attach container.attach} style={container.style}>
+  {#each layout as it (it.i)}
+    <Tile id={it.i} group={container.group} />
+  {/each}
+</div>
+```
+
+Missing breakpoints are generated from the nearest provided one.
+
+<ResponsiveDemo />
+
+## Breakpoints & columns
+
+Defaults mirror react-grid-layout:
+
+| Breakpoint | Min width (px) | Columns |
+| --- | --- | --- |
+| `lg` | 1200 | 12 |
+| `md` | 996 | 10 |
+| `sm` | 768 | 6 |
+| `xs` | 480 | 4 |
+| `xxs` | 0 | 2 |
+
+Override either with the `breakpoints` and `cols` options (exported as `DEFAULT_BREAKPOINTS` and
+`DEFAULT_BREAKPOINT_COLS` if you want to extend them):
+
+```ts
+const responsive = createResponsiveLayout(() => ({
+  width: width.width,
+  layouts,
+  breakpoints: { lg: 1280, md: 900, sm: 0 },
+  cols: { lg: 16, md: 8, sm: 4 },
+  onLayoutChange: (_active, all) => (layouts = all),
+}));
+```
+
+## `onLayoutChange` gives you both
+
+The factory's `onLayoutChange` option is `(activeLayout, allLayouts)`: the layout for the current
+breakpoint **and** the full updated map. Store the map so edits at one breakpoint don't clobber the
+others:
+
+```ts
+onLayoutChange: (_active, all) => (layouts = all),
+```
+
+The `onLayoutChange` the factory *returns* (which you pass to `createGridContainer`) takes care of
+routing each committed change into the active breakpoint's entry before calling your option above.
+
+<Callout type="info">
+  Prefer the turnkey component? [`<ResponsiveGridLayout>`](/svelte/docs/guides/component-layer#responsivegridlayout) is
+  the component that wraps this factory — pass it `layouts`, `width`, and an `item` snippet and it
+  handles the provider and the grid. See
+  [Components](/svelte/docs/api/components#responsivegridlayout) for its full prop table.
+</Callout>

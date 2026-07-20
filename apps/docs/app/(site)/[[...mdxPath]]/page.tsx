@@ -29,6 +29,17 @@ function isDocsPath(mdxPath: string[]): boolean {
   return FRAMEWORK_SET.has(mdxPath[0] ?? "") && mdxPath[1] === "docs";
 }
 
+// The framework a path belongs to, Title-cased for SEO copy, or null (unprefixed
+// pages like showcase/roadmap). The /react and /svelte docs are near-identical
+// content, so their titles/descriptions/structured-data carry the framework name —
+// otherwise the twins are duplicate SERP entries and neither targets "react grid"
+// vs "svelte grid" queries.
+const FRAMEWORK_LABELS: Record<string, string> = { react: "React", svelte: "Svelte" };
+function frameworkOf(mdxPath: string[]): string | null {
+  const seg = mdxPath[0] ?? "";
+  return FRAMEWORK_SET.has(seg) ? (FRAMEWORK_LABELS[seg] ?? seg) : null;
+}
+
 // Path-segment → breadcrumb label + landing URL, for the BreadcrumbList JSON-LD
 // on docs pages. Landing URLs carry the active framework prefix. Only sections
 // with a real landing page are listed (so every non-leaf crumb has a URL, as
@@ -79,10 +90,16 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
     };
   }
   const { metadata } = await loadPage(mdxPath);
+  const fw = frameworkOf(mdxPath);
+  const rawTitle = titleOf(metadata);
+  const rawDesc = typeof metadata.description === "string" ? metadata.description : undefined;
   return pageMetadata({
     path: routePath(mdxPath),
-    title: titleOf(metadata),
-    description: typeof metadata.description === "string" ? metadata.description : undefined,
+    // Tag framework pages so the /react and /svelte twins are distinct in search:
+    // "Dragging · React" / "Dragging · Svelte", and the framework keyword leads the
+    // description (survives SERP truncation).
+    title: fw && rawTitle ? `${rawTitle} · ${fw}` : rawTitle,
+    description: fw && rawDesc ? `${fw} · ${rawDesc}` : rawDesc,
   });
 }
 
@@ -154,14 +171,20 @@ function buildArticle(
   if (!isDocsPath(mdxPath)) return null;
   const canonical = `${SITE}${routePath(mdxPath)}/`;
   const modified = lastModified(mdxPath);
-  const description = typeof metadata.description === "string" ? metadata.description : DESCRIPTION;
+  const fw = frameworkOf(mdxPath);
+  const rawDesc = typeof metadata.description === "string" ? metadata.description : DESCRIPTION;
+  const rawTitle = titleOf(metadata) || "snapgrid documentation";
   return {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    headline: titleOf(metadata) || "snapgrid documentation",
-    description,
+    // Framework-tagged to match the page metadata (distinct twins).
+    headline: fw ? `${rawTitle} · ${fw}` : rawTitle,
+    description: fw ? `${fw} · ${rawDesc}` : rawDesc,
     url: canonical,
     inLanguage: "en",
+    ...(fw
+      ? { keywords: `snapgrid, ${fw}, dnd-kit, grid layout, react-grid-layout alternative` }
+      : {}),
     isPartOf: { "@id": SITE_ID },
     publisher: { "@id": ORG_ID },
     ...(modified ? { dateModified: modified } : {}),

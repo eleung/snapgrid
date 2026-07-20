@@ -1,0 +1,271 @@
+---
+title: Getting Started
+description: Install snapgrid and build your first draggable, repacking grid in Svelte 5 with the headless factories — in about five minutes.
+---
+
+import { Callout, Steps, Tabs } from "nextra/components";
+import { BasicGridDemo } from "@/components/demos-svelte";
+
+# Getting Started
+
+**snapgrid** is a draggable, resizable, repacking grid layout for Svelte 5 — a
+[react-grid-layout](https://github.com/react-grid-layout/react-grid-layout) v2 alternative built on
+[dnd-kit](https://next.dndkit.com). It keeps the controlled `{ i, x, y, w, h }` model RGL users know,
+and adds things RGL can't do: dragging tiles **between** grids, nested grids, interop with the wider
+dnd-kit ecosystem (sortable lists, boards), keyboard accessibility, and pluggable packing — masonry,
+gravity, shelf, or your own compactor.
+
+It's **headless-first** — you wire runes-based factories to your own markup — with a turnkey
+`<GridLayout>` for when you just want a grid that works. Requires **Svelte 5** (runes).
+
+<BasicGridDemo />
+
+<Callout type="info">
+  **Know dnd-kit? You already know most of this.** snapgrid *is* dnd-kit plus grid math — a grid
+  lives in dnd-kit's `<DragDropProvider>`, tiles are draggables, the surface is a droppable. If
+  you've touched `createDraggable` / `createSortable`, the headless API will feel familiar. New to
+  dnd-kit? A five-minute skim of [its overview](https://next.dndkit.com) is the single easiest win
+  before you read on.
+</Callout>
+
+## Install
+
+<Tabs items={["pnpm", "npm", "yarn", "bun"]}>
+<Tabs.Tab>
+
+```sh
+pnpm add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+npm install @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+yarn add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+bun add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom
+```
+
+</Tabs.Tab>
+</Tabs>
+
+`@dnd-kit/svelte` and `@dnd-kit/dom` are peer dependencies — snapgrid uses your copy, so there's
+nothing to dedupe. See [Installation](/svelte/docs/installation) for the full breakdown.
+
+## Your first grid
+
+<Steps>
+
+### Hold the layout in state
+
+snapgrid is **controlled**: you own the array, it never mutates it. Each item has an id (`i`), a
+position (`x`, `y`), and a size (`w`, `h`) in **grid units** — columns and rows, not pixels. Hold it
+in a `$state` rune.
+
+```svelte
+<script lang="ts">
+  import type { Layout } from "@snapgridjs/svelte";
+
+  let layout = $state<Layout>([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 2 },
+  ]);
+</script>
+```
+
+### Measure the container width
+
+The grid turns columns into pixels using the container's width. `createContainerWidth` measures it
+with a `ResizeObserver`; use its `attach` attachment on the element whose width should drive the grid.
+
+```svelte
+<script lang="ts">
+  import { createContainerWidth } from "@snapgridjs/svelte";
+  const width = createContainerWidth();
+</script>
+
+<div {@attach width.attach}>…</div>
+```
+
+### Host the grid inside a dnd-kit provider
+
+Render inside dnd-kit's `<DragDropProvider>`, and let `createGridContainer` host the grid. Pass it a
+**getter** for its options; it returns an `attach` attachment + `style` for your surface element and
+the grid's **`group`** — its id, which ties tiles to it.
+
+```svelte
+<!-- Surface.svelte -->
+<script lang="ts">
+  import { createGridContainer, type Layout } from "@snapgridjs/svelte";
+  import Tile from "./Tile.svelte";
+
+  let { layout, width, onLayoutChange }: {
+    layout: Layout; width: number; onLayoutChange: (l: Layout) => void;
+  } = $props();
+
+  const container = createGridContainer(() => ({ layout, width, onLayoutChange }));
+</script>
+
+<div {@attach container.attach} style={container.style}>
+  {#each layout as item (item.i)}
+    <Tile id={item.i} group={container.group} />
+  {/each}
+</div>
+```
+
+<Callout type="warning">
+  **`createGridContainer` must run *inside* the `<DragDropProvider>`.** It registers the grid on
+  dnd-kit's manager, so the host has to be a child of the provider — like `Surface` above — not the
+  component that renders the provider. Call it outside and you'll get `no grid found for group`.
+</Callout>
+
+### Render a tile with `createGridItem`
+
+Each tile calls `createGridItem({ id, group })` for its `attach` attachment and positioning `style` —
+the way a dnd-kit sortable item declares its list. You bring the element, classes, and content.
+
+```svelte
+<!-- Tile.svelte -->
+<script lang="ts">
+  import { createGridItem } from "@snapgridjs/svelte";
+  let { id, group }: { id: string; group: string } = $props();
+  const tile = createGridItem({ id, group });
+</script>
+
+<div {@attach tile.attach} style={tile.style} class="tile">{id}</div>
+```
+
+### Mark the landing spot
+
+`createGridPlaceholder(group)` tells you where the dragged tile will land (`current` is `null` when
+idle). Render a marker with its `style` inside the surface, alongside the tiles, so the target cell
+shows as you drag.
+
+```svelte
+<script lang="ts">
+  import { createGridPlaceholder } from "@snapgridjs/svelte";
+  // inside Surface — after createGridContainer:
+  const placeholder = createGridPlaceholder(container.group);
+</script>
+
+<!-- inside the container — after the tiles: -->
+{#if placeholder.current}
+  <div class="placeholder" style={placeholder.current.style}></div>
+{/if}
+```
+
+### That's it — drag it
+
+There's nothing more to wire. While you drag with a pointer, the tile **floats itself** above
+everything — dnd-kit lifts it into the browser's top layer, so it can cross grids unclipped — and on
+drop it settles into its new cell. Keyboard drags step the tile cell-by-cell in place. Tiles drag,
+the rest compact upward, and every committed change flows back through `onLayoutChange`.
+
+</Steps>
+
+## Putting it together
+
+```svelte filename="Board.svelte"
+<script lang="ts">
+  import { DragDropProvider } from "@dnd-kit/svelte";
+  import { createContainerWidth, type Layout } from "@snapgridjs/svelte";
+  import Surface from "./Surface.svelte";
+
+  const width = createContainerWidth();
+  let layout = $state<Layout>([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 2 },
+  ]);
+</script>
+
+<!-- DragDropProvider is the outermost element; Surface (which calls
+     createGridContainer) lives inside it. -->
+<div {@attach width.attach}>
+  <DragDropProvider>
+    <Surface {layout} width={width.width} onLayoutChange={(next) => (layout = next)} />
+  </DragDropProvider>
+</div>
+```
+
+```svelte filename="Surface.svelte"
+<script lang="ts">
+  import { createGridContainer, createGridPlaceholder, type Layout } from "@snapgridjs/svelte";
+  import Tile from "./Tile.svelte";
+
+  let { layout, width, onLayoutChange }: {
+    layout: Layout; width: number; onLayoutChange: (l: Layout) => void;
+  } = $props();
+
+  const container = createGridContainer(() => ({
+    layout,
+    width,
+    onLayoutChange,
+    gridConfig: { cols: 12, rowHeight: 80, margin: [12, 12] },
+  }));
+  const placeholder = createGridPlaceholder(container.group);
+</script>
+
+<div {@attach container.attach} style={container.style}>
+  {#each layout as item (item.i)}
+    <Tile id={item.i} group={container.group} />
+  {/each}
+  {#if placeholder.current}
+    <div class="placeholder" style={placeholder.current.style}></div>
+  {/if}
+</div>
+```
+
+```svelte filename="Tile.svelte"
+<script lang="ts">
+  import { createGridItem } from "@snapgridjs/svelte";
+  let { id, group }: { id: string; group: string } = $props();
+  const tile = createGridItem({ id, group });
+</script>
+
+<div {@attach tile.attach} style={tile.style} class="tile">{id}</div>
+```
+
+<Callout type="default">
+  snapgrid ships **no CSS**. The tiles and the `.placeholder` marker are styled by your own classes —
+  see [Styling](/svelte/docs/guides/styling) for the hooks it exposes. Want resize handles? Tiles are
+  drag-only until you render them — see [Resizing](/svelte/docs/guides/resizing).
+</Callout>
+
+## Don't want to wire all that?
+
+<Callout type="info">
+  The turnkey [`<GridLayout>`](/svelte/docs/guides/component-layer) bundles the provider, the host, the
+  tiles, and the placeholder. Pass it `layout` / `width` / `onLayoutChange` and an `item` snippet —
+  done. It's the gentlest on-ramp; drop to the factories for any grid that needs custom markup. Same
+  engine either way.
+</Callout>
+
+```svelte
+<GridLayout {layout} {width} onLayoutChange={(next) => (layout = next)}>
+  {#snippet item(it)}
+    <div class="tile">{it.i}</div>
+  {/snippet}
+</GridLayout>
+```
+
+## Where to next
+
+- [Core Concepts](/svelte/docs/concepts) — the mental model (controlled state, the dnd-kit DNA, the `group` key) plus a gotchas cheat-sheet.
+- [Headless usage](/svelte/docs/guides/headless) — the factories in depth: resize handles, the placeholder, and how a dragged tile floats itself.
+- [Component layer](/svelte/docs/guides/component-layer) — the turnkey `<GridLayout>` when you don't need custom markup.
+- [Dragging](/svelte/docs/guides/dragging) · [Resizing](/svelte/docs/guides/resizing) · [Compaction](/svelte/docs/guides/compaction) · [Cross-grid](/svelte/docs/guides/cross-grid) · [dnd-kit interop](/svelte/docs/guides/dnd-kit-interop) · [Responsive](/svelte/docs/guides/responsive).
+- [API Reference](/svelte/docs/api/overview) — every factory, component, and type.
