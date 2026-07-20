@@ -1,4 +1,5 @@
 import { DraggableLogoMark } from "@/components/DraggableLogoMark";
+import { FrameworkNav } from "@/components/FrameworkNav";
 import { FrameworkProvider } from "@/components/FrameworkProvider";
 import { FrameworkSwitcher } from "@/components/FrameworkSwitcher";
 import { VERSION } from "@/components/generated/version";
@@ -26,14 +27,22 @@ const Logo = () => (
       <span className="dg-logo__ver">v{VERSION}</span>
     </Link>
     <FrameworkSwitcher />
+    {/* Framework-aware Docs + Examples links sit here — on the left, next to the
+        switcher — rather than in the trailing Navbar slot. */}
+    <span className="dg-navnav">
+      <FrameworkNav />
+    </span>
   </span>
 );
 
+// Bump `storageKey` whenever the banner message changes, so it re-shows to readers who
+// dismissed the previous one.
 const banner = (
-  <Banner storageKey="v2-parity">
+  <Banner storageKey="svelte-release">
     <span>
-      snapgrid is a react-grid-layout v2 alternative built on dnd-kit. Drag, resize, repack, and
-      drag between grids.
+      New — snapgrid now ships for <strong>Svelte 5</strong>: the same dnd-kit-native,
+      headless-first grid — drag, resize, repack, and drag between grids.{" "}
+      <Link href="/svelte/examples">See it in Svelte →</Link>
     </span>
   </Banner>
 );

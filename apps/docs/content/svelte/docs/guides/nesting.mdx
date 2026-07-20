@@ -1,0 +1,182 @@
+---
+title: Nested grids
+description: Put a grid inside a tile of another grid. Nested grids share one provider, so tiles can be dragged between levels.
+---
+
+import { Callout } from "nextra/components";
+import { NestedDemo, NestedDropZoneDemo } from "@/components/demos-svelte";
+
+# Nested grids
+
+A grid can live **inside a tile of another grid**. Nested grids **share the outer grid's**
+`DragDropProvider` (one dnd-kit manager), so a tile can be dragged **between** the inner and outer
+grids. snapgrid resolves which grid the pointer is over with an **innermost-wins** rule: a drag that
+starts inside the inner grid stays scoped to it, and dragging a tile out hands it to the outer grid.
+
+<Callout type="info">
+  Nested grids cross levels by default. To keep a sub-grid **self-contained** — tiles can't leave it —
+  see [Contain a nested grid](#contain-a-nested-grid-opt-out-of-cross-layer) below.
+</Callout>
+
+<NestedDemo />
+
+The one thing to wire: **the outer tile that hosts the inner grid must drag only from a handle**, so a
+pointer-down inside the inner grid doesn't drag the whole panel. Put an `attachHandle` (from
+`createGridItem`) on the panel's header — **not** the grid-wide `dragConfig.handle`, which would force
+*every* outer tile to drag from that selector and disable the ones without it.
+
+```svelte
+<!-- OuterBoard.svelte — rendered inside a <DragDropProvider> (yours, or supplied by
+     <GridLayout> / <SnapGridGroup>). The inner grid does NOT mount its own — it shares this one. -->
+<script lang="ts">
+  import { createGridContainer, type Layout } from "@snapgridjs/svelte";
+  import Tile from "./Tile.svelte";
+
+  let {
+    outer,
+    width,
+    onLayoutChange,
+  }: { outer: Layout; width: number; onLayoutChange: (next: Layout) => void } = $props();
+
+  const container = createGridContainer(() => ({ layout: outer, width, onLayoutChange }));
+</script>
+
+<div {@attach container.attach} style={container.style}>
+  {#each outer as it (it.i)}
+    <Tile id={it.i} group={container.group} />
+  {/each}
+</div>
+```
+
+```svelte
+<!-- Tile.svelte -->
+<script lang="ts">
+  import { createGridItem } from "@snapgridjs/svelte";
+  import InnerBoard from "./InnerBoard.svelte";
+
+  let { id, group }: { id: string; group: string } = $props();
+  // svelte-ignore state_referenced_locally
+  const tile = createGridItem({ id, group });
+</script>
+
+{#if id === "panel"}
+  <div {@attach tile.attach} style={tile.style} class="panel">
+    <!-- The header is the only drag handle, so grabbing an inner tile never
+         drags the panel — and the other outer tiles stay whole-tile draggable. -->
+    <div {@attach tile.attachHandle} class="panel-head">Nested board</div>
+    <InnerBoard /> <!-- an ordinary host — shares the provider above, no new one -->
+  </div>
+{:else}
+  <div {@attach tile.attach} style={tile.style} class="tile">
+    {id}
+  </div>
+{/if}
+
+<!-- InnerBoard is an ordinary createGridContainer host. It just does NOT wrap itself
+     in a <DragDropProvider>, so it joins the outer grid's manager. -->
+```
+
+## How it works
+
+The grids share one dnd-kit manager, so a single collision pass sees both droppable surfaces. When
+their rects overlap (the pointer is over the inner grid, which sits inside the outer), snapgrid ranks
+the **innermost** grid highest, so the drag resolves to the inner grid. Move the pointer out of the
+inner grid and the outer grid wins — that's how a tile crosses levels. The panel's `attachHandle` keeps a
+pointer-down on an inner tile from arming the panel's own drag.
+
+A tile that crosses levels is **removed from one grid's layout and added to the other's** — wire both
+grids' `onLayoutChange`, exactly like [cross-grid dragging](/svelte/docs/guides/cross-grid) between siblings.
+
+## Nested drop zones (a non-grid droppable inside a grid)
+
+The same innermost-wins rule extends to **your own** drop targets. Put a plain dnd-kit `createDroppable` —
+a trash slot, an "archive" panel, a sub-list — inside a grid tile and, by default, it can never win: a
+grid claims a drag with a boosted collision priority, so the grid underneath always outranks a plain
+droppable sitting on top of it. To opt your drop zone into the grid's depth ranking:
+
+1. Pass **`nestedDropCollisionDetector`** to your `createDroppable`. This alone makes the zone outrank the
+   grid it sits inside — the grid is a marked ancestor, so the zone ranks one level deeper.
+2. Mark the element with **`data-snapgrid-droppable`** (or the exported `SNAPGRID_DROPPABLE_ATTR`). This
+   is only needed if you nest **another** droppable inside this zone, so that inner target counts this
+   boundary and outranks it in turn. It's harmless and future-proofs nesting, so the demo below sets it.
+
+<NestedDropZoneDemo />
+
+```svelte
+<!-- ArchiveZone.svelte -->
+<script lang="ts">
+  import {
+    createDroppable,
+    nestedDropCollisionDetector,
+    SNAPGRID_DROPPABLE_ATTR,
+  } from "@snapgridjs/svelte";
+
+  const zone = createDroppable({
+    id: "archive",
+    accept: (source) => source.type === "grid-item",
+    collisionDetector: nestedDropCollisionDetector,
+  });
+  // The detector already ranks this zone above its grid. The marker makes this a
+  // nesting boundary — only matters for droppables you nest INSIDE the zone.
+</script>
+
+<div
+  {@attach zone.attach}
+  {...{ [SNAPGRID_DROPPABLE_ATTR]: "" }}
+  data-drop-target={zone.isDropTarget || undefined}
+>
+  Archive
+</div>
+```
+
+When the pointer is over the zone, the zone wins the collision: the **grid backs off** — it shows no
+placeholder and leaves its layout untouched (its engine treats a target it doesn't own as a revert, so
+the dragged tile stays put) — and your zone becomes the resolved target. Handle the drop yourself on the
+shared `DragDropProvider`:
+
+```svelte
+<DragDropProvider
+  onDragEnd={(event) => {
+    const { source, target } = event.operation;
+    if (target?.id === "archive" && source?.type === "grid-item") {
+      // your drop logic — the grid already reverted the tile
+    }
+  }}
+>
+```
+
+<Callout type="info">
+  Depth counts **every** marked boundary, not just grids. A drop zone nested inside another **marked**
+  drop zone outranks its parent, so arbitrary nesting resolves innermost-first — the same rule that ranks
+  an inner grid above its outer one. Mark each intermediate zone: two zones at the same depth tie.
+</Callout>
+
+## Contain a nested grid (opt out of cross-layer)
+
+To keep a nested grid's tiles from leaving it — a self-contained widget — give it its **own**
+`<DragDropProvider>`. That puts it on a separate manager, so the outer grid's collision never sees it
+and tiles can't cross the boundary:
+
+```svelte
+<script lang="ts">
+  import { DragDropProvider } from "@dnd-kit/svelte";
+</script>
+
+<div class="panel">
+  <div {@attach tile.attachHandle} class="panel-head">Contained board</div>
+  <DragDropProvider>
+    <InnerBoard /> <!-- its own manager → isolated; tiles stay put -->
+  </DragDropProvider>
+</div>
+```
+
+## Limits
+
+<Callout type="warning">
+  Host the inner grid with a per-tile `attachHandle`, not a grid-wide `dragConfig.handle`. The latter is
+  applied to every tile in the grid, so any tile without a matching handle element becomes
+  undraggable.
+</Callout>
+
+- **Size the inner grid to its cell.** It measures its own container with `createContainerWidth`, so it
+  reflows as the outer tile is resized.

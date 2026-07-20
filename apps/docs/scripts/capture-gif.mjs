@@ -18,7 +18,7 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 
-await page.goto(`${BASE}/examples/`);
+await page.goto(`${BASE}/react/examples/`);
 await page.waitForSelector(".snapgrid-item");
 await page.waitForTimeout(600);
 

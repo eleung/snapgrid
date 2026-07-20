@@ -15,6 +15,7 @@ export function DemoFrame({
   hint,
   stageMinHeight = 260,
   code,
+  stackblitz = true,
   children,
 }: {
   title: string;
@@ -22,6 +23,12 @@ export function DemoFrame({
   stageMinHeight?: number;
   /** Highlighted source for the "Code" toggle (from generated/example-code). */
   code?: { html: string; raw: string };
+  /**
+   * Show the "Open in StackBlitz" button (needs `code`). Off for non-React demos:
+   * the sandbox builder emits a Vite + React project, so it can't run e.g. a
+   * `.svelte` source. The Preview/Code toggle still works.
+   */
+  stackblitz?: boolean;
   children: ReactNode;
 }) {
   const mounted = useMounted();
@@ -49,7 +56,7 @@ export function DemoFrame({
               ))}
             </div>
           ) : null}
-          {code ? (
+          {code && stackblitz ? (
             <button
               type="button"
               className="dg-demo__sb"

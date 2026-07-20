@@ -1,0 +1,76 @@
+---
+title: Server-side rendering
+description: Using snapgrid with SvelteKit and other SSR/SSG frameworks.
+---
+
+import { Callout } from "nextra/components";
+
+# Server-side rendering
+
+snapgrid works under SSR and static generation — SvelteKit's `ssr` and `prerender` modes included. A
+couple of notes keep it smooth.
+
+## Width measurement is SSR-safe
+
+`createContainerWidth` measures with a `ResizeObserver`, which only exists in the browser. The
+factory is SSR-safe by design:
+
+- it reports `initialWidth` (default `1280`) on the server **and** until the attachment runs on the
+  client, so the markup matches and there's no hydration mismatch;
+- it then measures the real width after mount and updates.
+
+```ts
+const width = createContainerWidth({ initialWidth: 1024 });
+```
+
+The handle exposes reactive `width.width` and `width.mounted`, plus a `width.attach` attachment for
+the element to measure. Pick an `initialWidth` close to your typical container to minimize the
+first-paint reflow, or gate on `width.mounted` if you'd rather not render until measured.
+
+## Avoiding layout flash
+
+Because the server renders at `initialWidth`, tiles briefly appear at that width before the client
+measures. To avoid any flash you can render the grid only once measured:
+
+```svelte
+<script lang="ts">
+  import { createContainerWidth } from "@snapgridjs/svelte";
+  import Board from "./Board.svelte";
+
+  const width = createContainerWidth();
+</script>
+
+<div {@attach width.attach}>
+  {#if width.mounted}
+    <Board width={width.width} />
+  {:else}
+    <div style="min-height: 240px"></div>
+  {/if}
+</div>
+
+<!-- Board is your headless grid: a DragDropProvider wrapping createGridContainer. -->
+```
+
+## SvelteKit
+
+SvelteKit renders a `.svelte` component on the server and hydrates it on the client — there's no
+per-file directive like React's `"use client"` to add. snapgrid's browser-only work (the width
+`ResizeObserver`, dnd-kit's sensors) lives in attachments and `$effect`s, which run only after mount,
+so the server render just emits the static initial markup and hydration wires up the interaction.
+
+```svelte
+<script lang="ts">
+  import { DragDropProvider } from "@dnd-kit/svelte";
+  import { createContainerWidth, createGridContainer } from "@snapgridjs/svelte";
+  // …
+</script>
+```
+
+If you ever import a module that touches browser globals at the top level, guard it with `browser`
+from `$app/environment` — but snapgrid itself needs no such guard.
+
+<Callout type="info">
+  Dragging is purely client-side: there's no active drag during SSR, so a tile renders in its normal
+  in-grid position on the server and only [floats itself](/svelte/docs/guides/headless#floating) once a drag
+  begins in the browser. Nothing to guard.
+</Callout>

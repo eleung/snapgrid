@@ -114,9 +114,30 @@ article a {
    react/svelte are `type: "page"` so each owns a docs sidebar; their auto
    navbar tabs are hidden (scoped to the navbar so sidebar links are untouched)
    and replaced by this switcher. */
-.nextra-navbar a[href^="/react/"],
-.nextra-navbar a[href^="/svelte/"] {
+.nextra-navbar a[href^="/react/"]:not(.dg-navlink),
+.nextra-navbar a[href^="/svelte/"]:not(.dg-navlink) {
   display: none;
+}
+/* Framework-aware Docs + Examples links (FrameworkNav): they live in the logo node,
+   left of the nav, right after the switcher. */
+.dg-navnav {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  margin-inline-start: 0.85rem;
+}
+@media (max-width: 768px) {
+  .dg-navnav {
+    display: none;
+  }
+}
+/* Make the CTA link in the announcement banner read as clickable. */
+.nextra-banner a {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  white-space: nowrap;
 }
 .dg-fw {
   display: inline-flex;

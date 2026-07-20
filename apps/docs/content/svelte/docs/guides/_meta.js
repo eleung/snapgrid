@@ -1,0 +1,17 @@
+export default {
+  headless: "Headless usage",
+  "component-layer": "Component layer",
+  dragging: "Dragging",
+  resizing: "Resizing",
+  compaction: "Compaction & packing",
+  "static-items": "Static items",
+  responsive: "Responsive layouts",
+  "cross-grid": "Cross-grid dragging",
+  nesting: "Nested grids",
+  "external-drop": "External drop",
+  "dnd-kit-interop": "dnd-kit interop",
+  styling: "Styling",
+  events: "Events & lifecycle",
+  ssr: "Server-side rendering",
+  architecture: "Architecture & dnd-kit",
+};

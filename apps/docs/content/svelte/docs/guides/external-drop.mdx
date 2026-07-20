@@ -1,0 +1,149 @@
+---
+title: External drop
+description: Accept arbitrary dnd-kit draggables — a palette, a sidebar — dropped into a grid.
+---
+
+import { Callout } from "nextra/components";
+import { ExternalDropDemo } from "@/components/demos-svelte";
+
+# External drop
+
+A grid can accept **non-grid** dnd-kit draggables — a widget palette, a sidebar of blocks — and
+turn a drop into a new layout item. Enable it with `dropConfig` and handle the result with
+`onDrop`.
+
+<ExternalDropDemo />
+
+## Set it up
+
+The grid and the external draggable must share one dnd-kit provider, so wrap both in a
+`<SnapGridGroup>` (dnd-kit's `DragDropProvider`). The grid hosts itself with `createGridContainer`,
+opting in via `dropConfig`. The draggable is a plain `createDraggable` from `@dnd-kit/svelte` that
+carries a `snapGridDrop` payload describing the item to create.
+
+```svelte
+<!-- PaletteItem.svelte -->
+<script module lang="ts">
+  import { Feedback } from "@dnd-kit/dom";
+  // A stable plugin instance (module scope) so its identity doesn't change per render.
+  const CLONE = [Feedback.configure({ feedback: "clone" })];
+</script>
+
+<script lang="ts">
+  import { createDraggable } from "@dnd-kit/svelte";
+
+  let { id, w, h }: { id: string; w: number; h: number } = $props();
+  // svelte-ignore state_referenced_locally
+  const draggable = createDraggable({ id, data: { snapGridDrop: { w, h } }, plugins: CLONE });
+</script>
+
+<button {@attach draggable.attach}>{`${w}×${h}`}</button>
+```
+
+```svelte
+<!-- DropGrid.svelte -->
+<script lang="ts">
+  import { createGridContainer, type Layout } from "@snapgridjs/svelte";
+  import Tile from "./Tile.svelte";
+
+  let {
+    layout,
+    width,
+    onLayoutChange,
+  }: { layout: Layout; width: number; onLayoutChange: (next: Layout) => void } = $props();
+
+  const container = createGridContainer(() => ({
+    layout,
+    width,
+    onLayoutChange,
+    onDrop: (next) => onLayoutChange(next),
+    dropConfig: { enabled: true, defaultItem: { w: 2, h: 2 } },
+  }));
+</script>
+
+<div {@attach container.attach} style={container.style}>
+  {#each layout as it (it.i)}
+    <Tile id={it.i} group={container.group} />
+  {/each}
+</div>
+```
+
+```svelte
+<!-- Tile.svelte -->
+<script lang="ts">
+  import { createGridItem } from "@snapgridjs/svelte";
+  let { id, group }: { id: string; group: string } = $props();
+  // svelte-ignore state_referenced_locally
+  const tile = createGridItem({ id, group });
+</script>
+
+<div {@attach tile.attach} style={tile.style} class="tile">{id}</div>
+```
+
+```svelte
+<!-- Board.svelte -->
+<script lang="ts">
+  import { SnapGridGroup, type Layout } from "@snapgridjs/svelte";
+  import PaletteItem from "./PaletteItem.svelte";
+  import DropGrid from "./DropGrid.svelte";
+
+  let layout = $state<Layout>([]);
+</script>
+
+<SnapGridGroup>
+  <PaletteItem id="pal-wide" w={4} h={1} />
+  <DropGrid {layout} {width} onLayoutChange={(next) => (layout = next)} />
+</SnapGridGroup>
+```
+
+## The drag preview
+
+Each draggable is its **own** floating preview — there's no shared overlay to wire up:
+
+- A **grid tile** being relocated (within or across grids) [floats itself](/svelte/docs/guides/headless#floating).
+- A **palette item** floats a **clone** of itself — that's the `CLONE` plugin
+  (`Feedback.configure({ feedback: "clone" })`) on its `createDraggable` above.
+
+Why a clone? dnd-kit's *default* feedback floats the element itself — right for a grid tile, but it
+would yank the palette item out of its tray. `"clone"` leaves the original in place and floats a copy
+instead. The copy is just your palette markup; it becomes a grid tile only once `onDrop` fires.
+
+## The `snapGridDrop` payload
+
+The external draggable carries `data.snapGridDrop` to control the inserted item:
+
+```ts
+interface GridDropData {
+  i?: string; // id for the new item; a unique one is generated if omitted
+  w?: number; // width in columns
+  h?: number; // height in rows
+}
+```
+
+If `w`/`h` are omitted, `dropConfig.defaultItem` is used (and finally `1×1`, matching
+react-grid-layout's default).
+
+## `dropConfig` options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `false` | Accept external draggables. |
+| `defaultItem` | `{ w, h }` | `{ w: 1, h: 1 }` | Size for a dropped item when the source omits `snapGridDrop`. |
+| `accept` | `(source) => boolean` | accept any non-grid draggable | Restrict which sources are accepted. |
+
+## `onDrop`, not `onLayoutChange`
+
+An external drop fires **`onDrop(layout, item, event)`** — the next layout, the synthesized item,
+and the source event — rather than `onLayoutChange`. That lets you add the item to both your layout
+state and any side data keyed by id (titles, content, etc.) in one place.
+
+<Callout type="info">
+  Synthesized ids are prefixed with the grid's id, so two drop-enabled grids in a group never mint
+  the same id.
+</Callout>
+
+## Beyond one-way drops
+
+External drop is a **one-way** drop of a plain dnd-kit `Draggable` into a grid. For **two-way**
+movement with a `createSortable` list or board — cards in, tiles back out, both reordering live — see
+[dnd-kit interop](/svelte/docs/guides/dnd-kit-interop).

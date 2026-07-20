@@ -247,14 +247,14 @@ const html = `<!doctype html><html><head><meta charset="utf-8">
       <div class="body">
         <div class="main">
           <h1>Draggable grid layouts<br>that drag <em>between</em> grids.</h1>
-          <div class="sub">A react-grid-layout v2 alternative, built on dnd-kit — controlled, headless-first, keyboard-accessible.</div>
+          <div class="sub">A react-grid-layout v2 alternative for React &amp; Svelte, built on dnd-kit — headless-first, keyboard-accessible.</div>
           <div class="chips">
             <span class="chip"><span class="langdot"></span>${LANGUAGE}</span>
             <span class="chip"><span class="octi">${icon("law", 16)}</span>${LICENSE}</span>
-            <span class="chip accent">~${SNAPGRID_KB} kB core</span>
+            <span class="chip accent">React · Svelte</span>
+            <span class="chip">~${SNAPGRID_KB} kB core</span>
             <span class="chip">Cross-grid</span>
             <span class="chip">Nested grids</span>
-            <span class="chip">Keyboard a11y</span>
           </div>
         </div>
         <div class="art">

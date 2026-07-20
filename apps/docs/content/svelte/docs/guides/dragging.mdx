@@ -1,0 +1,117 @@
+---
+title: Dragging
+description: Configure drag behaviour, including handles, cancel regions, activation threshold, and grid snapping.
+---
+
+import { Callout } from "nextra/components";
+import { DragHandleDemo, SnapDemo } from "@/components/demos-svelte";
+
+# Dragging
+
+Items drag by default. Configure how with `dragConfig`, and toggle it per item with `isDraggable` /
+`static` on the layout item. `dragConfig` is an option on `createGridContainer` (and, identically, a
+prop on the [`<GridLayout>`](/svelte/docs/guides/component-layer) shell):
+
+```ts
+const container = createGridContainer(() => ({
+  layout,
+  width,
+  onLayoutChange: (next) => (layout = next),
+  dragConfig: { threshold: 4 },
+}));
+```
+
+## `dragConfig` options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `true` | Grid-level on/off for dragging. |
+| `handle` | `string` | — | CSS selector for a drag handle inside each item — only pointer-downs within it start a drag. Mainly for `<GridLayout>`; **headless tiles should prefer [`attachHandle`](#drag-handles)** instead. |
+| `cancel` | `string` | — | CSS selector for regions that should **never** start a drag (e.g. buttons, inputs). |
+| `threshold` | `number` | `3` | Pixels the pointer must travel before a drag begins, so clicks aren't drags. |
+| `bounded` | `boolean` | `false` | Keep the dragged item within the grid container bounds. |
+| `snapToGrid` | `boolean` | `false` | Snap the dragged tile itself to cells while dragging (see below). |
+
+## Drag handles [#drag-handles]
+
+Restrict dragging to a grip so the rest of the tile (buttons, inputs, links) stays interactive — two
+ways, matching the two layers.
+
+**Headless — `attachHandle`.** `createGridItem` returns `attachHandle`, a Svelte attachment. Attach it
+to the grip element; only a pointer-down there starts a drag.
+
+```svelte
+<!-- Tile.svelte -->
+<script lang="ts">
+  import { createGridItem } from "@snapgridjs/svelte";
+
+  let { id, group }: { id: string; group: string } = $props();
+  // svelte-ignore state_referenced_locally
+  const tile = createGridItem({ id, group });
+</script>
+
+<div {@attach tile.attach} style={tile.style} class="tile">
+  <span {@attach tile.attachHandle} class="grip">⠿</span> <!-- drag starts here -->
+  <button onclick={…}>still clickable</button>
+</div>
+```
+
+**Turnkey — `dragConfig.handle`.** `<GridLayout>`'s item snippet is plain markup with no attachment to
+wire, so it gates by **CSS selector** (the react-grid-layout idiom). The selector also works headless via
+`createGridContainer`, and pairs with `cancel` for regions that should never start a drag.
+
+```ts
+const container = createGridContainer(() => ({ dragConfig: { handle: ".grip" }, /* … */ }));
+```
+
+<Callout type="warning">
+  Use **one or the other** — `attachHandle` *or* the selector. If you set both, a drag has to satisfy
+  both. Keyboard pickup is unaffected by either: a focused tile is always draggable (see below).
+</Callout>
+
+<DragHandleDemo />
+
+<Callout type="info">
+  Resize handles are always excluded from drag activation automatically. You never need to add them
+  to `cancel`.
+</Callout>
+
+## Snap to grid
+
+By default the dragged tile follows the pointer smoothly and only the **placeholder** snaps to
+cells (matching react-grid-layout). Set `snapToGrid: true` to snap the tile itself, axis-by-axis,
+to the column and row pitch.
+
+<SnapDemo />
+
+## Keyboard accessibility
+
+Tiles are keyboard-draggable out of the box. Each tile is focusable and announced as draggable
+(`tabindex="0"`, `role="button"`, `aria-roledescription="draggable"`), and arrow keys move it a cell
+at a time:
+
+- **Tab** to focus a tile.
+- **Enter** or **Space** to pick it up.
+- **Arrow keys** to move it one cell at a time. The layout reflows live.
+- **Enter** / **Space** to drop, or **Escape** to cancel and snap back.
+
+Keyboard dragging is in-grid only (there's no pointer to land a tile in another grid), and, like
+pointer dragging, a packed axis can pull the tile back (e.g. moving down under vertical compaction).
+
+<Callout type="info">
+  A `handle` restricts only **pointer** dragging. Keyboard users can always pick up a focused tile
+  with Enter/Space, so dragging stays accessible regardless of where the handle is.
+</Callout>
+
+## Per-item control
+
+- `isDraggable: false` on a `LayoutItem` disables dragging for that item only.
+- `static: true` anchors an item — others flow around it, and by default it can't be dragged or
+  resized (opt back in per item with `isDraggable` / `isResizable: true` for a "pinned" tile). See
+  [Static items](/svelte/docs/guides/static-items).
+- The grid-level `isDraggable` option overrides everything when set to `false`.
+
+## Lifecycle
+
+`onDragStart`, `onDrag`, and `onDragStop` fire with the react-grid-layout-compatible signature
+`(layout, oldItem, newItem, placeholder, event, node)`. See [Events & lifecycle](/svelte/docs/guides/events).
