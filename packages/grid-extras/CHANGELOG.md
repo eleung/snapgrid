@@ -1,5 +1,13 @@
 # @snapgridjs/extras
 
+## 0.9.0
+
+### Patch Changes
+
+- 65bebeb: Refresh package READMEs for the Svelte release. `@snapgridjs/svelte` now ships a README (install, headless quick start, and the turnkey `<GridLayout>`); the React, core, dnd, and extras READMEs document the Svelte binding alongside React; and documentation links that moved under `/react` and `/svelte` are corrected.
+- Updated dependencies [65bebeb]
+  - @snapgridjs/core@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes
