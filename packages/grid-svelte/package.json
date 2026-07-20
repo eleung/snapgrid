@@ -1,6 +1,6 @@
 {
   "name": "@snapgridjs/svelte",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Svelte 5 grid-layout components built on dnd-kit — a react-grid-layout v2 alternative.",
   "license": "MIT",
   "author": "Edmond Leung",
