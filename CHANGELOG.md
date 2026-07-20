@@ -4,6 +4,28 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.9.0] - 2026-07-20
+
+Svelte support. `@snapgridjs/svelte` brings the same headless-first, dnd-kit-native grid to Svelte 5,
+on the shared framework-free core — a grid behaves identically whichever framework renders it.
+
+### Added
+
+- **`@snapgridjs/svelte`** — a Svelte 5 binding for snapgrid, mirroring `@snapgridjs/react` on the
+  shared `@snapgridjs/core` + `@snapgridjs/dnd` engine. Headless factories (`createGridContainer`,
+  `createGridItem`, `createGridPlaceholder`, `createGridResizeHandle`, `createContainerWidth`,
+  `createResponsiveLayout`, `resolveController`) and drop-in components (`GridLayout`, `GridItem`,
+  `GridPlaceholder`, `ResponsiveGridLayout`, `SnapGridGroup`) deliver the same controlled drag,
+  resize, compaction, cross-grid, nesting, and dnd-kit interop as React — built on `@dnd-kit/svelte`
+  with runes + attachments (`{@attach}`). Requires Svelte 5. See the
+  [Svelte docs](https://snapgrid.dev/svelte/docs/getting-started).
+
+### Changed
+
+- Documentation is now split per framework — guides and examples live under `/react/…` and
+  `/svelte/…`, selectable from the framework switcher — and the package READMEs document the Svelte
+  binding alongside React.
+
 ## [0.8.0] - 2026-07-16
 
 A consumer's own drop target — a trash slot, an archive panel, a sub-list — can now live inside a
@@ -187,6 +209,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.9.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.9.0
 [0.8.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.8.0
 [0.7.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.7.0
 [0.6.1]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.6.1
