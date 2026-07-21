@@ -1,6 +1,6 @@
 {
   "name": "@snapgridjs/dnd",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Framework-agnostic dnd-kit grid engine for snapgrid — the shared drag/resize/cross-grid brain consumed by @snapgridjs/react (and future Vue/Solid bindings).",
   "license": "MIT",
   "author": "Edmond Leung",

@@ -1,0 +1,221 @@
+---
+title: Headless usage
+description: The primary API — compose snapgrid's hooks with dnd-kit's DragDropProvider and render your own markup. The grid host, tiles, resize handles, and the placeholder.
+---
+
+import { Callout } from "nextra/components";
+import { BasicGridDemo } from "@/components/demos";
+
+# Headless usage
+
+The hooks are snapgrid's primary API. They hand you refs, positioning styles, and drag state — you
+bring the markup, classes, and content. Reach for them when you want full control, or to compose with
+the dnd-kit draggables and sortables you already have ([dnd-kit interop](/react/docs/guides/dnd-kit-interop)).
+(`<GridLayout>` is a thin shell over these same hooks — see
+[Component layer](/react/docs/guides/component-layer) when you'd rather not wire it yourself.)
+
+<BasicGridDemo />
+
+## The shape of a headless grid
+
+Two pieces, both under a dnd-kit `DragDropProvider` that **you** supply:
+
+1. **`useGridContainer(options)`** — the grid *host*. Returns `containerProps` for your surface and
+   the grid's **`group`**.
+2. **`useGridItem({ id, group })`** — one tile. Returns a `ref` and positioning `style`.
+
+There's no third piece for the drag preview: a dragged tile [floats itself](#floating).
+
+```tsx
+import { DragDropProvider } from "@dnd-kit/react";
+import { useGridContainer, useGridItem } from "@snapgridjs/react";
+
+function Board({ layout, width, onLayoutChange }) {
+  return (
+    <DragDropProvider>
+      <Surface layout={layout} width={width} onLayoutChange={onLayoutChange} />
+    </DragDropProvider>
+  );
+}
+
+function Surface({ layout, width, onLayoutChange }) {
+  const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange });
+  return (
+    <div {...containerProps}>
+      {layout.map((it) => (
+        <Tile key={it.i} id={it.i} group={group} />
+      ))}
+    </div>
+  );
+}
+
+function Tile({ id, group }) {
+  const { ref, style } = useGridItem({ id, group });
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+    </div>
+  );
+}
+```
+
+<Callout type="warning">
+  **`useGridContainer` must run *inside* the provider.** It registers the grid on dnd-kit's manager,
+  so the host has to be a child component rendered inside `<DragDropProvider>` (like `Surface`) — not
+  the component that renders the provider. Calling it in the same component that renders
+  `<DragDropProvider>` puts the hook *outside* the provider's tree, and tiles throw
+  `no grid found for group`. (`SnapGridGroup` is dnd-kit's provider too, so the same rule applies.)
+</Callout>
+
+## `useGridContainer` — the grid host
+
+`useGridContainer(options)` creates the grid's controller + drag monitor and returns:
+
+| Field | What it is |
+| --- | --- |
+| `containerProps` | `{ ref, style, data-drop-target }` — spread onto your surface element. |
+| `group` | This grid's id. Pass it to every tile-level hook. |
+| `isDropTarget` | `true` while a compatible draggable is over the grid (handy for highlighting). |
+| `controller` | The grid's controller, for advanced composition. |
+
+`options` is the controlled state — `layout`, `width`, `onLayoutChange` — plus any of `gridConfig`,
+`dragConfig`, `resizeConfig`, `dropConfig`, `compactor`, `isDraggable`, `isResizable`, `autoSize`,
+`id`, and the [lifecycle callbacks](/react/docs/guides/events). Each is documented in its feature guide.
+
+## `useGridItem` — a tile
+
+`useGridItem({ id, group })` wires one tile:
+
+| Field | What it is |
+| --- | --- |
+| `ref` | Attach to the tile element. |
+| `handleRef` | Optional drag handle — attach to a child to restrict pointer dragging to it (see [Dragging](/react/docs/guides/dragging#drag-handles)). Leave it off and the whole tile drags. |
+| `style` | Absolute positioning (`position: absolute` + `left/top/width/height`); reflow is animated on the compositor. Spread it; don't override the position. |
+| `isDragging` | `true` while this tile is the active drag source — branch your styling on it. |
+| `item` | The tile's current (possibly reflowed) layout entry. |
+
+You choose the tag, classes, and content. snapgrid only supplies position + state.
+
+## The dragged tile floats itself [#floating]
+
+There's no overlay to render. While you drag with a pointer, dnd-kit lifts the active tile into the
+browser's **top layer**, so it floats above everything and crosses between grids **unclipped** — the
+same element you rendered, now floating. The other tiles reflow to open the landing cell, and on drop
+the tile settles into place. This is dnd-kit's default drag feedback; snapgrid only disables the drop
+animation so the tile lands on the cell instead of springing back to where it started.
+
+Because the tile *is* the preview, you style its dragging state right where you render it — branch on
+`isDragging`:
+
+```tsx
+function Tile({ id, group }) {
+  const { ref, style, isDragging } = useGridItem({ id, group });
+  return (
+    <div ref={ref} style={style} className="tile" data-dragging={isDragging || undefined}>
+      {id}
+    </div>
+  );
+}
+```
+
+<Callout type="info">
+  **Keyboard drags don't float.** With the keyboard sensor the tile stays in place and steps
+  cell-by-cell (Enter/Space to pick up and drop, arrows to move, Escape to cancel) — so the floating
+  behaviour is purely for pointer drags.
+</Callout>
+
+<Callout type="info">
+  **Need a *separate* floating element?** For a custom preview — a clone, a ghost, different markup —
+  dnd-kit's [`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/react`. You
+  rarely need it, since the tile already floats itself; reach for it only when the floating preview
+  must differ from the tile. See [Styling](/react/docs/guides/styling#custom-placeholder).
+</Callout>
+
+## Optional affordances
+
+Headless tiles carry nothing extra — no class names, no resize handles, no placeholder, just a `ref`
+and a `style`. The host and tile above are already a complete, working grid; everything else is yours
+to render. Two affordances are common enough that snapgrid gives you a hook for each:
+
+1. **`useGridResizeHandle({ id, handle, group })`** — render resize handles on a tile.
+2. **`useGridPlaceholder(group)`** — mark the cell a dragged tile will land in.
+
+## `useGridResizeHandle` — render your own resize handles [#usegridresizehandle]
+
+**Why you need it:** a headless tile has no resize handles. `resizeConfig.handles` only declares
+*which* edges are resizable; you render the handle elements. (The [`<GridItem>`](/react/docs/guides/component-layer)
+shell does this for you — this is what it does under the hood.)
+
+`useGridResizeHandle({ id, handle, group })` models a handle as its own draggable and returns:
+
+| Field | What it is |
+| --- | --- |
+| `ref` | Attach to your handle element. |
+| `handleProps` | Spread onto the handle — marks it so a pointer-down resizes instead of starting an item drag. |
+| `isResizing` | `true` while this item is being resized. |
+
+You position and style the handle however you like:
+
+```tsx
+function Tile({ id, group }) {
+  const { ref, style } = useGridItem({ id, group });
+  const resize = useGridResizeHandle({ id, handle: "se", group });
+  return (
+    <div ref={ref} style={style} className="tile">
+      {id}
+      {/* a bottom-right grip; CSS places + styles `.resize-handle` */}
+      <span ref={resize.ref} {...resize.handleProps} className="resize-handle" />
+    </div>
+  );
+}
+```
+
+Render one handle per axis you want (`"n" | "e" | "s" | "w" | "ne" | "nw" | "se" | "sw"`). See
+[Resizing](/react/docs/guides/resizing) for the config and per-item limits.
+
+## `useGridPlaceholder` — the landing marker
+
+**Why you'd use it:** during a drag, the placeholder shows the cell the tile will land in — the gap
+that reflows live as you move. It's optional; render it for the familiar "ghost cell" affordance.
+
+`useGridPlaceholder(group)` returns `{ item, style }` while a drag is active, or `null` when idle.
+Spread `style` onto an element you style:
+
+```tsx
+function Surface({ layout, width, onLayoutChange }) {
+  const { containerProps, group } = useGridContainer({ layout, width, onLayoutChange });
+  const placeholder = useGridPlaceholder(group);
+  return (
+    <div {...containerProps}>
+      {layout.map((it) => (
+        <Tile key={it.i} id={it.i} group={group} />
+      ))}
+      {placeholder && <div className="placeholder" style={placeholder.style} />}
+    </div>
+  );
+}
+```
+
+## Memoize your tiles
+
+The surface re-renders as the grid's height tracks the drag. Wrap your tile in `React.memo` so only
+the tile whose cell actually changed re-renders — each `useGridItem` subscribes to just its own slice,
+so a memoized neighbour stays put. (`<GridItem>` is already memoized.)
+
+## Mixing the two layers
+
+They share one engine, so nothing is all-or-nothing. Drop `<GridItem id group>` /
+`<GridPlaceholder group>` into a surface you host with `useGridContainer`, or use `<GridLayout>` for
+most of the app and the hooks for the one grid that needs custom markup. See
+[Component layer](/react/docs/guides/component-layer).
+
+## The hooks at a glance
+
+| Hook | Returns | Renders |
+| --- | --- | --- |
+| `useContainerWidth(options?)` | `{ width, mounted, containerRef }` | Nothing — measures an element. |
+| `useGridContainer(options)` | `{ containerProps, group, isDropTarget, controller }` | The surface; registers the droppable + owns the grid. |
+| `useGridItem({ id, group })` | `{ ref, handleRef, style, isDragging, item }` | One positioned tile. |
+| `useGridResizeHandle({ id, handle, group })` | `{ ref, handleProps, isResizing }` | One resize handle. |
+| `useGridPlaceholder(group)` | `{ item, style } \| null` | The landing-cell marker (null when idle). |
+| `useResponsiveLayout(options)` | `{ breakpoint, cols, layout, onLayoutChange }` | Nothing — resolves the active breakpoint. See [Responsive](/react/docs/guides/responsive). |

@@ -18,7 +18,7 @@ function trackErrors(page: Page): string[] {
 }
 
 async function gotoInterop(page: Page) {
-  await page.goto("/examples/");
+  await page.goto("/react/examples/");
   const demo = page.locator(".dg-interop");
   await demo.waitFor();
   await demo.scrollIntoViewIfNeeded();

@@ -11,7 +11,7 @@ Extra packing styles for [snapgrid](https://github.com/eleung/snapgrid) — drop
 pnpm add @snapgridjs/extras
 ```
 
-Use alongside [`@snapgridjs/react`](https://www.npmjs.com/package/@snapgridjs/react) (or `@snapgridjs/core`).
+Use alongside [`@snapgridjs/react`](https://www.npmjs.com/package/@snapgridjs/react) or [`@snapgridjs/svelte`](https://www.npmjs.com/package/@snapgridjs/svelte) (or `@snapgridjs/core` directly). The `Compactor`s are framework-free — the same packer drops into either binding's `<GridLayout>`.
 
 ## Packers
 
@@ -28,7 +28,7 @@ import { masonryCompactor } from "@snapgridjs/extras";
 <GridLayout layout={layout} width={width} onLayoutChange={setLayout} compactor={masonryCompactor} />;
 ```
 
-→ See the [compaction guide](https://snapgrid.dev/docs/guides/compaction).
+→ See the [compaction guide](https://snapgrid.dev/react/docs/guides/compaction).
 
 ## License
 

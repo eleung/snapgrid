@@ -233,8 +233,8 @@ export function PerfLab() {
           react-grid-layout
         </a>
         ’s core packing. For very large grids, snapgrid also ships drop-in O(n&nbsp;log&nbsp;n){" "}
-        <a href="/docs/guides/compaction#fast-compactors">fast compactors</a>. Avatars generated
-        with{" "}
+        <a href="/react/docs/guides/compaction#fast-compactors">fast compactors</a>. Avatars
+        generated with{" "}
         <a href="https://www.dicebear.com/styles/lorelei/" target="_blank" rel="noreferrer">
           DiceBear’s Lorelei
         </a>{" "}

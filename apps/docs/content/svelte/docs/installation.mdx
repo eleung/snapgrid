@@ -1,0 +1,102 @@
+---
+title: Installation
+description: Packages, peer dependencies, the single-import convenience, and framework notes for installing snapgrid in Svelte 5.
+---
+
+import { Callout, Tabs } from "nextra/components";
+
+# Installation
+
+## Packages
+
+snapgrid is a small monorepo. Most apps install only `@snapgridjs/svelte`.
+
+| Package | What it is | When you need it |
+| --- | --- | --- |
+| `@snapgridjs/svelte` | Svelte 5 components + factories. Pulls in `@snapgridjs/dnd` + `@snapgridjs/core`. | **Always** — the main entry point. |
+| `@snapgridjs/core` | Framework-agnostic layout math (move/resize/compaction, geometry, drag-session). | Comes in automatically. Depend on it directly only to drive layout without dnd-kit or Svelte. |
+| `@snapgridjs/dnd` | Framework-agnostic dnd-kit engine (the drag/resize/cross-grid brain). Pulls in `@snapgridjs/core`. | Comes in automatically. Depend on it directly only to build a binding for another framework. |
+| `@snapgridjs/extras` | Optional packers: `masonry`, `gravity`, `shelf`, `wrap`, and the fast `O(n log n)` compactors. | Only if you use those packing styles. |
+
+## Install
+
+<Tabs items={["pnpm", "npm", "yarn", "bun"]}>
+<Tabs.Tab>
+
+```sh
+pnpm add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+npm install @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+yarn add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+bun add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom
+```
+
+</Tabs.Tab>
+</Tabs>
+
+## Peer dependencies
+
+snapgrid drives the interaction through dnd-kit, declared as **peer dependencies** so you control the
+version and there's only ever one copy:
+
+- `@dnd-kit/svelte` — the Svelte 5 bindings (`DragDropProvider`, `createDraggable`, `DragOverlay`).
+- `@dnd-kit/dom` — the DOM sensors and feedback plugins.
+- `svelte` **5.29 or newer** (runes).
+
+<Callout type="info">
+  Because dnd-kit is a peer dependency, snapgrid doesn't bundle its own copy — it composes the one
+  you install. Your grid and any other dnd-kit draggables in your app share a single
+  `DragDropProvider` context, which is exactly what makes cross-grid and external drops work.
+</Callout>
+
+## One import source (optional)
+
+`@snapgridjs/svelte` re-exports the dnd-kit primitives you'll commonly need for a grid —
+`DragDropProvider`, `DragOverlay`, `createDraggable`, `createDroppable`, `Feedback`, `PointerSensor`,
+`KeyboardSensor` — so you can import everything from one place:
+
+```svelte
+<script lang="ts">
+  // Either of these works; the re-export just saves an import line.
+  import { DragDropProvider, createDraggable } from "@snapgridjs/svelte";
+  import { DragDropProvider, createDraggable } from "@dnd-kit/svelte";
+</script>
+```
+
+<Callout type="default">
+  Importing the dnd-kit pieces from `@snapgridjs/svelte` guarantees they resolve the *same* dnd-kit
+  instance as the grid — a second copy of `@dnd-kit/svelte` is a separate provider context, and its
+  drags never reach the grid.
+</Callout>
+
+## No stylesheet to import
+
+snapgrid ships **zero CSS**. Factories return positioning styles as inline strings plus a few stable
+class names and data attributes for you to target. There is no `import "@snapgridjs/svelte/styles.css"`
+step. See [Styling](/svelte/docs/guides/styling) for what's exposed.
+
+## Framework notes
+
+- **Vite / SvelteKit** — nothing special; it just works.
+- **SvelteKit (SSR)** — fully supported. `createContainerWidth` is SSR-safe: it renders at an initial
+  width on the server, then measures on the client via its attachment (attachments only run in the
+  browser). The reflow FLIP and the drag sensors are client-only too, so a grid renders on the server
+  and comes fully alive after hydration. See [Server-side rendering](/svelte/docs/guides/ssr).
+- **TypeScript** — snapgrid is written in TypeScript and ships its own types. No `@types/*` needed.

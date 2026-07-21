@@ -1,7 +1,7 @@
 import { type Page, expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/examples/");
+  await page.goto("/react/examples/");
   await page.waitForSelector(".dg-cell");
   await page.waitForTimeout(400);
 });

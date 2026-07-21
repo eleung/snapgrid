@@ -1,5 +1,6 @@
 "use client";
 
+import { type Framework, useFramework } from "@/components/FrameworkProvider";
 import {
   Boxes,
   Check,
@@ -16,14 +17,38 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { HeroGrid } from "./demos";
+import { SvelteHeroDemo } from "./demos-svelte";
 // Build-time generated (see scripts/measure-bundle.mjs + highlight-snippets.mjs).
-import { BUNDLE_SIZE } from "./generated/bundle-size";
-import { HERO_HEADLESS_HTML, RGL_DIFF_HTML } from "./generated/hero-code";
+import { BUNDLE_SIZE, BUNDLE_SIZE_SVELTE } from "./generated/bundle-size";
+import {
+  HERO_HEADLESS_HTML,
+  HERO_HEADLESS_HTML_SVELTE,
+  RGL_DIFF_HTML,
+} from "./generated/hero-code";
 
-const INSTALL = "pnpm add @snapgridjs/react @dnd-kit/react @dnd-kit/dom";
+// Measured bundle size per framework (brotli, tree-shaken GridLayout, runtime external).
+// Widened from the `as const` generated literals so both frameworks' figures fit.
+type BundleSize = { total: number; snapgrid: number; dndkit: number };
+const BUNDLE: Record<Framework, BundleSize> = {
+  react: BUNDLE_SIZE,
+  svelte: BUNDLE_SIZE_SVELTE,
+};
+
+// The install command per framework binding. Both share @dnd-kit/dom (the DOM engine);
+// the binding + its dnd-kit adapter differ.
+const INSTALL: Record<Framework, string> = {
+  react: "pnpm add @snapgridjs/react @dnd-kit/react @dnd-kit/dom",
+  svelte: "pnpm add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom",
+};
+
+// The "30-second example" source per framework (pre-highlighted at build time).
+const HERO_CODE: Record<Framework, string> = {
+  react: HERO_HEADLESS_HTML,
+  svelte: HERO_HEADLESS_HTML_SVELTE,
+};
 
 /** The hero install command — click anywhere on it to copy — with a size breakdown. */
-function InstallCommand() {
+function InstallCommand({ command, size }: { command: string; size: BundleSize }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="dg-install-wrap">
@@ -32,7 +57,7 @@ function InstallCommand() {
         className="dg-install"
         aria-label={copied ? "Copied install command" : "Copy install command"}
         onClick={() => {
-          navigator.clipboard?.writeText(INSTALL).then(
+          navigator.clipboard?.writeText(command).then(
             () => {
               setCopied(true);
               setTimeout(() => setCopied(false), 1600);
@@ -41,15 +66,15 @@ function InstallCommand() {
           );
         }}
       >
-        <code className="dg-install__cmd">{INSTALL}</code>
+        <code className="dg-install__cmd">{command}</code>
         <span className="dg-install__copy" aria-hidden="true">
           {copied ? <Check size={15} /> : <Copy size={15} />}
         </span>
       </button>
       <div className="dg-install__size">
-        <span className="dg-install__size-total">≈ {BUNDLE_SIZE.total}&nbsp;kB brotli</span>
+        <span className="dg-install__size-total">≈ {size.total}&nbsp;kB brotli</span>
         <span className="dg-install__size-parts">
-          snapgrid&nbsp;~{BUNDLE_SIZE.snapgrid}&nbsp;kB + dnd-kit&nbsp;~{BUNDLE_SIZE.dndkit}&nbsp;kB
+          snapgrid&nbsp;~{size.snapgrid}&nbsp;kB + dnd-kit&nbsp;~{size.dndkit}&nbsp;kB
         </span>
       </div>
     </div>
@@ -57,7 +82,7 @@ function InstallCommand() {
 }
 
 /** The "30-second example" card — the headless API (the turnkey layer lives in the RGL comparison). */
-function CodeExample() {
+function CodeExample({ html }: { html: string }) {
   return (
     <div className="dg-codecard">
       <div className="dg-codecard__bar">
@@ -69,14 +94,15 @@ function CodeExample() {
       <div
         className="dg-codecard__code"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: build-time Shiki output, fully trusted
-        dangerouslySetInnerHTML={{ __html: HERO_HEADLESS_HTML }}
+        dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>
   );
 }
 
 /** RGL v2 → snapgrid as a unified diff — the component markup is near-identical (styling and any
- * hook usage are the real migration work; see the migration guide). */
+ * hook usage are the real migration work; see the migration guide). React-only: react-grid-layout
+ * is a React library, so a Svelte user has nothing to migrate from. */
 function CompareCode() {
   return (
     <div className="dg-codecard dg-diffcard">
@@ -102,64 +128,77 @@ interface Feature {
   body: string;
 }
 
-const FEATURES: Feature[] = [
-  {
-    icon: Component,
-    href: "/docs/guides/headless",
-    title: "Headless-first, dnd-kit-native",
-    body: "Hooks you wire to your own markup, under your dnd-kit provider — tiles declare a group, like useSortable. <GridLayout> is the turnkey shell on top.",
-  },
-  {
-    icon: SlidersHorizontal,
-    href: "/docs/concepts",
-    title: "Controlled & predictable",
-    body: "You own the layout array. Every drag, resize, and cross-grid move comes back through onLayoutChange. No hidden internal state.",
-  },
-  {
-    icon: Boxes,
-    href: "/docs/guides/compaction",
-    title: "Pluggable packing",
-    body: "Vertical, horizontal, or free. Plus masonry, gravity, and shelf packers, or bring your own Compactor.",
-  },
-  {
-    icon: Puzzle,
-    href: "/docs/guides/dnd-kit-interop",
-    title: "Cross-grid & dnd-kit interop",
-    body: "Drag tiles between grids, or between a grid and a dnd-kit sortable list or board — cards land at a real cell, tiles drop back out, all under one provider.",
-  },
-  {
-    icon: Layers,
-    href: "/docs/guides/nesting",
-    title: "Nested grids",
-    body: "Drop a grid inside a tile of another and drag tiles between levels — or give a sub-grid its own provider to keep it contained.",
-  },
-  {
-    icon: MonitorSmartphone,
-    href: "/docs/guides/responsive",
-    title: "Responsive",
-    body: "Per-breakpoint layouts via the useResponsiveLayout hook, or the turnkey <ResponsiveGridLayout>.",
-  },
-  {
-    icon: Scaling,
-    href: "/docs/guides/resizing",
-    title: "Resizable, with limits",
-    body: "Any edge or corner, with per-item minW/maxW/minH/maxH honored and static tiles that never move.",
-  },
-  {
-    icon: Keyboard,
-    href: "/docs/guides/dragging#keyboard-accessibility",
-    title: "Keyboard accessible",
-    body: "Every tile is keyboard-draggable: focus, pick up with Enter, move with the arrow keys, drop or cancel with Escape. No extra wiring.",
-  },
-];
+// Features are shared across frameworks; only the doc links (prefix) and the headless
+// wording ("hooks" vs "factories", useResponsiveLayout vs createResponsiveLayout) differ.
+function features(fw: Framework): Feature[] {
+  const composable = fw === "svelte" ? "Factories" : "Hooks";
+  const responsiveApi =
+    fw === "svelte" ? "createResponsiveLayout factory" : "useResponsiveLayout hook";
+  return [
+    {
+      icon: Component,
+      href: `/${fw}/docs/guides/headless`,
+      title: "Headless-first, dnd-kit-native",
+      body: `${composable} you wire to your own markup, under your dnd-kit provider — tiles declare a group, like a sortable. <GridLayout> is the turnkey shell on top.`,
+    },
+    {
+      icon: SlidersHorizontal,
+      href: `/${fw}/docs/concepts`,
+      title: "Controlled & predictable",
+      body: "You own the layout array. Every drag, resize, and cross-grid move comes back through onLayoutChange. No hidden internal state.",
+    },
+    {
+      icon: Boxes,
+      href: `/${fw}/docs/guides/compaction`,
+      title: "Pluggable packing",
+      body: "Vertical, horizontal, or free. Plus masonry, gravity, and shelf packers, or bring your own Compactor.",
+    },
+    {
+      icon: Puzzle,
+      href: `/${fw}/docs/guides/dnd-kit-interop`,
+      title: "Cross-grid & dnd-kit interop",
+      body: "Drag tiles between grids, or between a grid and a dnd-kit sortable list or board — cards land at a real cell, tiles drop back out, all under one provider.",
+    },
+    {
+      icon: Layers,
+      href: `/${fw}/docs/guides/nesting`,
+      title: "Nested grids",
+      body: "Drop a grid inside a tile of another and drag tiles between levels — or give a sub-grid its own provider to keep it contained.",
+    },
+    {
+      icon: MonitorSmartphone,
+      href: `/${fw}/docs/guides/responsive`,
+      title: "Responsive",
+      body: `Per-breakpoint layouts via the ${responsiveApi}, or the turnkey <ResponsiveGridLayout>.`,
+    },
+    {
+      icon: Scaling,
+      href: `/${fw}/docs/guides/resizing`,
+      title: "Resizable, with limits",
+      body: "Any edge or corner, with per-item minW/maxW/minH/maxH honored and static tiles that never move.",
+    },
+    {
+      icon: Keyboard,
+      href: `/${fw}/docs/guides/dragging#keyboard-accessibility`,
+      title: "Keyboard accessible",
+      body: "Every tile is keyboard-draggable: focus, pick up with Enter, move with the arrow keys, drop or cancel with Escape. No extra wiring.",
+    },
+  ];
+}
 
 export function Home() {
+  // The active framework follows the navbar switcher (persisted); the home is
+  // framework-agnostic, so it swaps the install line, hero grid, example, and links
+  // to match — no page hop.
+  const { framework } = useFramework();
+  const isReact = framework === "react";
+
   return (
     <div className="dg-home">
       <Link className="dg-roadmap-teaser" href="/roadmap">
         <span className="dg-roadmap-teaser__tag">Roadmap</span>
         <span className="dg-roadmap-teaser__text">
-          Next: <strong>Vue, Svelte, Solid &amp; vanilla-TS</strong> bindings on snapgrid&apos;s
+          Next: <strong>Vue, Solid &amp; vanilla-TS</strong> bindings on snapgrid&apos;s
           framework-agnostic core.
         </span>
         <span className="dg-roadmap-teaser__more">See the roadmap →</span>
@@ -168,31 +207,37 @@ export function Home() {
       <section className="dg-hero">
         <div className="dg-home__lead">
           <div>
-            <p className="dg-hero__eyebrow">a dnd-kit grid · react-grid-layout alternative</p>
+            <p className="dg-hero__eyebrow">
+              {isReact
+                ? "a dnd-kit grid · react-grid-layout alternative"
+                : "a dnd-kit grid layout for Svelte 5"}
+            </p>
             <h1 className="dg-hero__title">Grids that drag, resize, and repack.</h1>
             <p className="dg-hero__sub">
               A headless-first grid layout built on <strong>dnd-kit</strong> — draggable, resizable,
-              repacking tiles that compose with the sortables and droppables you already have. A
-              component layer makes react-grid-layout users feel right at home too.
+              repacking tiles that compose with the sortables and droppables you already have.{" "}
+              {isReact
+                ? "A component layer makes react-grid-layout users feel right at home too."
+                : "A turnkey component layer sits on top for the common case."}
             </p>
             <div className="dg-hero__cta">
-              <Link className="dg-cta dg-cta--primary" href="/docs/getting-started">
+              <Link className="dg-cta dg-cta--primary" href={`/${framework}/docs/getting-started`}>
                 Get started →
               </Link>
-              <Link className="dg-cta dg-cta--ghost" href="/examples">
+              <Link className="dg-cta dg-cta--ghost" href={`/${framework}/examples`}>
                 See examples
               </Link>
             </div>
           </div>
-          <HeroGrid />
+          {isReact ? <HeroGrid /> : <SvelteHeroDemo />}
         </div>
         {/* Full-width row under both columns so the install command fits on one line. */}
-        <InstallCommand />
+        <InstallCommand command={INSTALL[framework]} size={BUNDLE[framework]} />
       </section>
 
       <h2>Why snapgrid</h2>
       <div className="dg-features">
-        {FEATURES.map(({ icon: Icon, href, title, body }) => (
+        {features(framework).map(({ icon: Icon, href, title, body }) => (
           <Link className="dg-feature" key={title} href={href}>
             <span className="dg-feature__icon">
               <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
@@ -205,51 +250,56 @@ export function Home() {
       </div>
 
       <h2>A 30-second example</h2>
-      <CodeExample />
+      <CodeExample html={HERO_CODE[framework]} />
 
       <div className="dg-hero__cta" style={{ marginTop: "1.5rem" }}>
-        <Link className="dg-cta dg-cta--primary" href="/docs/getting-started">
+        <Link className="dg-cta dg-cta--primary" href={`/${framework}/docs/getting-started`}>
           Read the guide →
         </Link>
-        <Link className="dg-cta dg-cta--ghost" href="/docs/api/overview">
+        <Link className="dg-cta dg-cta--ghost" href={`/${framework}/docs/api/overview`}>
           API reference
         </Link>
       </div>
 
-      <section className="dg-compare">
-        <h2>Coming from react-grid-layout?</h2>
-        <p>
-          The{" "}
-          <strong>
-            <code>{"<GridLayout>"}</code> component layer
-          </strong>{" "}
-          mirrors react-grid-layout v2&apos;s model — same controlled <code>layout</code>,{" "}
-          <code>onLayoutChange</code>, and config objects — so RGL users adopt it quickly, then drop
-          any grid down to the headless hooks at their own pace. Same engine, no second migration.
-        </p>
-        <CompareCode />
-        <p className="dg-compare__grouplabel">Migration path</p>
-        <ul className="dg-compare__list">
-          <li>
-            <strong>Not a literal drop-in.</strong> Same API shape, but you restyle — snapgrid ships
-            no CSS and uses its own class names.
-          </li>
-          <li>
-            <strong>v2 hooks aren&apos;t mirrored.</strong> <code>useGridLayout</code> /{" "}
-            <code>useResponsiveLayout</code> code moves to the{" "}
-            <Link href="/docs/guides/headless">headless API</Link>.
-          </li>
-          <li>
-            <strong>On v1?</strong> No one-import shim — its <code>WidthProvider</code> / flat-prop
-            API is dated enough that it&apos;s worth modernising. The{" "}
-            <Link href="/docs/guides/migrating-from-rgl">migration guide</Link> maps it prop by
-            prop.
-          </li>
-        </ul>
-        <Link className="dg-cta dg-cta--ghost" href="/docs/guides/migrating-from-rgl">
-          Full comparison &amp; migration guide →
-        </Link>
-      </section>
+      {/* react-grid-layout is a React library, so the migration comparison only makes
+          sense for React — a Svelte user has nothing to migrate from. */}
+      {isReact ? (
+        <section className="dg-compare">
+          <h2>Coming from react-grid-layout?</h2>
+          <p>
+            The{" "}
+            <strong>
+              <code>{"<GridLayout>"}</code> component layer
+            </strong>{" "}
+            mirrors react-grid-layout v2&apos;s model — same controlled <code>layout</code>,{" "}
+            <code>onLayoutChange</code>, and config objects — so RGL users adopt it quickly, then
+            drop any grid down to the headless hooks at their own pace. Same engine, no second
+            migration.
+          </p>
+          <CompareCode />
+          <p className="dg-compare__grouplabel">Migration path</p>
+          <ul className="dg-compare__list">
+            <li>
+              <strong>Not a literal drop-in.</strong> Same API shape, but you restyle — snapgrid
+              ships no CSS and uses its own class names.
+            </li>
+            <li>
+              <strong>v2 hooks aren&apos;t mirrored.</strong> <code>useGridLayout</code> /{" "}
+              <code>useResponsiveLayout</code> code moves to the{" "}
+              <Link href="/react/docs/guides/headless">headless API</Link>.
+            </li>
+            <li>
+              <strong>On v1?</strong> No one-import shim — its <code>WidthProvider</code> /
+              flat-prop API is dated enough that it&apos;s worth modernising. The{" "}
+              <Link href="/react/docs/guides/migrating-from-rgl">migration guide</Link> maps it prop
+              by prop.
+            </li>
+          </ul>
+          <Link className="dg-cta dg-cta--ghost" href="/react/docs/guides/migrating-from-rgl">
+            Full comparison &amp; migration guide →
+          </Link>
+        </section>
+      ) : null}
     </div>
   );
 }

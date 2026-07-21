@@ -1,0 +1,267 @@
+---
+title: Migrating from react-grid-layout
+description: Migrating from react-grid-layout to snapgrid. v1's WidthProvider + flat props map prop-by-prop; v2 already shares the config-object API, but you still re-author styling and move any hook usage to snapgrid's headless API.
+---
+
+import { Callout } from "nextra/components";
+import { BUNDLE_SIZE } from "@/components/generated/bundle-size";
+
+# Migrating from react-grid-layout
+
+snapgrid deliberately keeps react-grid-layout's mental model: a controlled array of
+`{ i, x, y, w, h }` items, a `cols` grid, `rowHeight`, and `onLayoutChange`.
+
+<Callout type="info">
+  **On react-grid-layout v2?** The component API is genuinely close: v2 already uses the same
+  composable `gridConfig` / `dragConfig` / `resizeConfig` / `compactor` objects and a `useContainerWidth`
+  hook, so your `<GridLayout>` *markup* barely changes — see the side-by-side diff on the
+  [home page](/). But it's **not a literal drop-in**. Two things still need real work, both covered
+  below: you **re-author styling** (snapgrid ships no CSS and uses its own class names), and any code
+  built on v2's **hooks** (`useGridLayout` / `useResponsiveLayout`) moves to snapgrid's
+  [headless API](/react/docs/guides/headless) — there's no hook-for-hook swap. Skip to
+  [Coming from v2](#coming-from-v2). The rest of the guide is the **v1** prop-mapping.
+</Callout>
+
+This guide assumes you're coming from `react-grid-layout` **v1** (RGL) and know its API. Most of the
+migration is moving a handful of top-level props into config objects, and deleting two CSS imports.
+
+## What you keep, what you gain
+
+snapgrid is a capability superset of react-grid-layout's core, on a different, more capable engine:
+
+| | snapgrid | react-grid-layout |
+| --- | --- | --- |
+| Layout model (`{ i, x, y, w, h }`, controlled) | ✅ | ✅ |
+| Responsive breakpoints | ✅ | ✅ |
+| Resize handles · per-item min/max · static tiles | ✅ | ✅ |
+| **Drag tiles _between_ grids** | ✅ built-in (`SnapGridGroup`) | ❌ |
+| **Nested grids** | ✅ cross-level dragging | ⚠️ manual |
+| **Keyboard dragging / a11y** | ✅ Enter · arrows · Esc | ❌ |
+| **Headless** (bring your own markup) | ✅ provider + hooks | ❌ renders its own DOM |
+| Pluggable packing | ✅ vertical / horizontal / none **+ masonry / gravity / shelf + custom** | vertical / horizontal / none |
+| Accept external draggables | ✅ `dropConfig` / `onDrop` | ⚠️ `droppingItem` |
+| Styling | unstyled: **ships no CSS** | requires `react-grid-layout.css` + `react-resizable.css` |
+| Interaction engine | [dnd-kit](https://dndkit.com/): its latest framework-agnostic core (pointer · touch · keyboard) | react-draggable + react-resizable |
+| TypeScript types | ✅ bundled | via `@types/react-grid-layout` |
+
+<Callout type="default">
+  react-grid-layout is mature, widely deployed, and battle-tested. This table is about capability
+  differences, not quality. snapgrid is new; if you need a proven incumbent today, RGL is a great
+  choice.
+</Callout>
+
+### Bundle size
+
+snapgrid itself is \~{BUNDLE_SIZE.snapgrid} kB brotli, but it's built on
+[dnd-kit](https://dndkit.com/) (\~{BUNDLE_SIZE.dndkit} kB), so a fresh install is
+**\~{BUNDLE_SIZE.total} kB brotli**, roughly **2.5× react-grid-layout v2's \~15 kB** (minified, React
+excluded). That weight _is_ dnd-kit, and it's a deliberate trade:
+
+- **dnd-kit is the de-facto standard for drag-and-drop in React.** Its accessible, multi-sensor
+  engine is what gives snapgrid keyboard dragging, touch support, and cross-grid out of the box
+  (things RGL's older react-draggable / react-resizable stack doesn't).
+- **If your app already uses dnd-kit, snapgrid adds only \~{BUNDLE_SIZE.snapgrid} kB.**
+- snapgrid tracks dnd-kit's **latest framework-agnostic line** (`@dnd-kit/react`), the line dnd-kit
+  recommends over the legacy `@dnd-kit/core`.
+
+## Coming from v2 [#coming-from-v2]
+
+react-grid-layout v2 and snapgrid share the same component model — a controlled `layout`,
+`onLayoutChange`, and the composable `gridConfig` / `dragConfig` / `resizeConfig` / `compactor`
+objects — so `<GridLayout>` and `<ResponsiveGridLayout>` map almost prop-for-prop (the
+[prop tables](#2-map-the-props) below double as your v2 reference, and the
+[home-page diff](/) shows how little the markup moves). Two things still take real work:
+
+### Re-author your styling
+
+snapgrid ships **no CSS**. v2's stylesheet and class names (`react-grid-item`,
+`react-grid-placeholder`, the resize-handle classes) don't carry over: delete the stylesheet import
+and restyle against snapgrid's own hooks — `.snapgrid-item`, `.snapgrid-placeholder`,
+`.snapgrid-resize-handle--{axis}` (or your own classes in the headless layer). See
+[Styling](/react/docs/guides/styling). For most apps this is the bulk of the migration.
+
+### Hooks → headless usage
+
+snapgrid's hooks are its **own headless API**, not a re-implementation of v2's. Some names overlap
+(`useContainerWidth`, `useResponsiveLayout`) but the contracts differ, and snapgrid's grid *host* is
+**`useGridContainer`**, not v2's `useGridLayout`. So there's **no hook-for-hook swap**: if you built
+directly on v2's hooks, migrate that grid to snapgrid's [headless usage](/react/docs/guides/headless)
+outright (provider → `useGridContainer` → `useGridItem`; a dragged tile floats itself, so there's no
+overlay to wire). If you only used the `<GridLayout>` / `<ResponsiveGridLayout>` components, you can
+skip this.
+
+The [behaviours that differ](#4-the-three-behaviours-that-differ) below — compaction runs on drag (not
+on every render) and the grid is always controlled — apply to v2 as well.
+
+## 1. Swap the imports
+
+```tsx
+// Before — react-grid-layout
+import GridLayout, { WidthProvider } from "react-grid-layout";
+import "react-grid-layout/css/styles.css";
+import "react-resizable/css/styles.css";
+const Grid = WidthProvider(GridLayout);
+
+// After — snapgrid (ships no CSS; measure width with a hook)
+import { GridLayout, useContainerWidth, type Layout } from "@snapgridjs/react";
+```
+
+Install the package and its dnd-kit peers:
+
+```sh
+pnpm add @snapgridjs/react @dnd-kit/react @dnd-kit/dom
+```
+
+<Callout type="warning">
+  snapgrid ships **no stylesheet**. Delete the `react-grid-layout/css/styles.css` and
+  `react-resizable/css/styles.css` imports and style `.snapgrid-item`, the resize handles, and the
+  placeholder yourself. See [Styling](/react/docs/guides/styling).
+</Callout>
+
+## 2. Map the props
+
+Most RGL props that lived at the top level move into `gridConfig`, `dragConfig`, or `resizeConfig`.
+
+### `<GridLayout>`
+
+| react-grid-layout | snapgrid | Notes |
+| --- | --- | --- |
+| `width` / `WidthProvider` | `width` | From [`useContainerWidth()`](/react/docs/api/hooks#usecontainerwidth). |
+| `layout` | `layout` | **Same item shape** (`i, x, y, w, h, minW, maxW, minH, maxH, static`). |
+| `onLayoutChange` | `onLayoutChange` | Same `(layout) => void`. |
+| `cols` | `gridConfig.cols` | Default `12`. |
+| `rowHeight` | `gridConfig.rowHeight` | Default `150`. |
+| `margin` | `gridConfig.margin` | `[x, y]`, default `[10, 10]`. |
+| `containerPadding` | `gridConfig.containerPadding` | Default falls back to `margin`. |
+| `maxRows` | `gridConfig.maxRows` | |
+| `compactType` | `compactor` | `verticalCompactor` / `horizontalCompactor` / `noCompactor`. See below. |
+| `isDraggable` | `isDraggable` | Or `dragConfig.enabled`. |
+| `isResizable` | `isResizable` | |
+| `draggableHandle` | `dragConfig.handle` | CSS selector. |
+| `draggableCancel` | `dragConfig.cancel` | CSS selector. |
+| `isBounded` | `dragConfig.bounded` | |
+| `resizeHandles` | `resizeConfig.handles` | e.g. `["se", "e", "s"]`. Default `["se"]`. |
+| `onDragStart` · `onDrag` · `onDragStop` | same names | |
+| `onResizeStart` · `onResize` · `onResizeStop` | same names | |
+| `isDroppable` · `droppingItem` · `onDrop` | `dropConfig` + `onDrop` | See [External drop](/react/docs/guides/external-drop). |
+| `autoSize` | `autoSize` | |
+| `useCSSTransforms` · `transformScale` · `measureBeforeMount` | — | Not needed; snapgrid positions tiles with `left/top`, animates reflow on the compositor, and measures with `ResizeObserver`. |
+
+### `<ResponsiveGridLayout>`
+
+These stay as top-level props, same as RGL:
+
+| react-grid-layout | snapgrid |
+| --- | --- |
+| `breakpoints` | `breakpoints` |
+| `cols` (per breakpoint) | `cols` |
+| `layouts` | `layouts` |
+| `onBreakpointChange(bp, cols)` | `onBreakpointChange(breakpoint, cols)` |
+| `onLayoutChange(layout, layouts)` | `onLayoutChange(layout, layouts)` |
+| `rowHeight` · `margin` · `containerPadding` | same |
+
+The default breakpoints and columns match RGL's: `{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }`
+and `{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }`.
+
+### `compactType` → `compactor`
+
+| RGL `compactType` | snapgrid `compactor` |
+| --- | --- |
+| `"vertical"` (default) | `verticalCompactor` (default) |
+| `"horizontal"` | `horizontalCompactor` |
+| `null` | `noCompactor` |
+
+`@snapgridjs/extras` adds `masonryCompactor`, `gravityCompactor`, and `shelfCompactor`, or you can
+write your own. See [Compaction & packing](/react/docs/guides/compaction).
+
+## 3. Side-by-side
+
+```tsx
+// Before — react-grid-layout
+const Grid = WidthProvider(GridLayout);
+
+function Board() {
+  const [layout, setLayout] = useState([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+  ]);
+  return (
+    <Grid
+      layout={layout}
+      cols={12}
+      rowHeight={30}
+      compactType="vertical"
+      draggableHandle=".drag-handle"
+      onLayoutChange={setLayout}
+    >
+      <div key="a"><span className="drag-handle" /> A</div>
+      <div key="b"><span className="drag-handle" /> B</div>
+    </Grid>
+  );
+}
+```
+
+```tsx
+// After — snapgrid
+function Board() {
+  const { width, containerRef } = useContainerWidth();
+  const [layout, setLayout] = useState<Layout>([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+  ]);
+  return (
+    <div ref={containerRef}>
+      <GridLayout
+        layout={layout}
+        width={width}
+        onLayoutChange={setLayout}
+        gridConfig={{ cols: 12, rowHeight: 30 }}
+        dragConfig={{ handle: ".drag-handle" }}
+      >
+        <div key="a" className="tile"><span className="drag-handle" /> A</div>
+        <div key="b" className="tile"><span className="drag-handle" /> B</div>
+      </GridLayout>
+    </div>
+  );
+}
+```
+
+(`compactor={verticalCompactor}` is the default, so it's omitted above.)
+
+## 4. The three behaviours that differ
+
+These are the only things likely to surprise you.
+
+### Compaction runs during a drag, not on render
+
+RGL re-compacts the layout on every render. **snapgrid renders your `layout` verbatim** and only
+re-packs during an active drag. So your *initial* layout must already be its resting state. If you
+relied on RGL to tidy a hand-written layout on mount, pre-compact it once:
+
+```tsx
+import { verticalCompactor } from "@snapgridjs/react";
+
+const initial = verticalCompactor.compact(rawLayout, 12); // cols
+const [layout, setLayout] = useState(initial);
+```
+
+<Callout type="warning">
+  A layout with gaps or overlaps will **stay** that way until the user drags something. Feed
+  snapgrid a clean, non-overlapping layout (or pre-compact as above).
+</Callout>
+
+### Always controlled
+
+RGL can run uncontrolled, holding layout state internally if you don't pass `layout`. snapgrid is
+**always controlled**: keep `layout` in state and apply every `onLayoutChange`. There is no
+uncontrolled mode.
+
+### No `preventCollision` / `allowOverlap`
+
+Placement is governed by the `compactor`, not collision flags. For free-form placement where tiles
+can sit anywhere (RGL's `allowOverlap` / `compactType={null}`), use `noCompactor`.
+
+## Anything missing?
+
+If you hit an RGL feature without a clear equivalent here,
+[open an issue](https://github.com/eleung/snapgrid/issues). Migration gaps are high-priority.

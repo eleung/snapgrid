@@ -1,0 +1,127 @@
+---
+title: Compaction & packing
+description: Built-in vertical/horizontal/none compaction, the masonry/gravity/shelf extras, and writing a custom Compactor.
+---
+
+import { Callout } from "nextra/components";
+import { CompactorDemo } from "@/components/demos-svelte";
+
+# Compaction & packing
+
+After every move, resize, insert, or remove, the layout is re-packed by a **`Compactor`**. Pass one
+as the `compactor` option to `createGridContainer` (or, identically, as a prop on
+[`<GridLayout>`](/svelte/docs/guides/component-layer)); swap it any time. It's just a value.
+
+```ts
+import { createGridContainer, verticalCompactor, horizontalCompactor, noCompactor } from "@snapgridjs/svelte";
+
+const container = createGridContainer(() => ({ compactor: horizontalCompactor, /* … */ }));
+```
+
+<CompactorDemo />
+
+## Built-in compactors
+
+Exported from `@snapgridjs/svelte` (re-exported from the core engine):
+
+| Compactor | Behaviour |
+| --- | --- |
+| `verticalCompactor` | Items fall upward to fill gaps. The default, matches react-grid-layout. |
+| `horizontalCompactor` | Items pack to the left. |
+| `noCompactor` | Free positioning: items stay where dropped and may overlap. |
+
+These honor `static` items and per-item collision rules.
+
+## Extra packers
+
+`@snapgridjs/extras` adds variable-height packing styles. They repack the **movable** items by reading
+order — the dropped cell influences order while the algorithm decides final positions — and reserve
+any `static` tiles in place, packing the rest around them.
+
+```ts
+import { masonryCompactor, gravityCompactor, shelfCompactor } from "@snapgridjs/extras";
+```
+
+| Compactor | Behaviour |
+| --- | --- |
+| `masonryCompactor` | Minimizes height by dropping each item into its shortest column span. |
+| `gravityCompactor` | Top-left gravity: each item falls into the earliest free hole (row-major). |
+| `shelfCompactor` | Packs left-to-right into rows, wrapping to a new shelf when full. |
+| `wrapCompactor` | react-grid-layout's wrap packer — fills a row, then wraps to the next. |
+
+<Callout type="warning">
+  The extra packers honor `static` tiles (reserved in place, others pack around them) but do **not**
+  enforce `maxRows` — the `Compactor.compact(layout, cols)` contract only receives the column count.
+  Use a built-in compactor when you need a hard row cap.
+</Callout>
+
+## Fast compactors
+
+`@snapgridjs/extras` also re-exports react-grid-layout's **O(n&nbsp;log&nbsp;n)** vertical and
+horizontal compactors: drop-in replacements for the built-in cascades that produce the **same
+packing** on clean (non-overlapping) layouts but pack far faster at scale.
+
+```ts
+import { fastVerticalCompactor, fastHorizontalCompactor } from "@snapgridjs/extras";
+import { createGridContainer } from "@snapgridjs/svelte";
+
+const container = createGridContainer(() => ({ compactor: fastVerticalCompactor, /* … */ }));
+```
+
+They only help with **bulk** compaction: building a large layout from scratch, a responsive
+reflow, or compacting imported data. Dragging is already cheap (each move re-packs an already-tidy
+layout), so the fast variants don't change how a drag feels; reach for them when you pack hundreds
+to thousands of items at once.
+
+Each also has an **`…OverlapCompactor`** variant (`fastVerticalOverlapCompactor`,
+`fastHorizontalOverlapCompactor`, `wrapOverlapCompactor`) that permits overlapping items rather than
+cascading them apart.
+
+react-grid-layout's published benchmarks, the standard `O(n²)` cascade vs. the fast `O(n log n)`
+"rising tide":
+
+| Items | Standard vertical | Fast vertical | Speedup |
+| --- | --- | --- | --- |
+| 50 | 112 µs | 19 µs | 6× |
+| 100 | 203 µs | 36 µs | 6× |
+| 200 | 821 µs | 51 µs | 16× |
+| 500 | 5.7 ms | 129 µs | 45× |
+
+| Items | Standard horizontal | Fast horizontal | Speedup |
+| --- | --- | --- | --- |
+| 50 | 164 µs | 12 µs | 14× |
+| 100 | 477 µs | 25 µs | 19× |
+| 200 | 1.1 ms | 42 µs | 26× |
+
+<Callout type="info">
+  The fast compactors are the “rising tide” algorithm by [@morris](https://github.com/morris)
+  ([react-grid-layout #2152](https://github.com/react-grid-layout/react-grid-layout/pull/2152)).
+  Keep the built-in `verticalCompactor` / `horizontalCompactor` as your default. They're the
+  exact-parity path that honors `static` and `maxRows`; the fast variants are an opt-in for very
+  large grids.
+</Callout>
+
+## Writing a custom compactor
+
+A `Compactor` is a small object. Implement `compact(layout, cols)` and return the packed layout:
+
+```ts
+import type { Compactor, Layout } from "@snapgridjs/svelte";
+
+const diagonalCompactor: Compactor = {
+  type: null, // null = free-positioning from the engine's perspective
+  allowOverlap: false,
+  compact(layout: Layout, cols: number): Layout {
+    return [...layout]
+      .sort((a, b) => a.y - b.y || a.x - b.x)
+      .map((item, idx) => ({ ...item, x: Math.min(idx, cols - item.w), y: idx }));
+  },
+};
+```
+
+| Field | Description |
+| --- | --- |
+| `type` | `"vertical" \| "horizontal" \| "wrap" \| null`. Built-in types use the engine's native cascade; `null` means your `compact()` does the work. |
+| `compact(layout, cols)` | Returns the re-packed layout. Called after every interaction. |
+| `allowOverlap` | If `true`, items may overlap and the result of the move is returned as-is. |
+| `preventCollision` | If `true`, moves/resizes into occupied cells are rejected instead of cascading. |
