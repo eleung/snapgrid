@@ -1,0 +1,120 @@
+---
+title: Components
+description: GridLayout, ResponsiveGridLayout, GridItem, GridPlaceholder, SnapGridGroup.
+---
+
+import { Callout } from "nextra/components";
+
+# Components
+
+The component layer — a thin shell in the react-grid-layout style over the [factories](/svelte/docs/api/hooks).
+`<GridLayout>` bundles the dnd-kit `DragDropProvider`, the container, the items, and the placeholder,
+so you never touch dnd-kit directly. For full control of the markup, or to compose with other dnd-kit
+draggables, use the factories. See the [Component layer guide](/svelte/docs/guides/component-layer) for usage;
+this page is the prop reference.
+
+A dragged tile [floats itself](/svelte/docs/guides/headless#floating), so there's no overlay component to
+render at either layer. If you need a *separate* floating preview, dnd-kit's
+[`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/svelte`.
+
+## GridLayout
+
+The turnkey controlled grid. Each item's content comes from an `item` snippet (Svelte has no
+keyed-children analog), keyed by the layout item's `i`. It supplies its own `DragDropProvider`; nest
+several (or wrap them in [`SnapGridGroup`](#snapgridgroup)) and they share one.
+
+```svelte
+<GridLayout
+  {layout}
+  {width}
+  onLayoutChange={(next) => (layout = next)}
+  gridConfig={{ cols: 12, rowHeight: 60, margin: [12, 12] }}
+  resizeConfig={{ handles: ["se", "e", "s"] }}
+>
+  {#snippet item(it)}
+    <div>{it.i}</div>
+  {/snippet}
+</GridLayout>
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `layout` | `Layout` | — | **Required.** Controlled array of items. Never mutated. |
+| `width` | `number` | — | **Required.** Container width in px (from `createContainerWidth`). |
+| `item` | `Snippet<[LayoutItem]>` | — | **Required.** Renders each item's content; receives the item's current (reflowed) entry. |
+| `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. |
+| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/svelte/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/svelte/docs/guides/dragging). |
+| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/svelte/docs/guides/resizing). |
+| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/svelte/docs/guides/external-drop). |
+| `accept` | `(source) => boolean` | — | [dnd-kit interop](/svelte/docs/guides/dnd-kit-interop): also accept a foreign sortable as a drop target. |
+| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/svelte/docs/guides/compaction). |
+| `isDraggable` | `boolean` | `true` | Grid-level drag toggle. |
+| `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
+| `autoSize` | `boolean` | `true` | Grow the container height to fit content. |
+| `id` | `string` | auto | Stable id for the droppable surface. |
+| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/svelte/docs/guides/events). |
+| `onResizeStart` `onResize` `onResizeStop` | `GridEventCallback` | — | Resize lifecycle. |
+| `onDrop` | `(layout, item, event) => void` | — | Fired when an external draggable is dropped in. |
+| `class` | `string` | — | Appended to `snapgrid`. |
+| `style` | `string` | — | Merged after (and able to override) the surface's positioning style. |
+
+## ResponsiveGridLayout
+
+Switches columns and layout by breakpoint as `width` changes. See
+[Responsive layouts](/svelte/docs/guides/responsive).
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `width` | `number` | — | **Required.** Container width in px. |
+| `layouts` | `ResponsiveLayouts` | — | **Required.** Per-breakpoint layout map. |
+| `item` | `Snippet<[LayoutItem]>` | — | **Required.** Renders each item's content (keyed by `i`). |
+| `onLayoutChange` | `(layout, layouts) => void` | — | Active layout **and** the updated map. |
+| `onBreakpointChange` | `(breakpoint, cols) => void` | — | Fired when the active breakpoint changes. |
+| `breakpoints` | `Breakpoints` | `DEFAULT_BREAKPOINTS` | Breakpoint → min width (px). |
+| `cols` | `BreakpointCols` | `DEFAULT_BREAKPOINT_COLS` | Breakpoint → column count. |
+| `rowHeight` | `number` | `150` | Row height in px. |
+| `margin` | `[number, number]` | `[10, 10]` | Gap between items. |
+| `containerPadding` | `[number, number] \| null` | `null` | Surface padding; falls back to `margin`. |
+| `compactor` `dragConfig` `resizeConfig` `isDraggable` `isResizable` `autoSize` `class` `style` | | | As on `GridLayout`. |
+
+## GridItem
+
+A positioned tile with stable classes (`snapgrid-item`, `data-grid-id`, `data-dragging`) and the
+configured resize handles. Svelte's fine-grained reactivity updates only the tiles whose state
+changed, so there's nothing to memoize. Use it inside your own surface, or let `GridLayout` create
+them.
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `id` | `string` | **Required.** Matches the layout item's `i`. |
+| `group` | `string` | **Required.** The owning grid's id (from its `createGridContainer`). |
+| `children` | `Snippet` | Tile content. |
+| `class` | `string` | Appended to `snapgrid-item`. |
+| `style` | `string` | Merged after (and able to override) the positioning style. |
+
+## GridPlaceholder
+
+Renders the landing-cell marker, or nothing when idle. Takes the grid's `group`. Customize with
+`class` / `style`, or use [`createGridPlaceholder`](/svelte/docs/api/hooks#creategridplaceholder) for full
+control.
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `group` | `string` | **Required.** The owning grid's id. |
+| `class` | `string` | Appended to `snapgrid-placeholder`. |
+| `style` | `string` | Merged after (and able to override) the default look. |
+
+## SnapGridGroup
+
+Shares one dnd-kit `DragDropProvider` across several sibling grids so tiles can be dragged between
+them. Takes only a `children` snippet — a thin wrapper over `DragDropProvider` (nesting `GridLayout`s
+already shares a provider, so this is just explicit). See [Cross-grid dragging](/svelte/docs/guides/cross-grid).
+
+<Callout type="warning">
+  Item ids must be unique across all grids that share a provider.
+</Callout>

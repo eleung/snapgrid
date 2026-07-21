@@ -7,7 +7,7 @@
 
 **A [react-grid-layout](https://github.com/react-grid-layout/react-grid-layout) v2 alternative, built on [dnd-kit](https://github.com/clauderic/dnd-kit).**
 
-Draggable, resizable, responsive grid layouts for React, with pluggable packing and dragging tiles _between_ grids.
+Draggable, resizable, responsive grid layouts for **React and Svelte**, with pluggable packing and dragging tiles _between_ grids.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-c2410c.svg)](./LICENSE)
 [![npm](https://img.shields.io/npm/v/@snapgridjs/react.svg)](https://www.npmjs.com/package/@snapgridjs/react)
@@ -16,9 +16,11 @@ Draggable, resizable, responsive grid layouts for React, with pluggable packing 
 [![types](https://img.shields.io/badge/types-included-blue.svg)](#)
 
 [**Documentation**](https://snapgrid.dev) ·
-[Getting Started](https://snapgrid.dev/docs/getting-started) ·
-[Examples](https://snapgrid.dev/examples) ·
-[API](https://snapgrid.dev/docs/api/overview)
+[Getting Started](https://snapgrid.dev/react/docs/getting-started) ·
+[Examples](https://snapgrid.dev/react/examples) ·
+[API](https://snapgrid.dev/react/docs/api/overview)
+
+**Bindings:** [React](https://snapgrid.dev/react/docs/getting-started) · [Svelte](https://snapgrid.dev/svelte/docs/getting-started)
 
 <br />
 
@@ -31,7 +33,7 @@ Draggable, resizable, responsive grid layouts for React, with pluggable packing 
 ## Why snapgrid
 
 - **Controlled & predictable**: you own the layout array; every change comes back through `onLayoutChange`. No hidden state.
-- **Headless-first**: compose `useGridContainer` + hooks under a dnd-kit `DragDropProvider` for full control of your markup — or drop in the turnkey [`<GridLayout>`](https://snapgrid.dev/docs/guides/component-layer) (react-grid-layout-style) when you don't need that. Ships **no CSS**.
+- **Headless-first**: compose `useGridContainer` + hooks under a dnd-kit `DragDropProvider` for full control of your markup — or drop in the turnkey [`<GridLayout>`](https://snapgrid.dev/react/docs/guides/component-layer) (react-grid-layout-style) when you don't need that. Ships **no CSS**.
 - **Pluggable packing**: `vertical` / `horizontal` / `none`, plus `masonry` / `gravity` / `shelf` from `@snapgridjs/extras`, or your own `Compactor`.
 - **Cross-grid dragging**: wrap grids in a `<SnapGridGroup>` and drag tiles between them.
 - **Nested grids**: drop a grid inside a tile of another grid and drag tiles between levels — or isolate a sub-grid by giving it its own provider.
@@ -61,7 +63,7 @@ snapgrid keeps the parts of [react-grid-layout](https://github.com/react-grid-la
 | Interaction engine | [dnd-kit](https://dndkit.com/), its latest framework-agnostic core (pointer · touch · keyboard) | react-draggable + react-resizable |
 | TypeScript types | ✅ bundled | via `@types/react-grid-layout` |
 
-> react-grid-layout is mature, widely deployed, and battle-tested. This table is about capability differences, not quality. snapgrid is new; if you need a proven incumbent today, RGL is a great choice. Coming from it? See the [migration guide](https://snapgrid.dev/docs/guides/migrating-from-rgl).
+> react-grid-layout is mature, widely deployed, and battle-tested. This table is about capability differences, not quality. snapgrid is new; if you need a proven incumbent today, RGL is a great choice. Coming from it? See the [migration guide](https://snapgrid.dev/react/docs/guides/migrating-from-rgl).
 
 ### Bundle size, honestly
 
@@ -76,14 +78,18 @@ snapgrid itself is ~8 kB brotli, but it's built on [dnd-kit](https://dndkit.com/
 ## Install
 
 ```sh
+# React
 pnpm add @snapgridjs/react @dnd-kit/react @dnd-kit/dom
+
+# Svelte 5
+pnpm add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom
 ```
 
 `@snapgridjs/extras` (masonry/gravity/shelf packers) is optional.
 
 ## Quick start
 
-snapgrid is **headless-first**: you compose hooks with a dnd-kit `DragDropProvider` and render your own markup.
+snapgrid is **headless-first**: you compose hooks with a dnd-kit `DragDropProvider` and render your own markup. The example below is React; the **Svelte** API mirrors it with `createGridContainer` / `createGridItem` factories and `{@attach}` — see the [Svelte quick start](https://snapgrid.dev/svelte/docs/getting-started).
 
 ```tsx
 import { DragDropProvider } from "@dnd-kit/react";
@@ -133,7 +139,7 @@ function Tile({ id, group }: { id: string; group: string }) {
 }
 ```
 
-**Prefer a ready-made component?** The turnkey [`<GridLayout>`](https://snapgrid.dev/docs/guides/component-layer) wraps these same hooks (and supplies the provider) in a react-grid-layout-style API — drop in keyed children and you're done:
+**Prefer a ready-made component?** The turnkey [`<GridLayout>`](https://snapgrid.dev/react/docs/guides/component-layer) wraps these same hooks (and supplies the provider) in a react-grid-layout-style API — drop in keyed children and you're done:
 
 ```tsx
 <GridLayout layout={layout} width={width} onLayoutChange={setLayout}>
@@ -143,13 +149,14 @@ function Tile({ id, group }: { id: string; group: string }) {
 </GridLayout>
 ```
 
-→ Full walkthrough in [**Getting Started**](https://snapgrid.dev/docs/getting-started).
+→ Full walkthrough in [**Getting Started**](https://snapgrid.dev/react/docs/getting-started).
 
 ## Packages
 
 | Package | Description |
 | --- | --- |
-| [`@snapgridjs/react`](./packages/grid-react) | React components + hooks. The main entry point. |
+| [`@snapgridjs/react`](./packages/grid-react) | React components + hooks. The main entry point for React. |
+| [`@snapgridjs/svelte`](./packages/grid-svelte) | Svelte 5 components + factories. The main entry point for Svelte. |
 | [`@snapgridjs/core`](./packages/grid-core) | Framework-agnostic layout math (geometry, move/resize, compaction, drag-session). |
 | [`@snapgridjs/dnd`](./packages/grid-dnd) | Framework-agnostic dnd-kit engine (drag/resize/cross-grid/interop) the bindings build on. Comes in with `@snapgridjs/react`; for binding authors. |
 | [`@snapgridjs/extras`](./packages/grid-extras) | Optional packers: masonry, gravity, shelf, wrap. |

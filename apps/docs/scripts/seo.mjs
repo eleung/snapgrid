@@ -16,7 +16,7 @@ const SITE = (process.env.DOCS_SITE_URL ?? "https://snapgrid.dev").replace(/\/+$
 // so the manifest start_url/icon paths can't disagree with how the app is served.
 const BASE_PATH = (process.env.DOCS_BASE_PATH ?? new URL(SITE).pathname).replace(/\/+$/, "");
 const DESCRIPTION =
-  "A react-grid-layout v2 alternative built on dnd-kit. Draggable, resizable, responsive grid layouts with cross-grid dragging and pluggable packing.";
+  "A react-grid-layout v2 alternative built on dnd-kit, for React and Svelte. Draggable, resizable grid layouts with cross-grid dragging and pluggable packing.";
 
 // Walk content/ for .mdx/.md content files → { route, lastmod }.
 function collect(dir, prefix = "") {

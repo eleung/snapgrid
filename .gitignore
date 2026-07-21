@@ -11,6 +11,8 @@ coverage/
 !.vscode/settings.json
 *.log
 .turbo/
+# @sveltejs/package build cache (grid-svelte)
+.svelte-kit/
 
 # Local Claude session data — keep local only (per global guidelines)
 .claude/

@@ -1,0 +1,164 @@
+---
+title: Component layer
+description: The turnkey <GridLayout> shell — a controlled component in the react-grid-layout style, over the same headless factories, for when the factories are more than you need.
+---
+
+import { Callout } from "nextra/components";
+import { ComponentLayerDemo } from "@/components/demos-svelte";
+
+# Component layer
+
+snapgrid is [headless-first](/svelte/docs/guides/headless), but you don't have to wire the factories yourself.
+The **component layer** is a thin shell in the react-grid-layout style over those exact factories: `<GridLayout>`
+bundles the dnd-kit `DragDropProvider`, the container, the items, and the placeholder, so you never
+touch dnd-kit directly.
+
+<Callout type="info">
+  **This is the escape hatch.** If the headless provider/host/tile wiring is more than you
+  want, reach for `<GridLayout>` — it mirrors react-grid-layout v2, so it's the gentlest on-ramp.
+  When one grid later needs custom markup, drop just that grid down to the [factories](/svelte/docs/guides/headless).
+  Same engine; the two layers mix freely.
+</Callout>
+
+## `<GridLayout>`
+
+A controlled grid. Each layout item's content comes from an **`item` snippet** — Svelte has no
+keyed-children analog, so the snippet receives the item (keyed by `i`) and snapgrid positions it and
+renders the resize handles and placeholder for you.
+
+```svelte
+<script lang="ts">
+  import { GridLayout, createContainerWidth, type Layout } from "@snapgridjs/svelte";
+
+  const width = createContainerWidth();
+  let layout = $state<Layout>([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 3 },
+  ]);
+</script>
+
+<div {@attach width.attach}>
+  <GridLayout
+    {layout}
+    width={width.width}
+    onLayoutChange={(next) => (layout = next)}
+    gridConfig={{ cols: 12, rowHeight: 60, margin: [12, 12] }}
+    resizeConfig={{ handles: ["se", "e", "s"] }}
+  >
+    {#snippet item(it)}
+      <div class="tile">{it.i}</div>
+    {/snippet}
+  </GridLayout>
+</div>
+```
+
+It supplies its own `DragDropProvider`; nest several (or wrap them in
+[`<SnapGridGroup>`](#cross-grid-with-components)) and they share one.
+
+<ComponentLayerDemo />
+
+## Config props map 1:1 to the factory options
+
+Every behaviour prop on `<GridLayout>` is the same option you'd pass to
+[`createGridContainer`](/svelte/docs/guides/headless) — only the spelling differs (a component prop vs. an object
+key). So each feature guide applies to both layers:
+
+| Prop | What it does | Guide |
+| --- | --- | --- |
+| `gridConfig` | Columns, row height, margins, padding, maxRows. | [Concepts](/svelte/docs/concepts) |
+| `dragConfig` | Handle, cancel, threshold, bounds, snap. | [Dragging](/svelte/docs/guides/dragging) |
+| `resizeConfig` | Which handles to show. | [Resizing](/svelte/docs/guides/resizing) |
+| `compactor` | Packing algorithm. | [Compaction](/svelte/docs/guides/compaction) |
+| `dropConfig` / `onDrop` | Accept external draggables. | [External drop](/svelte/docs/guides/external-drop) |
+| `isDraggable` / `isResizable` / `autoSize` | Grid-level toggles. | — |
+| `onDragStart` … `onResizeStop` | Lifecycle callbacks. | [Events](/svelte/docs/guides/events) |
+
+See [Components → GridLayout](/svelte/docs/api/components#gridlayout) for the complete prop table.
+
+## `<ResponsiveGridLayout>`
+
+The turnkey wrapper over [`createResponsiveLayout`](/svelte/docs/guides/responsive). Give it a per-breakpoint `layouts`
+map instead of a single `layout`; it switches column count and layout as `width` crosses breakpoints.
+
+```svelte
+<script lang="ts">
+  import { ResponsiveGridLayout, createContainerWidth, type ResponsiveLayouts } from "@snapgridjs/svelte";
+
+  const width = createContainerWidth();
+  let layouts = $state<ResponsiveLayouts>({ lg: [/* … */] });
+</script>
+
+<div {@attach width.attach}>
+  <ResponsiveGridLayout
+    width={width.width}
+    {layouts}
+    onLayoutChange={(_active, all) => (layouts = all)}
+  >
+    {#snippet item(it)}
+      <div class="tile">{it.i}</div>
+    {/snippet}
+  </ResponsiveGridLayout>
+</div>
+```
+
+## Cross-grid with components
+
+Wrap sibling grids in [`<SnapGridGroup>`](/svelte/docs/guides/cross-grid) — the shared provider — and tiles
+drag between them. (Nested `<GridLayout>`s share a provider automatically.)
+
+```svelte
+<SnapGridGroup>
+  <GridLayout layout={left} width={w} onLayoutChange={(next) => (left = next)}>
+    {#snippet item(it)}
+      <div class="tile">{it.i}</div>
+    {/snippet}
+  </GridLayout>
+  <GridLayout layout={right} width={w} onLayoutChange={(next) => (right = next)}>
+    {#snippet item(it)}
+      <div class="tile">{it.i}</div>
+    {/snippet}
+  </GridLayout>
+</SnapGridGroup>
+```
+
+<Callout type="warning">
+  Item ids must be unique across all grids that share a provider — they share one drag manager.
+</Callout>
+
+## Composing the pieces
+
+The layer isn't all-or-nothing. `<GridItem>` and `<GridPlaceholder>` are the same tiles `<GridLayout>`
+renders, exposed so you can drop them into a surface you host with `createGridContainer` — handy when you
+want the styled tile but control of the container:
+
+```svelte
+<script lang="ts">
+  import { createGridContainer, GridItem, GridPlaceholder, type Layout } from "@snapgridjs/svelte";
+
+  let { layout, width, onLayoutChange }: {
+    layout: Layout;
+    width: number;
+    onLayoutChange: (next: Layout) => void;
+  } = $props();
+
+  const container = createGridContainer(() => ({ layout, width, onLayoutChange }));
+</script>
+
+<div {@attach container.attach} style={container.style}>
+  {#each layout as it (it.i)}
+    <GridItem id={it.i} group={container.group}>{it.i}</GridItem>
+  {/each}
+  <GridPlaceholder group={container.group} />
+</div>
+```
+
+`<GridItem>` applies the stable `.snapgrid-item` class and `data-grid-id` / `data-dragging` attributes
+(see [Styling](/svelte/docs/guides/styling)) and updates only its own slice, so re-rendering the surface doesn't
+touch every tile.
+
+<Callout type="info">
+  There's no drag overlay to manage at either layer — a dragged tile
+  [floats itself](/svelte/docs/guides/headless#floating). See [Components](/svelte/docs/api/components) for the full
+  prop tables and [Headless usage](/svelte/docs/guides/headless) for the factories.
+</Callout>

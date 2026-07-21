@@ -1,4 +1,6 @@
 import { fileURLToPath } from "node:url";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { svelteTesting } from "@testing-library/svelte/vite";
 import { defineWorkspace } from "vitest/config";
 
 const coreSrc = fileURLToPath(new URL("./packages/grid-core/src/index.ts", import.meta.url));
@@ -46,6 +48,27 @@ export default defineWorkspace([
       environment: "jsdom",
       include: ["src/**/*.test.{ts,tsx}"],
       setupFiles: ["./vitest.setup.ts"],
+    },
+  },
+  {
+    // Svelte binding: factories/components, jsdom environment. Runs against the
+    // live core + engine source (like the React project), with the Svelte compiler.
+    plugins: [svelte(), svelteTesting()],
+    resolve: {
+      alias: { "@snapgridjs/core": coreSrc, "@snapgridjs/dnd": dndSrc },
+      // Resolve the `svelte` export condition of @dnd-kit/svelte (uncompiled runes
+      // modules) so the Svelte compiler processes them.
+      conditions: ["svelte", "browser"],
+    },
+    test: {
+      name: "svelte",
+      root: "./packages/grid-svelte",
+      environment: "jsdom",
+      include: ["src/**/*.test.{ts,svelte.ts}"],
+      setupFiles: ["./vitest.setup.ts"],
+      // @dnd-kit/svelte ships uncompiled .svelte / .svelte.js runes modules; inline
+      // it so the Svelte compiler processes them instead of Node choking on ".svelte".
+      server: { deps: { inline: [/@dnd-kit\/svelte/] } },
     },
   },
   {

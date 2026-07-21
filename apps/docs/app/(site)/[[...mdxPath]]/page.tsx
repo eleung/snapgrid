@@ -1,6 +1,7 @@
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import { VERSION } from "@/components/generated/version";
+import { FRAMEWORK_IDS } from "@/lib/frameworks";
 import { DESCRIPTION, GITHUB, HOME_TITLE, SITE, pageMetadata } from "@/lib/site";
 import { useMDXComponents as getMDXComponents } from "@/mdx-components";
 import type { Metadata } from "next";
@@ -21,14 +22,35 @@ async function loadPage(mdxPath: string[]) {
   }
 }
 
+// Framework-prefixed docs live under /<framework>/docs/** (react, svelte, …);
+// showcase/roadmap/changelog stay unprefixed. A docs page is `[framework, "docs", …]`.
+const FRAMEWORK_SET = new Set<string>(FRAMEWORK_IDS);
+function isDocsPath(mdxPath: string[]): boolean {
+  return FRAMEWORK_SET.has(mdxPath[0] ?? "") && mdxPath[1] === "docs";
+}
+
+// The framework a path belongs to, Title-cased for SEO copy, or null (unprefixed
+// pages like showcase/roadmap). The /react and /svelte docs are near-identical
+// content, so their titles/descriptions/structured-data carry the framework name —
+// otherwise the twins are duplicate SERP entries and neither targets "react grid"
+// vs "svelte grid" queries.
+const FRAMEWORK_LABELS: Record<string, string> = { react: "React", svelte: "Svelte" };
+function frameworkOf(mdxPath: string[]): string | null {
+  const seg = mdxPath[0] ?? "";
+  return FRAMEWORK_SET.has(seg) ? (FRAMEWORK_LABELS[seg] ?? seg) : null;
+}
+
 // Path-segment → breadcrumb label + landing URL, for the BreadcrumbList JSON-LD
-// on docs pages. Only sections with a real landing page are listed (so every
-// non-leaf crumb has a URL, as Google requires); `guides` has no index page and
-// is intentionally absent — the page title carries that level.
-const DOCS_SECTIONS: Record<string, { name: string; item: string }> = {
-  docs: { name: "Documentation", item: `${SITE}/docs/getting-started/` },
-  api: { name: "API", item: `${SITE}/docs/api/overview/` },
-};
+// on docs pages. Landing URLs carry the active framework prefix. Only sections
+// with a real landing page are listed (so every non-leaf crumb has a URL, as
+// Google requires); `guides` has no index page and is intentionally absent — the
+// page title carries that level. The framework segment itself is not a crumb.
+function docsSections(framework: string): Record<string, { name: string; item: string }> {
+  return {
+    docs: { name: "Documentation", item: `${SITE}/${framework}/docs/getting-started/` },
+    api: { name: "API", item: `${SITE}/${framework}/docs/api/overview/` },
+  };
+}
 
 type PageProps = {
   params: Promise<{ mdxPath?: string[] }>;
@@ -68,10 +90,16 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
     };
   }
   const { metadata } = await loadPage(mdxPath);
+  const fw = frameworkOf(mdxPath);
+  const rawTitle = titleOf(metadata);
+  const rawDesc = typeof metadata.description === "string" ? metadata.description : undefined;
   return pageMetadata({
     path: routePath(mdxPath),
-    title: titleOf(metadata),
-    description: typeof metadata.description === "string" ? metadata.description : undefined,
+    // Tag framework pages so the /react and /svelte twins are distinct in search:
+    // "Dragging · React" / "Dragging · Svelte", and the framework keyword leads the
+    // description (survives SERP truncation).
+    title: fw && rawTitle ? `${rawTitle} · ${fw}` : rawTitle,
+    description: fw && rawDesc ? `${fw} · ${rawDesc}` : rawDesc,
   });
 }
 
@@ -140,17 +168,23 @@ function buildArticle(
   mdxPath: string[],
   metadata: { title?: unknown; description?: unknown },
 ): object | null {
-  if (mdxPath[0] !== "docs") return null;
+  if (!isDocsPath(mdxPath)) return null;
   const canonical = `${SITE}${routePath(mdxPath)}/`;
   const modified = lastModified(mdxPath);
-  const description = typeof metadata.description === "string" ? metadata.description : DESCRIPTION;
+  const fw = frameworkOf(mdxPath);
+  const rawDesc = typeof metadata.description === "string" ? metadata.description : DESCRIPTION;
+  const rawTitle = titleOf(metadata) || "snapgrid documentation";
   return {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    headline: titleOf(metadata) || "snapgrid documentation",
-    description,
+    // Framework-tagged to match the page metadata (distinct twins).
+    headline: fw ? `${rawTitle} · ${fw}` : rawTitle,
+    description: fw ? `${fw} · ${rawDesc}` : rawDesc,
     url: canonical,
     inLanguage: "en",
+    ...(fw
+      ? { keywords: `snapgrid, ${fw}, dnd-kit, grid layout, react-grid-layout alternative` }
+      : {}),
     isPartOf: { "@id": SITE_ID },
     publisher: { "@id": ORG_ID },
     ...(modified ? { dateModified: modified } : {}),
@@ -159,11 +193,12 @@ function buildArticle(
 
 // BreadcrumbList for docs pages: snapgrid › Documentation › [API ›] Page.
 function buildBreadcrumb(mdxPath: string[], metadata: { title?: unknown }): object | null {
-  if (mdxPath[0] !== "docs") return null;
+  if (!isDocsPath(mdxPath)) return null;
   const canonical = `${SITE}${routePath(mdxPath)}/`;
+  const sections = docsSections(mdxPath[0] as string);
   const crumbs: { name: string; item?: string }[] = [{ name: "snapgrid", item: `${SITE}/` }];
   for (const seg of mdxPath.slice(0, -1)) {
-    if (DOCS_SECTIONS[seg]) crumbs.push(DOCS_SECTIONS[seg]);
+    if (sections[seg]) crumbs.push(sections[seg]);
   }
   crumbs.push({ name: titleOf(metadata) || "Documentation", item: canonical });
   // Drop any crumb whose URL repeats an earlier one (e.g. a section's own landing

@@ -1,0 +1,94 @@
+---
+title: Resizing
+description: Which handles to show, rendering them in the headless layer, per-item min/max constraints, and the preventCollision gotcha.
+---
+
+import { Callout } from "nextra/components";
+import { ResizeDemo } from "@/components/demos-svelte";
+
+# Resizing
+
+A grid item resizes from **handles** at its edges and corners. You declare *which* axes are resizable
+with `resizeConfig`, and clamp each item's size with `minW` / `maxW` / `minH` / `maxH`. `resizeConfig`
+is an option on `createGridContainer` (and, identically, a prop on the
+[`<GridLayout>`](/svelte/docs/guides/component-layer) shell):
+
+```ts
+const container = createGridContainer(() => ({
+  layout,
+  width,
+  onLayoutChange: (next) => (layout = next),
+  resizeConfig: { handles: ["se", "e", "s"] },
+}));
+```
+
+<Callout type="warning">
+  **In the headless layer you render the handles yourself.** `resizeConfig.handles` only declares
+  which axes are *allowed* — a bare `createGridItem` tile shows nothing to grab. Render a handle per axis
+  with [`createGridResizeHandle`](#rendering-handles-headless) (below). `<GridLayout>` renders them for
+  you — reach for it if you'd rather not.
+</Callout>
+
+<ResizeDemo />
+
+## `resizeConfig` options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `true` | Grid-level on/off for resizing. |
+| `handles` | `ResizeHandleAxis[]` | `["se"]` | Which handles each item may show. |
+
+The eight axes are `"n"`, `"e"`, `"s"`, `"w"`, `"ne"`, `"nw"`, `"se"`, `"sw"`. West and north handles
+keep the opposite edge anchored as you drag; east and south keep the top-left anchored and clamp to
+the grid's columns (and `maxRows`, if set).
+
+## Rendering handles (headless) [#rendering-handles-headless]
+
+`createGridResizeHandle({ id, handle, group })` models a handle as its own draggable. Attach its `attach`
+and spread `handleProps` onto an element you position and style — `handleProps` marks the element so a
+pointer-down resizes instead of starting an item drag:
+
+```svelte
+<!-- Tile.svelte -->
+<script lang="ts">
+  import { createGridItem, createGridResizeHandle } from "@snapgridjs/svelte";
+
+  let { id, group }: { id: string; group: string } = $props();
+  // svelte-ignore state_referenced_locally
+  const tile = createGridItem({ id, group });
+  // svelte-ignore state_referenced_locally
+  const resize = createGridResizeHandle({ id, handle: "se", group });
+</script>
+
+<div {@attach tile.attach} style={tile.style} class="tile">
+  {id}
+  <!-- CSS places + styles `.resize-handle` at the corner -->
+  <span {@attach resize.attach} {...resize.handleProps} class="resize-handle"></span>
+</div>
+```
+
+Render one handle per axis you configured. `createGridResizeHandle` also returns `isResizing` for
+styling. See [Headless usage](/svelte/docs/guides/headless#usegridresizehandle) for the full picture.
+
+## Per-item constraints
+
+Add limits directly to the layout item; snapgrid enforces them as you resize:
+
+```ts
+const layout = [
+  { i: "a", x: 0, y: 0, w: 4, h: 2, minW: 2, minH: 1 }, // never smaller than 2×1
+  { i: "b", x: 4, y: 0, w: 4, h: 2, maxW: 6, maxH: 3 }, // never larger than 6×3
+];
+```
+
+| Field | Description |
+| --- | --- |
+| `minW` / `maxW` | Min / max width in columns. `maxW` defaults to the column count. |
+| `minH` / `maxH` | Min / max height in rows. `maxH` defaults to unbounded. |
+| `resizeHandles` | Per-item handle set, overriding `resizeConfig.handles`. |
+| `isResizable` | Per-item on/off, overriding the grid default. `static` items don't resize unless they set `isResizable: true`. |
+
+<Callout type="info">
+  When the active compactor has `preventCollision` set, a resize that would overlap another tile is
+  rejected (the item keeps its previous size) rather than pushing neighbours.
+</Callout>
