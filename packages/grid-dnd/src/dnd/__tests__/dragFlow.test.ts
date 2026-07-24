@@ -1,4 +1,4 @@
-import { toPositionParams } from "@snapgridjs/core";
+import { beginDrag, dragTo, noCompactor, toPositionParams } from "@snapgridjs/core";
 import { describe, expect, it } from "vitest";
 import {
   type DropState,
@@ -7,6 +7,7 @@ import {
   dragData,
   dropDestination,
   receiveCell,
+  scrollAdjustedPointer,
 } from "../dragFlow.js";
 
 const pp = toPositionParams(
@@ -149,5 +150,55 @@ describe("dropDestination (#7 keyboard is in-grid only)", () => {
     expect(dropDestination({ keyboard: false, targetId: 42, myId: "me" })).toBe("42");
     expect(dropDestination({ keyboard: false, targetId: null, myId: "me" })).toBeNull();
     expect(dropDestination({ keyboard: false, targetId: undefined, myId: "me" })).toBeNull();
+  });
+});
+
+describe("scrollAdjustedPointer (drag tracking under scroll, issue #49)", () => {
+  it("returns the pointer unchanged when the grid hasn't moved", () => {
+    const p = { x: 100, y: 120 };
+    expect(scrollAdjustedPointer(p, { x: 0, y: 0 }, { x: 0, y: 0 })).toEqual(p);
+  });
+
+  it("passes the pointer through when either grid origin is unknown", () => {
+    const p = { x: 100, y: 120 };
+    expect(scrollAdjustedPointer(p, null, { x: 0, y: 0 })).toEqual(p);
+    expect(scrollAdjustedPointer(p, { x: 0, y: 0 }, null)).toEqual(p);
+  });
+
+  it("shifts by the negative of the grid's movement (page scrolled down → grid moved up)", () => {
+    // Grid's client-rect origin went from y=0 to y=-330 (page scrolled down 330px).
+    // The pointer is physically still, but relative to the grid it is now 330px lower.
+    expect(scrollAdjustedPointer({ x: 10, y: 10 }, { x: 0, y: 0 }, { x: 0, y: -330 })).toEqual({
+      x: 10,
+      y: 340,
+    });
+  });
+});
+
+describe("in-grid drag tracks the grid as the page scrolls (issue #49)", () => {
+  // Free placement so the target cell is exactly where the pointer maps (no
+  // compaction bounce), isolating the pointer→cell math the scroll fix touches.
+  const ctx = { positionParams: pp, compactor: noCompactor, cols: 12 };
+  // Tile "a" at cell (0,0), 2×2, grabbed at its top-left; the grid's top-left sits
+  // at the viewport origin when the drag starts. Row pitch is 110px (see `pp`).
+  const itemA = { i: "a", x: 0, y: 0, w: 2, h: 2 };
+  const layout = [itemA];
+  const anchor = { item: itemA, left: 10, top: 10, pointer: { x: 10, y: 10 } };
+
+  it("freezes at the start cell when the pointer is still and scroll is ignored (the bug)", () => {
+    const session = beginDrag(layout, anchor);
+    // Raw client pointer never changes while auto-scroll reveals lower rows →
+    // the target never leaves the top row, so you cannot drop at the bottom.
+    const next = dragTo(session, { x: 10, y: 10 }, ctx);
+    expect(next.placeholder).toMatchObject({ x: 0, y: 0 });
+  });
+
+  it("advances toward the bottom when the grid scrolls up under a still pointer", () => {
+    const session = beginDrag(layout, anchor);
+    // Page scrolled down 330px → grid origin y: 0 → -330, pointer physically still.
+    const adjusted = scrollAdjustedPointer({ x: 10, y: 10 }, { x: 0, y: 0 }, { x: 0, y: -330 });
+    const next = dragTo(session, adjusted, ctx);
+    // 330px ÷ 110px row pitch = 3 rows down — now reachable.
+    expect(next.placeholder).toMatchObject({ x: 0, y: 3 });
   });
 });

@@ -15,7 +15,14 @@ import {
 import type { GridController } from "../controller/GridController.js";
 import { getController, getGrabOffset, setGrabOffset } from "../controller/registry.js";
 import type { SnapGridDragData } from "./dragData.js";
-import { arrowStep, classifyDrop, dragData, externalDropSpec, receiveCell } from "./dragFlow.js";
+import {
+  arrowStep,
+  classifyDrop,
+  dragData,
+  externalDropSpec,
+  receiveCell,
+  scrollAdjustedPointer,
+} from "./dragFlow.js";
 import { domElement } from "./entity.js";
 
 /**
@@ -34,8 +41,27 @@ import { domElement } from "./entity.js";
 
 type Point = { x: number; y: number };
 type DragSource = { id: string | number; type?: unknown; data?: unknown } | null;
+// The slice of a dnd-kit drag operation #move needs. Both the live operation
+// (`manager.dragOperation`) and the `dragmove` event's snapshot satisfy it.
+type DragOperationView = {
+  position: { current: Point };
+  source: DragSource;
+  target: { id: string | number } | null;
+  activatorEvent: Event | null;
+};
 
 const hasWindow = typeof window !== "undefined";
+// Capture so non-bubbling scroll events from any scrollable ancestor reach us
+// (matching how dnd-kit's own ScrollListener binds); passive since we never
+// preventDefault a scroll.
+const SCROLL_LISTENER_OPTIONS = { capture: true, passive: true } as const;
+
+/** A grid element's top-left in client (viewport) space, or null if unknown. */
+function rectOrigin(el: Element | null): Point | null {
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { x: r.left, y: r.top };
+}
 
 function dragCtx(ctrl: GridController) {
   const cfg = ctrl.config!;
@@ -70,6 +96,13 @@ class SnapGridEngine {
   #keyboard = false;
   #dropSpec: { i: string; w: number; h: number } | null = null; // external draggable
   #dropCounter = 0;
+  // The source grid's client-rect origin at drag start. The source-owned session
+  // (in-grid move / resize) derives its target from a pointer delta against
+  // offsets captured at start; comparing this against the grid's *live* origin
+  // tells us how far it has scrolled so we can re-anchor the pointer (issue #49).
+  #sourceStartOrigin: Point | null = null;
+  // A scroll listener is bound only for the duration of a drag (see #bindScroll).
+  #scrollBound = false;
   // Per-drag cache so a continuous drag (pointer over one grid for many frames)
   // doesn't re-resolve the destination controller on every move.
   #lastTargetId: string | number | null = null;
@@ -88,18 +121,11 @@ class SnapGridEngine {
           op.source as DragSource,
           op.activatorEvent,
         );
+        // dnd-kit emits no `dragmove` while the page auto-scrolls, so listen for
+        // scroll ourselves and recompute the drag against the grid's live rect.
+        this.#bindScroll();
       }),
-      mon.addEventListener("dragmove", (event) => {
-        const op = event.operation;
-        const p = op.position.current;
-        this.#move(
-          dragData(event),
-          { x: p.x, y: p.y },
-          op.source as DragSource,
-          op.target?.id ?? null,
-          op.activatorEvent,
-        );
-      }),
+      mon.addEventListener("dragmove", (event) => this.#moveFromOperation(event.operation)),
       mon.addEventListener("dragend", (event) => {
         const op = event.operation;
         this.#end(
@@ -119,6 +145,7 @@ class SnapGridEngine {
     for (const u of this.#unsub) u();
     this.#unsub = [];
     if (hasWindow) window.removeEventListener("keydown", this.#onKeyDown, true);
+    this.#unbindScroll();
   }
 
   #reset(): void {
@@ -126,6 +153,7 @@ class SnapGridEngine {
     this.#dest = null;
     this.#keyboard = false;
     this.#dropSpec = null;
+    this.#sourceStartOrigin = null;
     this.#lastTargetId = null;
     this.#lastDest = undefined;
   }
@@ -163,6 +191,9 @@ class SnapGridEngine {
     const layout = owner.getCommitted();
     const item = layout.find((it) => it.i === data.itemId);
     if (!item) return;
+    // Snapshot the grid's viewport origin so the source-owned session can correct
+    // for scroll on every later frame (see #sourceStartOrigin / scrollAdjustedPointer).
+    this.#sourceStartOrigin = rectOrigin(owner.element);
 
     if (data.kind === "resize") {
       const rect = calcGridItemPosition(cfg.positionParams, item.x, item.y, item.w, item.h);
@@ -200,7 +231,12 @@ class SnapGridEngine {
     const ownerSession = owner?.getSession();
     if (owner && ownerSession?.kind === "resize") {
       const cfg = owner.config!;
-      const next = dragResize(ownerSession, pointer, dragCtx(owner));
+      const adjusted = scrollAdjustedPointer(
+        pointer,
+        this.#sourceStartOrigin,
+        rectOrigin(owner.element),
+      );
+      const next = dragResize(ownerSession, adjusted, dragCtx(owner));
       owner.setSession(next);
       cfg.callbacks.onResize?.(
         next.preview,
@@ -237,7 +273,12 @@ class SnapGridEngine {
       const cur = owner.getSession();
       if (!cur) return;
       const cfg = owner.config!;
-      const next = dragTo(cur, pointer, dragCtx(owner));
+      const adjusted = scrollAdjustedPointer(
+        pointer,
+        this.#sourceStartOrigin,
+        rectOrigin(owner.element),
+      );
+      const next = dragTo(cur, adjusted, dragCtx(owner));
       owner.setSession(next);
       cfg.callbacks.onDrag?.(
         next.preview,
@@ -426,7 +467,9 @@ class SnapGridEngine {
       }
     } finally {
       // Always clean up, even if a consumer callback above threw — otherwise a stale
-      // session / keyboard flag / grab offset would leak into the next drag.
+      // session / keyboard flag / grab offset / scroll listener would leak into the
+      // next drag.
+      this.#unbindScroll();
       setGrabOffset(this.#manager, null);
       source?.setKeyboard(false);
       source?.setSession(null);
@@ -434,6 +477,45 @@ class SnapGridEngine {
       this.#reset();
     }
   }
+
+  // Drive #move from a dnd-kit drag operation — shared by the `dragmove` monitor
+  // event and the scroll-driven recompute below, which pass the same object.
+  #moveFromOperation(op: DragOperationView): void {
+    const p = op.position.current;
+    this.#move(
+      dragData({ operation: op }),
+      { x: p.x, y: p.y },
+      op.source as DragSource,
+      op.target?.id ?? null,
+      op.activatorEvent ?? null,
+    );
+  }
+
+  // ── Scroll tracking ───────────────────────────────────────────────────────
+  // The page (or an ancestor) scrolling mid-drag moves the grid under a possibly
+  // still pointer, but dnd-kit emits no `dragmove` for it — it only re-runs
+  // collision. So recompute the active drag ourselves against the grid's live rect
+  // (the pointer stays put in viewport space; scrolling doesn't move it), which
+  // lets the placeholder keep advancing — e.g. auto-scrolling to the bottom (#49).
+  // Bound only for the span of a drag; dnd-kit's autoscroll scrolls at most once
+  // per frame, so a direct recompute is already frame-paced.
+  #bindScroll(): void {
+    if (!hasWindow || this.#scrollBound) return;
+    this.#scrollBound = true;
+    window.addEventListener("scroll", this.#onScroll, SCROLL_LISTENER_OPTIONS);
+  }
+
+  #unbindScroll(): void {
+    if (!hasWindow || !this.#scrollBound) return;
+    this.#scrollBound = false;
+    window.removeEventListener("scroll", this.#onScroll, SCROLL_LISTENER_OPTIONS);
+  }
+
+  #onScroll = (): void => {
+    if (this.#keyboard) return; // keyboard drags step by cell, not by pointer
+    const op = this.#manager.dragOperation;
+    if (op.status.dragging) this.#moveFromOperation(op);
+  };
 
   #onKeyDown = (e: KeyboardEvent): void => {
     if (!this.#keyboard) return;

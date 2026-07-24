@@ -71,6 +71,32 @@ export function receiveCell(
 }
 
 /**
+ * Re-anchor a client-space pointer to a grid that has moved in the viewport since
+ * the drag started (the page or an ancestor scrolled). The source grid's own drag
+ * session ({@link dragTo}/{@link dragResize}) derives its target from the pointer
+ * delta against offsets snapshotted at drag start; those go stale the moment the
+ * grid scrolls, so the placeholder freezes and you can't reach rows the pointer
+ * hasn't physically moved over (the auto-scroll-to-the-bottom case, issue #49).
+ *
+ * Shifting the pointer by the negative of the grid's movement makes the delta once
+ * again measure "how far the pointer moved *relative to the grid*", so a still
+ * pointer over a scrolling grid keeps advancing. The receive path already reads a
+ * live rect each frame ({@link receiveCell}); this is the source-side analog.
+ * Returns the pointer untouched when either origin is unknown (no DOM rect yet).
+ */
+export function scrollAdjustedPointer(
+  pointer: { x: number; y: number },
+  startOrigin: { x: number; y: number } | null,
+  nowOrigin: { x: number; y: number } | null,
+): { x: number; y: number } {
+  if (!startOrigin || !nowOrigin) return pointer;
+  return {
+    x: pointer.x - (nowOrigin.x - startOrigin.x),
+    y: pointer.y - (nowOrigin.y - startOrigin.y),
+  };
+}
+
+/**
  * Map a keyboard event key to a one-cell grid step while a keyboard drag is
  * active, or null for keys snapgrid doesn't own — Enter/Space (drop) and Escape
  * (cancel) fall through to dnd-kit's KeyboardSensor.
