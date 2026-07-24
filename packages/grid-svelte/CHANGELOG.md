@@ -1,5 +1,13 @@
 # @snapgridjs/svelte
 
+## 0.9.1
+
+### Patch Changes
+
+- Updated dependencies [6a48e22]
+  - @snapgridjs/dnd@0.9.1
+  - @snapgridjs/core@0.9.1
+
 ## 0.9.0
 
 ### Minor Changes
