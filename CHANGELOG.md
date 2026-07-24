@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.9.1] - 2026-07-24
+
+A drag keeps tracking the pointer when the page scrolls mid-drag — including dnd-kit's auto-scroll
+near a viewport edge — so a tile can reach and drop at the rows the scroll reveals.
+
+### Fixed
+
+- **Drag position under page scroll.** An in-grid drag (and resize) derived its target cell from the
+  pointer against the grid's position captured at drag start, so once the page scrolled the target
+  stopped following and a tile couldn't reach or drop at the bottom (`@snapgridjs/dnd`). The engine now
+  re-anchors to the grid's live position each frame and recomputes on scroll — dnd-kit emits no
+  drag-move event while scrolling — matching the cross-grid receive path, which already read a live
+  rect. Reported in [#49](https://github.com/eleung/snapgrid/issues/49).
+
 ## [0.9.0] - 2026-07-20
 
 Svelte support. `@snapgridjs/svelte` brings the same headless-first, dnd-kit-native grid to Svelte 5,
@@ -209,6 +223,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.9.1]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.9.1
 [0.9.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.9.0
 [0.8.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.8.0
 [0.7.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.7.0
