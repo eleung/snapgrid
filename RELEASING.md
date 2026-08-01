@@ -3,17 +3,18 @@
 Maintainer runbook for cutting a snapgrid release. Contributors don't need this —
 see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-snapgrid publishes five packages from this monorepo, versioned with
+snapgrid publishes six packages from this monorepo, versioned with
 [Changesets](https://github.com/changesets/changesets):
 
 - `@snapgridjs/core`
 - `@snapgridjs/dnd`
 - `@snapgridjs/react`
 - `@snapgridjs/svelte`
+- `@snapgridjs/vue`
 - `@snapgridjs/extras`
 
-These five are kept in **lockstep** — they always share one version (changesets `fixed` in
-`.changeset/config.json`), dnd-kit-style. Any release bumps all five to the same number, even ones
+These six are kept in **lockstep** — they always share one version (changesets `fixed` in
+`.changeset/config.json`), dnd-kit-style. Any release bumps all six to the same number, even ones
 without changes, so "snapgrid X.Y.Z" means one matched set. (`@snapgridjs/docs` is private and never
 published — it's in the changesets `ignore` list.)
 
@@ -101,7 +102,7 @@ Local publishes do **not** carry the provenance badge — only CI (OIDC) does �
 A brand-new package can't be released by CI until it exists, because the OIDC trusted publisher is
 configured **per package** and npm enforces 2FA on writes (which CI can't satisfy interactively).
 This is what made the v0.1.0 launch a manual first publish — and `@snapgridjs/svelte` its own when it
-joined the set in the 0.8.x line. To add one:
+joined the set in the 0.8.x line, and `@snapgridjs/vue` its own when it joined. To add one:
 
 1. **Bootstrap locally** — `npm login`, then
    `pnpm --filter <new-pkg> publish --access public --no-git-checks` (enter the OTP). This creates
