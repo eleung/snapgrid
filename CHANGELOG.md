@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.10.0] - 2026-08-01
+
+Vue support. `@snapgridjs/vue` brings the same headless-first, dnd-kit-native grid to Vue 3, on the
+shared framework-free core — a grid behaves identically whichever framework renders it.
+
+### Added
+
+- **`@snapgridjs/vue`** — a Vue 3 binding for snapgrid, mirroring `@snapgridjs/react` and
+  `@snapgridjs/svelte` on the shared `@snapgridjs/core` + `@snapgridjs/dnd` engine. Headless
+  composables (`useGridContainer`, `useGridItem`, `useGridPlaceholder`, `useGridResizeHandle`,
+  `useContainerWidth`, `useResponsiveLayout`, `useGridController`, `resolveController`) and drop-in
+  components (`GridLayout`, `GridItem`, `GridPlaceholder`, `ResponsiveGridLayout`, `SnapGridGroup`)
+  deliver the same controlled drag, resize, compaction, cross-grid, nesting, keyboard accessibility
+  and dnd-kit interop as the other bindings — built on `@dnd-kit/vue`, with composables returning
+  refs and elements bound through function refs. SSR-safe (verified with no DOM present). Requires
+  Vue 3.5. See the [Vue docs](https://snapgrid.dev/vue/docs/getting-started).
+
+### Changed
+
+- Documentation now covers three bindings — guides and examples live under `/react/…`, `/svelte/…`
+  and `/vue/…`, selectable from the framework switcher — and the package READMEs document the Vue
+  binding alongside React and Svelte.
+
 ## [0.9.1] - 2026-07-24
 
 A drag keeps tracking the pointer when the page scrolls mid-drag — including dnd-kit's auto-scroll
@@ -223,6 +246,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.10.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.10.0
 [0.9.1]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.9.1
 [0.9.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.9.0
 [0.8.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.8.0
