@@ -1,0 +1,123 @@
+---
+title: Responsive layouts
+description: Per-breakpoint layouts with the useResponsiveLayout composable (and the turnkey ResponsiveGridLayout component).
+---
+
+import { Callout } from "nextra/components";
+import { ResponsiveDemo } from "@/components/demos-vue";
+
+# Responsive layouts
+
+A responsive grid switches **column count and layout** as the container width crosses breakpoints.
+The headless engine is `useResponsiveLayout`: give it a map of per-breakpoint layouts and the
+measured `width`, and it resolves the active breakpoint's `cols` and `layout` plus an
+`onLayoutChange` that writes back to the right breakpoint. Feed those into `useGridContainer`.
+
+```vue
+<!-- ResponsiveBoard.vue -->
+<script setup>
+import { ref } from "vue";
+import { DragDropProvider, useContainerWidth, useResponsiveLayout } from "@snapgridjs/vue";
+import Grid from "./Grid.vue";
+
+const { width, setRef } = useContainerWidth();
+const layouts = ref({
+  lg: [
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 2 },
+  ],
+});
+
+// Resolve the active breakpoint's column count + layout from the width. Options are
+// passed as a getter so the result tracks the live width and layouts.
+const { cols, layout, onLayoutChange } = useResponsiveLayout(() => ({
+  width: width.value,
+  layouts: layouts.value,
+  onLayoutChange: (_active, all) => (layouts.value = all),
+  onBreakpointChange: (bp, activeCols) => console.log("now at", bp, activeCols),
+}));
+</script>
+
+<template>
+  <div :ref="setRef">
+    <DragDropProvider>
+      <Grid :layout="layout" :width="width" :cols="cols" @layout-change="onLayoutChange" />
+    </DragDropProvider>
+  </div>
+</template>
+```
+
+```vue
+<!-- Grid.vue — the column count tracks the active breakpoint, so the grid reflows with it. -->
+<script setup>
+import { useGridContainer } from "@snapgridjs/vue";
+import Tile from "./Tile.vue";
+
+const props = defineProps({ layout: Array, width: Number, cols: Number });
+const emit = defineEmits(["layoutChange"]);
+
+const { setRef, style, group } = useGridContainer(() => ({
+  layout: props.layout,
+  width: props.width,
+  gridConfig: { cols: props.cols },
+  onLayoutChange: (next) => emit("layoutChange", next),
+}));
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">
+    <Tile v-for="it in layout" :key="it.i" :id="it.i" :group="group" />
+  </div>
+</template>
+```
+
+Missing breakpoints are generated from the nearest provided one.
+
+<ResponsiveDemo />
+
+## Breakpoints & columns
+
+Defaults mirror react-grid-layout:
+
+| Breakpoint | Min width (px) | Columns |
+| --- | --- | --- |
+| `lg` | 1200 | 12 |
+| `md` | 996 | 10 |
+| `sm` | 768 | 6 |
+| `xs` | 480 | 4 |
+| `xxs` | 0 | 2 |
+
+Override either with the `breakpoints` and `cols` options (exported as `DEFAULT_BREAKPOINTS` and
+`DEFAULT_BREAKPOINT_COLS` if you want to extend them):
+
+```js
+const { cols, layout, onLayoutChange } = useResponsiveLayout(() => ({
+  width: width.value,
+  layouts: layouts.value,
+  breakpoints: { lg: 1280, md: 900, sm: 0 },
+  cols: { lg: 16, md: 8, sm: 4 },
+  onLayoutChange: (_active, all) => (layouts.value = all),
+}));
+```
+
+## `onLayoutChange` gives you both
+
+The composable's `onLayoutChange` option is `(activeLayout, allLayouts)`: the layout for the current
+breakpoint **and** the full updated map. Store the map so edits at one breakpoint don't clobber the
+others:
+
+```js
+onLayoutChange: (_active, all) => (layouts.value = all),
+```
+
+The `onLayoutChange` the composable *returns* (which you pass to `useGridContainer`) takes care of
+routing each committed change into the active breakpoint's entry before calling your option above.
+It's a plain function, not a ref — pass it straight through.
+
+<Callout type="info">
+  Prefer the turnkey component? [`<ResponsiveGridLayout>`](/vue/docs/guides/component-layer#responsivegridlayout) is
+  the component that wraps this composable — pass it `layouts`, `width`, and an `item` scoped slot and
+  it handles the provider and the grid. See
+  [Components](/vue/docs/api/components#responsivegridlayout) for its full prop table.
+</Callout>

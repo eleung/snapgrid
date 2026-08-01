@@ -34,7 +34,11 @@ function isDocsPath(mdxPath: string[]): boolean {
 // content, so their titles/descriptions/structured-data carry the framework name —
 // otherwise the twins are duplicate SERP entries and neither targets "react grid"
 // vs "svelte grid" queries.
-const FRAMEWORK_LABELS: Record<string, string> = { react: "React", svelte: "Svelte" };
+const FRAMEWORK_LABELS: Record<string, string> = {
+  react: "React",
+  svelte: "Svelte",
+  vue: "Vue",
+};
 function frameworkOf(mdxPath: string[]): string | null {
   const seg = mdxPath[0] ?? "";
   return FRAMEWORK_SET.has(seg) ? (FRAMEWORK_LABELS[seg] ?? seg) : null;

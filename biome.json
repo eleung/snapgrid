@@ -15,7 +15,8 @@
       "test-results",
       "playwright-report",
       "*.svelte",
-      ".svelte-kit"
+      ".svelte-kit",
+      "*.vue"
     ]
   },
   "formatter": {

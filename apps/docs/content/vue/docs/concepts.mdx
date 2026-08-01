@@ -1,0 +1,214 @@
+---
+title: Core Concepts
+description: The mental model — controlled state, the layout model, snapgrid's dnd-kit DNA, the group key, the interaction model, compaction, and a gotchas cheat-sheet.
+---
+
+import { Callout } from "nextra/components";
+
+# Core Concepts
+
+Six ideas explain almost everything snapgrid does. Read this once and the guides will click.
+
+## 1. The layout is controlled
+
+snapgrid never holds your layout. You keep the array in state; snapgrid reads it, previews changes
+while you drag, and hands you the next array through `onLayoutChange` when an interaction commits.
+
+```vue
+<script setup>
+import { ref } from "vue";
+
+const layout = ref(initial);
+</script>
+```
+
+No hidden internal state to fall out of sync with, undo/redo is trivial (keep your own history), and
+you persist or transform the layout however you like. The trade-off: **you must apply the change.**
+If you don't assign the new array to `layout.value` in `onLayoutChange`, nothing moves.
+
+<Callout type="warning">
+  Treat the layout as **immutable**. snapgrid clones internally and never mutates the array or items
+  you pass; assign the new array to `layout.value` in `onLayoutChange`.
+</Callout>
+
+## 2. The layout model
+
+A `Layout` is `LayoutItem[]`. Items are positioned and sized in **grid units** — columns and rows,
+not pixels:
+
+```ts
+interface LayoutItem {
+  i: string; // unique id — matches the tile's v-for key / group lookup
+  x: number; // column (0-based)
+  y: number; // row (0-based)
+  w: number; // width in columns
+  h: number; // height in rows
+  minW?: number; maxW?: number; // resize limits (maxW defaults to the column count)
+  minH?: number; maxH?: number;
+  static?: boolean;      // never moves or resizes; others flow around it
+  isDraggable?: boolean; // per-item override of the grid default
+  isResizable?: boolean;
+  isBounded?: boolean;   // per-item override of dragConfig.bounded
+  resizeHandles?: ResizeHandleAxis[]; // per-item handle set
+}
+```
+
+Pixels come from the **`GridConfig`** — `cols`, `rowHeight` (default **150**), `margin` (default
+`[10, 10]`), `containerPadding` (falls back to `margin`), `maxRows` — plus the measured container
+`width`. snapgrid's geometry turns `(x, y, w, h)` into `left/top/width/height` and back.
+
+## 3. It's built on dnd-kit
+
+This is the most important idea, and the one that makes snapgrid different. snapgrid does **not** ship
+its own drag engine — it composes [dnd-kit](https://next.dndkit.com) (the 0.4 framework-agnostic
+line). The grid is just another participant in *your* dnd-kit tree:
+
+| dnd-kit primitive | its role in a grid |
+| --- | --- |
+| `<DragDropProvider>` | the grid lives inside it — **you supply it** |
+| `useDraggable` | every tile (wrapped by `useGridItem`) |
+| `useDroppable` | the grid surface (created by `useGridContainer`) |
+| collision detection | resolves which grid the pointer is over — the drop target |
+| `Feedback` plugin | floats the dragged tile itself in the top layer (default feedback); set to `none` for keyboard, so the tile steps in place |
+| `<DragOverlay>` | optional — a *separate* floating preview; snapgrid doesn't need one (the tile [floats itself](/vue/docs/guides/headless#floating)), but it's re-exported as an escape hatch |
+
+snapgrid's own job is the **grid** part on top: the coordinate space, the packing, and the controlled
+layout. The brains of *that* (geometry, the collision cascade, compaction) come from
+[react-grid-layout](https://github.com/react-grid-layout/react-grid-layout)'s engine; the
+*interaction* is all dnd-kit.
+
+<Callout type="info">
+  **Know dnd-kit and you already know 80% of snapgrid.** The headless API is dnd-kit's idiom — you
+  bring a `DragDropProvider`, tiles declare a `group` the way [`useSortable`](https://next.dndkit.com)
+  declares a list, and a grid composes with sortables and other draggables under one provider (see
+  [dnd-kit interop](/vue/docs/guides/dnd-kit-interop)). If dnd-kit is new to you, a five-minute skim of
+  its docs is the easiest possible head start.
+</Callout>
+
+→ Going deeper — the layered packages, the one-per-manager engine, the observable render bridge, and
+the seam for driving a grid without a framework: [**Architecture & dnd-kit**](/vue/docs/guides/architecture).
+
+## 4. Headless first, with a turnkey escape hatch
+
+The primary API is a set of **composables** you wire to your own markup. A thin `<GridLayout>`
+component wraps those same composables for the common case.
+
+```vue
+<!-- Headless — your markup, you own every element. Board.vue -->
+<template>
+  <!-- <DragDropProvider> is dnd-kit's provider — you supply it. Surface (which calls
+       useGridContainer) is a child of it. -->
+  <DragDropProvider>
+    <Surface :layout="layout" :width="width" @layout-change="layout = $event" />
+  </DragDropProvider>
+</template>
+```
+
+```vue
+<!-- Surface.vue — useGridContainer is the grid host; it returns its `group`. -->
+<script setup>
+import { useGridContainer } from "@snapgridjs/vue";
+
+const props = defineProps({ layout: Array, width: Number });
+const emit = defineEmits(["layoutChange"]);
+
+const { setRef, style, group } = useGridContainer(() => ({
+  layout: props.layout,
+  width: props.width,
+  onLayoutChange: (next) => emit("layoutChange", next),
+}));
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">
+    <Tile v-for="it in layout" :key="it.i" :id="it.i" :group="group" />
+  </div>
+</template>
+```
+
+```vue
+<!-- Tile.vue — resolves its grid by `group`. -->
+<script setup>
+import { useGridItem } from "@snapgridjs/vue";
+
+const props = defineProps({ id: String, group: String });
+const { setRef, style } = useGridItem({ id: props.id, group: props.group });
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">{{ id }}</div>
+</template>
+```
+
+```vue
+<!-- Turnkey — the same thing, wired for you. <GridLayout> bundles the provider,
+     the container, the items, and the placeholder. -->
+<GridLayout :layout="layout" :width="width" :on-layout-change="(next) => (layout = next)">
+  <template #item="{ item }">
+    <div>{{ item.i }}</div>
+  </template>
+</GridLayout>
+```
+
+<Callout type="info">
+  **Two idioms, on purpose.** The **headless** composables speak dnd-kit — reach for them to compose
+  with the dnd-kit ecosystem or to own every element. The **turnkey**
+  [`<GridLayout>`](/vue/docs/guides/component-layer) speaks react-grid-layout — a controlled,
+  ready-made component for when the headless wiring is more than you need. They share one engine, so
+  you can start turnkey and drop any single grid down to the composables. If the composables ever
+  feel like too much, that component *is* your escape hatch.
+</Callout>
+
+## 5. How a tile finds its grid: `group`
+
+A tile declares its grid with a **`group`** key — exactly like a dnd-kit sortable item declares which
+list it's in. `useGridContainer` returns the grid's `group` (its id, as a ref); you pass it to each
+`useGridItem({ id, group })`, `useGridResizeHandle({ id, handle, group })`, and
+`useGridPlaceholder(group)`. This is what lets several grids share one provider and still keep their
+items straight — so **ids must be unique across grids that share a provider.**
+
+## 6. The interaction model
+
+While you drag (with a pointer):
+
+- the dragged tile floats itself above everything — dnd-kit lifts it into the browser's top layer —
+  so it can cross grids unclipped;
+- dnd-kit's **collision** system resolves which grid the pointer is over (the drop target);
+- snapgrid maps the pointer to a **cell** and re-packs, so a **placeholder** marks where the tile
+  will land while the other tiles animate to their reflowed positions.
+
+On drop, the previewed layout becomes the committed layout and flows back through `onLayoutChange`.
+The full lifecycle (`onDragStart` → `onDrag` → `onDragStop`, and the resize equivalents) fires
+throughout — see [Events & lifecycle](/vue/docs/guides/events).
+
+<Callout type="info">
+  **Keyboard drags have no floating preview:** the tile stays visible and steps cell-by-cell with the
+  arrow keys (Enter/Space to pick up and drop, Escape to cancel). Accessibility comes free from
+  dnd-kit's keyboard sensor.
+</Callout>
+
+## Compaction (packing)
+
+After every move, resize, insert, or remove, the layout is **re-packed** by a `Compactor`:
+
+- `verticalCompactor` (default) — items fall upward, like react-grid-layout;
+- `horizontalCompactor` — items pack to the left;
+- `noCompactor` — free positioning; items stay put and may overlap;
+- `masonry` / `gravity` / `shelf` / `wrap` / fast variants — from `@snapgridjs/extras`.
+
+It's just a value you pass and can swap at runtime. See [Compaction & packing](/vue/docs/guides/compaction).
+
+## Gotchas cheat-sheet
+
+The handful of things that trip people up. Each is spelled out in its guide; this is the quick scan.
+
+| Gotcha | In short | More |
+| --- | --- | --- |
+| **Provider wraps the host** | `useGridContainer` must run *inside* `<DragDropProvider>` — in a **child** component, since Vue resolves `inject` from the parent chain — or you get `no grid found for group`. | [Headless](/vue/docs/guides/headless) |
+| **Destructure the composables** | Vue only auto-unwraps top-level setup bindings, so pull `setRef` / `style` / `group` out of the handle — a kept-whole `container.style` reaches the template as a ref object. | [Headless](/vue/docs/guides/headless) |
+| **The tile floats itself** | No overlay to render — a dragged tile lifts into the top layer on its own. Style its drag look via the tile's `[data-dragging]`. | [Headless](/vue/docs/guides/headless#floating) · [Styling](/vue/docs/guides/styling) |
+| **Headless tiles have no affordances** | No resize handles, placeholder, or classes — render them with `useGridResizeHandle` / `useGridPlaceholder` and bring your own classes. | [Headless](/vue/docs/guides/headless) · [Styling](/vue/docs/guides/styling) |
+| **Always controlled** | Apply every `onLayoutChange` or nothing moves; never mutate the layout. | above |
+| **Feed a clean initial layout** | snapgrid renders your layout verbatim and only re-packs *during* a drag — pre-compact gaps/overlaps. | [Compaction](/vue/docs/guides/compaction) |
+| **Nested grids share one provider** | A grid nested in another shares the outer's `<DragDropProvider>`; innermost-wins collision resolves the inner grid, so tiles cross levels. Give a sub-grid its **own** provider to contain it. | [Nesting](/vue/docs/guides/nesting) |
+| **Mind the defaults** | `rowHeight` is 150; `width` is `initialWidth` (1280) until measured — gate on `mounted` to avoid a first-paint reflow under SSR. | [SSR](/vue/docs/guides/ssr) |

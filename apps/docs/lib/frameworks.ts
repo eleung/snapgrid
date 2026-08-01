@@ -4,6 +4,7 @@
 export const FRAMEWORKS = [
   { id: "react", label: "React", available: true },
   { id: "svelte", label: "Svelte", available: true },
+  { id: "vue", label: "Vue", available: true },
 ] as const;
 
 export type Framework = (typeof FRAMEWORKS)[number]["id"];

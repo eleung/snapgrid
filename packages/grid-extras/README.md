@@ -11,7 +11,7 @@ Extra packing styles for [snapgrid](https://github.com/eleung/snapgrid) — drop
 pnpm add @snapgridjs/extras
 ```
 
-Use alongside [`@snapgridjs/react`](https://www.npmjs.com/package/@snapgridjs/react) or [`@snapgridjs/svelte`](https://www.npmjs.com/package/@snapgridjs/svelte) (or `@snapgridjs/core` directly). The `Compactor`s are framework-free — the same packer drops into either binding's `<GridLayout>`.
+Use alongside [`@snapgridjs/react`](https://www.npmjs.com/package/@snapgridjs/react), [`@snapgridjs/svelte`](https://www.npmjs.com/package/@snapgridjs/svelte) or [`@snapgridjs/vue`](https://www.npmjs.com/package/@snapgridjs/vue) (or `@snapgridjs/core` directly). The `Compactor`s are framework-free — the same packer drops into any binding's `<GridLayout>`.
 
 ## Packers
 

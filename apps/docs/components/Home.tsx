@@ -18,33 +18,45 @@ import Link from "next/link";
 import { useState } from "react";
 import { HeroGrid } from "./demos";
 import { SvelteHeroDemo } from "./demos-svelte";
+import { VueHeroDemo } from "./demos-vue";
 // Build-time generated (see scripts/measure-bundle.mjs + highlight-snippets.mjs).
-import { BUNDLE_SIZE, BUNDLE_SIZE_SVELTE } from "./generated/bundle-size";
+import { BUNDLE_SIZE, BUNDLE_SIZE_SVELTE, BUNDLE_SIZE_VUE } from "./generated/bundle-size";
 import {
   HERO_HEADLESS_HTML,
   HERO_HEADLESS_HTML_SVELTE,
+  HERO_HEADLESS_HTML_VUE,
   RGL_DIFF_HTML,
 } from "./generated/hero-code";
 
 // Measured bundle size per framework (brotli, tree-shaken GridLayout, runtime external).
-// Widened from the `as const` generated literals so both frameworks' figures fit.
+// Widened from the `as const` generated literals so every framework's figures fit.
 type BundleSize = { total: number; snapgrid: number; dndkit: number };
 const BUNDLE: Record<Framework, BundleSize> = {
   react: BUNDLE_SIZE,
   svelte: BUNDLE_SIZE_SVELTE,
+  vue: BUNDLE_SIZE_VUE,
 };
 
-// The install command per framework binding. Both share @dnd-kit/dom (the DOM engine);
+// The install command per framework binding. All share @dnd-kit/dom (the DOM engine);
 // the binding + its dnd-kit adapter differ.
 const INSTALL: Record<Framework, string> = {
   react: "pnpm add @snapgridjs/react @dnd-kit/react @dnd-kit/dom",
   svelte: "pnpm add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom",
+  vue: "pnpm add @snapgridjs/vue @dnd-kit/vue @dnd-kit/dom",
 };
 
 // The "30-second example" source per framework (pre-highlighted at build time).
 const HERO_CODE: Record<Framework, string> = {
   react: HERO_HEADLESS_HTML,
   svelte: HERO_HEADLESS_HTML_SVELTE,
+  vue: HERO_HEADLESS_HTML_VUE,
+};
+
+// The hero grid demo per framework — React renders inline, the others mount as islands.
+const HERO_DEMO: Record<Framework, () => React.ReactElement> = {
+  react: HeroGrid,
+  svelte: SvelteHeroDemo,
+  vue: VueHeroDemo,
 };
 
 /** The hero install command — click anywhere on it to copy — with a size breakdown. */
@@ -131,9 +143,11 @@ interface Feature {
 // Features are shared across frameworks; only the doc links (prefix) and the headless
 // wording ("hooks" vs "factories", useResponsiveLayout vs createResponsiveLayout) differ.
 function features(fw: Framework): Feature[] {
-  const composable = fw === "svelte" ? "Factories" : "Hooks";
+  const composable = fw === "svelte" ? "Factories" : fw === "vue" ? "Composables" : "Hooks";
   const responsiveApi =
-    fw === "svelte" ? "createResponsiveLayout factory" : "useResponsiveLayout hook";
+    fw === "svelte"
+      ? "createResponsiveLayout factory"
+      : `useResponsiveLayout ${fw === "vue" ? "composable" : "hook"}`;
   return [
     {
       icon: Component,
@@ -198,7 +212,7 @@ export function Home() {
       <Link className="dg-roadmap-teaser" href="/roadmap">
         <span className="dg-roadmap-teaser__tag">Roadmap</span>
         <span className="dg-roadmap-teaser__text">
-          Next: <strong>Vue, Solid &amp; vanilla-TS</strong> bindings on snapgrid&apos;s
+          Next: <strong>Solid &amp; vanilla-TS</strong> bindings on snapgrid&apos;s
           framework-agnostic core.
         </span>
         <span className="dg-roadmap-teaser__more">See the roadmap →</span>
@@ -210,7 +224,9 @@ export function Home() {
             <p className="dg-hero__eyebrow">
               {isReact
                 ? "a dnd-kit grid · react-grid-layout alternative"
-                : "a dnd-kit grid layout for Svelte 5"}
+                : framework === "vue"
+                  ? "a dnd-kit grid layout for Vue 3"
+                  : "a dnd-kit grid layout for Svelte 5"}
             </p>
             <h1 className="dg-hero__title">Grids that drag, resize, and repack.</h1>
             <p className="dg-hero__sub">
@@ -229,7 +245,10 @@ export function Home() {
               </Link>
             </div>
           </div>
-          {isReact ? <HeroGrid /> : <SvelteHeroDemo />}
+          {(() => {
+            const Hero = HERO_DEMO[framework];
+            return <Hero />;
+          })()}
         </div>
         {/* Full-width row under both columns so the install command fits on one line. */}
         <InstallCommand command={INSTALL[framework]} size={BUNDLE[framework]} />
@@ -262,7 +281,7 @@ export function Home() {
       </div>
 
       {/* react-grid-layout is a React library, so the migration comparison only makes
-          sense for React — a Svelte user has nothing to migrate from. */}
+          sense for React — a Svelte or Vue user has nothing to migrate from. */}
       {isReact ? (
         <section className="dg-compare">
           <h2>Coming from react-grid-layout?</h2>

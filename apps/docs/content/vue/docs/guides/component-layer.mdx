@@ -1,0 +1,180 @@
+---
+title: Component layer
+description: The turnkey <GridLayout> shell — a controlled component in the react-grid-layout style, over the same headless composables, for when the composables are more than you need.
+---
+
+import { Callout } from "nextra/components";
+import { ComponentLayerDemo } from "@/components/demos-vue";
+
+# Component layer
+
+snapgrid is [headless-first](/vue/docs/guides/headless), but you don't have to wire the composables yourself.
+The **component layer** is a thin shell in the react-grid-layout style over those exact composables: `<GridLayout>`
+bundles the dnd-kit `DragDropProvider`, the container, the items, and the placeholder, so you never
+touch dnd-kit directly.
+
+<Callout type="info">
+  **This is the escape hatch.** If the headless provider/host/tile wiring is more than you
+  want, reach for `<GridLayout>` — it mirrors react-grid-layout v2, so it's the gentlest on-ramp.
+  When one grid later needs custom markup, drop just that grid down to the [composables](/vue/docs/guides/headless).
+  Same engine; the two layers mix freely.
+</Callout>
+
+## `<GridLayout>`
+
+A controlled grid. Each layout item's content comes from an **`item` scoped slot** — Vue has no
+keyed-children analog, so the slot receives the item (keyed by `i`) and snapgrid positions it and
+renders the resize handles and placeholder for you.
+
+```vue
+<script setup>
+import { ref } from "vue";
+import { GridLayout, useContainerWidth } from "@snapgridjs/vue";
+
+const { width, setRef } = useContainerWidth();
+const layout = ref([
+  { i: "a", x: 0, y: 0, w: 4, h: 2 },
+  { i: "b", x: 4, y: 0, w: 4, h: 2 },
+  { i: "c", x: 8, y: 0, w: 4, h: 3 },
+]);
+</script>
+
+<template>
+  <div :ref="setRef">
+    <GridLayout
+      :layout="layout"
+      :width="width"
+      :on-layout-change="(next) => (layout = next)"
+      :grid-config="{ cols: 12, rowHeight: 60, margin: [12, 12] }"
+      :resize-config="{ handles: ['se', 'e', 's'] }"
+    >
+      <template #item="{ item }">
+        <div class="tile">{{ item.i }}</div>
+      </template>
+    </GridLayout>
+  </div>
+</template>
+```
+
+It supplies its own `DragDropProvider`; nest several (or wrap them in
+[`<SnapGridGroup>`](#cross-grid-with-components)) and they share one.
+
+<Callout type="info">
+  `<GridLayout>` is also the way around Vue's `inject` rule: it renders the provider *and* its grid
+  surface as a separate child component, so unlike a bare `useGridContainer` call it's safe to use in
+  the very component that hosts the grid. See [Architecture](/vue/docs/guides/architecture) for why.
+</Callout>
+
+<ComponentLayerDemo />
+
+## Config props map 1:1 to the composable options
+
+Every behaviour prop on `<GridLayout>` is the same option you'd pass to
+[`useGridContainer`](/vue/docs/guides/headless) — only the spelling differs (a component prop vs. an object
+key). So each feature guide applies to both layers:
+
+| Prop | What it does | Guide |
+| --- | --- | --- |
+| `gridConfig` | Columns, row height, margins, padding, maxRows. | [Concepts](/vue/docs/concepts) |
+| `dragConfig` | Handle, cancel, threshold, bounds, snap. | [Dragging](/vue/docs/guides/dragging) |
+| `resizeConfig` | Which handles to show. | [Resizing](/vue/docs/guides/resizing) |
+| `compactor` | Packing algorithm. | [Compaction](/vue/docs/guides/compaction) |
+| `dropConfig` / `onDrop` | Accept external draggables. | [External drop](/vue/docs/guides/external-drop) |
+| `isDraggable` / `isResizable` / `autoSize` | Grid-level toggles. | — |
+| `onDragStart` … `onResizeStop` | Lifecycle callbacks. | [Events](/vue/docs/guides/events) |
+
+See [Components → GridLayout](/vue/docs/api/components#gridlayout) for the complete prop table.
+
+## `<ResponsiveGridLayout>`
+
+The turnkey wrapper over [`useResponsiveLayout`](/vue/docs/guides/responsive). Give it a per-breakpoint `layouts`
+map instead of a single `layout`; it switches column count and layout as `width` crosses breakpoints.
+
+```vue
+<script setup>
+import { ref } from "vue";
+import { ResponsiveGridLayout, useContainerWidth } from "@snapgridjs/vue";
+
+const { width, setRef } = useContainerWidth();
+const layouts = ref({ lg: [/* … */] });
+</script>
+
+<template>
+  <div :ref="setRef">
+    <ResponsiveGridLayout
+      :width="width"
+      :layouts="layouts"
+      :on-layout-change="(_active, all) => (layouts = all)"
+    >
+      <template #item="{ item }">
+        <div class="tile">{{ item.i }}</div>
+      </template>
+    </ResponsiveGridLayout>
+  </div>
+</template>
+```
+
+## Cross-grid with components
+
+Wrap sibling grids in [`<SnapGridGroup>`](/vue/docs/guides/cross-grid) — the shared provider — and tiles
+drag between them. (Nested `<GridLayout>`s share a provider automatically.)
+
+```vue
+<template>
+  <SnapGridGroup>
+    <GridLayout :layout="left" :width="w" :on-layout-change="(next) => (left = next)">
+      <template #item="{ item }">
+        <div class="tile">{{ item.i }}</div>
+      </template>
+    </GridLayout>
+    <GridLayout :layout="right" :width="w" :on-layout-change="(next) => (right = next)">
+      <template #item="{ item }">
+        <div class="tile">{{ item.i }}</div>
+      </template>
+    </GridLayout>
+  </SnapGridGroup>
+</template>
+```
+
+<Callout type="warning">
+  Item ids must be unique across all grids that share a provider — they share one drag manager.
+</Callout>
+
+## Composing the pieces
+
+The layer isn't all-or-nothing. `<GridItem>` and `<GridPlaceholder>` are the same tiles `<GridLayout>`
+renders, exposed so you can drop them into a surface you host with `useGridContainer` — handy when you
+want the styled tile but control of the container:
+
+```vue
+<!-- Surface.vue — rendered inside a <DragDropProvider> or <SnapGridGroup>. -->
+<script setup>
+import { GridItem, GridPlaceholder, useGridContainer } from "@snapgridjs/vue";
+
+const props = defineProps({ layout: Array, width: Number, onLayoutChange: Function });
+
+// Destructure so the template auto-unwraps each ref.
+const { setRef, style, group } = useGridContainer(() => ({
+  layout: props.layout,
+  width: props.width,
+  onLayoutChange: props.onLayoutChange,
+}));
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">
+    <GridItem v-for="it in layout" :key="it.i" :id="it.i" :group="group">{{ it.i }}</GridItem>
+    <GridPlaceholder :group="group" />
+  </div>
+</template>
+```
+
+`<GridItem>` applies the stable `.snapgrid-item` class and `data-grid-id` / `data-dragging` attributes
+(see [Styling](/vue/docs/guides/styling)) and updates only its own slice, so re-rendering the surface doesn't
+touch every tile.
+
+<Callout type="info">
+  There's no drag overlay to manage at either layer — a dragged tile
+  [floats itself](/vue/docs/guides/headless#floating). See [Components](/vue/docs/api/components) for the full
+  prop tables and [Headless usage](/vue/docs/guides/headless) for the composables.
+</Callout>

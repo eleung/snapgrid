@@ -1,0 +1,159 @@
+---
+title: External drop
+description: Accept arbitrary dnd-kit draggables — a palette, a sidebar — dropped into a grid.
+---
+
+import { Callout } from "nextra/components";
+import { ExternalDropDemo } from "@/components/demos-vue";
+
+# External drop
+
+A grid can accept **non-grid** dnd-kit draggables — a widget palette, a sidebar of blocks — and
+turn a drop into a new layout item. Enable it with `dropConfig` and handle the result with
+`onDrop`.
+
+<ExternalDropDemo />
+
+## Set it up
+
+The grid and the external draggable must share one dnd-kit provider, so wrap both in a
+`<SnapGridGroup>` (dnd-kit's `DragDropProvider`). The grid hosts itself with `useGridContainer`,
+opting in via `dropConfig`. The draggable is a plain `useDraggable` — import it from
+`@snapgridjs/vue` so it resolves the same dnd-kit instance — carrying a `snapGridDrop` payload that
+describes the item to create.
+
+```vue
+<!-- PaletteItem.vue -->
+<script setup>
+import { ref } from "vue";
+import { Feedback, useDraggable } from "@snapgridjs/vue";
+
+const props = defineProps({ id: String, w: Number, h: Number });
+
+// `<script setup>` runs once per instance, so this plugin array keeps a stable identity
+// for the draggable's lifetime.
+const CLONE = [Feedback.configure({ feedback: "clone" })];
+const el = ref(null);
+
+useDraggable({
+  id: props.id,
+  data: { snapGridDrop: { w: props.w, h: props.h } },
+  plugins: CLONE,
+  element: el,
+});
+</script>
+
+<template>
+  <button ref="el">{{ w }}×{{ h }}</button>
+</template>
+```
+
+```vue
+<!-- DropGrid.vue -->
+<script setup>
+import { useGridContainer } from "@snapgridjs/vue";
+import Tile from "./Tile.vue";
+
+const props = defineProps({ layout: Array, width: Number });
+const emit = defineEmits(["layoutChange"]);
+
+const { setRef, style, group } = useGridContainer(() => ({
+  layout: props.layout,
+  width: props.width,
+  onLayoutChange: (next) => emit("layoutChange", next),
+  onDrop: (next) => emit("layoutChange", next),
+  dropConfig: { enabled: true, defaultItem: { w: 2, h: 2 } },
+}));
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">
+    <Tile v-for="it in layout" :key="it.i" :id="it.i" :group="group" />
+  </div>
+</template>
+```
+
+```vue
+<!-- Tile.vue -->
+<script setup>
+import { useGridItem } from "@snapgridjs/vue";
+
+const props = defineProps({ id: String, group: String });
+const { setRef, style } = useGridItem({ id: props.id, group: props.group });
+</script>
+
+<template>
+  <div :ref="setRef" :style="style" class="tile">{{ id }}</div>
+</template>
+```
+
+```vue
+<!-- Board.vue -->
+<script setup>
+import { ref } from "vue";
+import { SnapGridGroup } from "@snapgridjs/vue";
+import PaletteItem from "./PaletteItem.vue";
+import DropGrid from "./DropGrid.vue";
+
+const layout = ref([]);
+</script>
+
+<template>
+  <SnapGridGroup>
+    <PaletteItem id="pal-wide" :w="4" :h="1" />
+    <DropGrid :layout="layout" :width="600" @layout-change="layout = $event" />
+  </SnapGridGroup>
+</template>
+```
+
+## The drag preview
+
+Each draggable is its **own** floating preview — there's no shared overlay to wire up:
+
+- A **grid tile** being relocated (within or across grids) [floats itself](/vue/docs/guides/headless#floating).
+- A **palette item** floats a **clone** of itself — that's the `CLONE` plugin
+  (`Feedback.configure({ feedback: "clone" })`) on its `useDraggable` above.
+
+Why a clone? dnd-kit's *default* feedback floats the element itself — right for a grid tile, but it
+would yank the palette item out of its tray. `"clone"` leaves the original in place and floats a copy
+instead. The copy is just your palette markup; it becomes a grid tile only once `onDrop` fires.
+
+## The `snapGridDrop` payload
+
+The external draggable carries `data.snapGridDrop` to control the inserted item:
+
+```ts
+interface GridDropData {
+  i?: string; // id for the new item; a unique one is generated if omitted
+  w?: number; // width in columns
+  h?: number; // height in rows
+}
+```
+
+If `w`/`h` are omitted, `dropConfig.defaultItem` is used (and finally `1×1`, matching
+react-grid-layout's default).
+
+## `dropConfig` options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `false` | Accept external draggables. |
+| `defaultItem` | `{ w, h }` | `{ w: 1, h: 1 }` | Size for a dropped item when the source omits `snapGridDrop`. |
+| `accept` | `(source) => boolean` | accept any non-grid draggable | Restrict which sources are accepted. |
+
+## `onDrop`, not `onLayoutChange`
+
+An external drop fires **`onDrop(layout, item, event)`** — the next layout, the synthesized item,
+and the source event — rather than `onLayoutChange`. That lets you add the item to both your layout
+state and any side data keyed by id (titles, content, etc.) in one place.
+
+<Callout type="info">
+  Synthesized ids are prefixed with the grid's id, so two drop-enabled grids in a group never mint
+  the same id.
+</Callout>
+
+## Beyond one-way drops
+
+External drop is a **one-way** drop of a plain dnd-kit `Draggable` into a grid. For **two-way**
+movement with a `useSortable` list or board — cards in, tiles back out, both reordering live — see
+[dnd-kit interop](/vue/docs/guides/dnd-kit-interop).
