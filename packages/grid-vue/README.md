@@ -7,18 +7,17 @@ Draggable, resizable, responsive grid layouts for Vue — with pluggable packing
 [![npm](https://img.shields.io/npm/v/@snapgridjs/vue.svg)](https://www.npmjs.com/package/@snapgridjs/vue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-c2410c.svg)](https://github.com/eleung/snapgrid/blob/main/LICENSE)
 
-[**Documentation**](https://snapgrid.dev) ·
-[React docs](https://snapgrid.dev/react/docs/getting-started) ·
-[Svelte docs](https://snapgrid.dev/svelte/docs/getting-started)
+[**Documentation**](https://snapgrid.dev/vue/docs/getting-started) ·
+[Getting Started](https://snapgrid.dev/vue/docs/getting-started) ·
+[Examples](https://snapgrid.dev/vue/examples) ·
+[API](https://snapgrid.dev/vue/docs/api/overview)
 
 > The Vue binding of snapgrid. Same framework-free core + dnd-kit engine as [`@snapgridjs/react`](https://www.npmjs.com/package/@snapgridjs/react) and [`@snapgridjs/svelte`](https://www.npmjs.com/package/@snapgridjs/svelte) — a grid behaves identically whichever framework renders it.
-
-> **Vue guides are still being written.** The quick start below is complete and current. Until the Vue pages land on [snapgrid.dev](https://snapgrid.dev), the [React](https://snapgrid.dev/react/docs/getting-started) and [Svelte](https://snapgrid.dev/svelte/docs/getting-started) guides describe the same engine, options and behaviour — only the binding syntax differs.
 
 ## Why snapgrid
 
 - **Controlled & predictable** — you own the layout array; every change comes back through `onLayoutChange`. No hidden state.
-- **Headless-first** — compose `useGridContainer` + composables under a dnd-kit `DragDropProvider` for full control of your markup — or drop in the turnkey `<GridLayout>` when you don't need that. Ships **no CSS**.
+- **Headless-first** — compose `useGridContainer` + composables under a dnd-kit `DragDropProvider` for full control of your markup — or drop in the turnkey [`<GridLayout>`](https://snapgrid.dev/vue/docs/guides/component-layer) when you don't need that. Ships **no CSS**.
 - **Vue 3 native** — composables returning refs and function refs; tiles declare a `group`, like a dnd-kit sortable. Fine-grained reactivity, nothing to memoize.
 - **Pluggable packing** — `vertical` / `horizontal` / `none`, plus `masonry` / `gravity` / `shelf` from [`@snapgridjs/extras`](https://www.npmjs.com/package/@snapgridjs/extras), or your own `Compactor`.
 - **Cross-grid dragging** — wrap grids in a `<SnapGridGroup>` and drag tiles between them.
@@ -103,7 +102,7 @@ const { setRef, style } = useGridItem({ id: props.id, group: props.group });
 </template>
 ```
 
-**Prefer a ready-made component?** The turnkey `<GridLayout>` wraps these same composables (and supplies the provider) — pass an `item` scoped slot and you're done:
+**Prefer a ready-made component?** The turnkey [`<GridLayout>`](https://snapgrid.dev/vue/docs/guides/component-layer) wraps these same composables (and supplies the provider) — pass an `item` scoped slot and you're done:
 
 ```vue
 <GridLayout :layout="layout" :width="width" :on-layout-change="(next) => (layout = next)">
@@ -114,6 +113,8 @@ const { setRef, style } = useGridItem({ id: props.id, group: props.group });
 ```
 
 The `item` slot receives the item's **committed** layout entry. Inside a tile, `useGridItem().item` gives the live (reflowed) entry during a drag.
+
+→ Full walkthrough in [**Getting Started**](https://snapgrid.dev/vue/docs/getting-started).
 
 ## License
 

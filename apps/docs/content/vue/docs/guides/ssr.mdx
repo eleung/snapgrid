@@ -1,0 +1,76 @@
+---
+title: Server-side rendering
+description: Using snapgrid with Nuxt and other SSR/SSG frameworks.
+---
+
+import { Callout } from "nextra/components";
+
+# Server-side rendering
+
+snapgrid works under SSR and static generation — Nuxt's `ssr` and prerender (`nuxt generate`) modes
+included. A couple of notes keep it smooth.
+
+## Width measurement is SSR-safe
+
+`useContainerWidth` measures with a `ResizeObserver`, which only exists in the browser. The
+composable is SSR-safe by design:
+
+- it reports `initialWidth` (default `1280`) on the server **and** until the element is bound on the
+  client, so the markup matches and there's no hydration mismatch;
+- it then measures the real width after mount and updates.
+
+```js
+const { width, mounted, setRef } = useContainerWidth({ initialWidth: 1024 });
+```
+
+The handle exposes reactive `width` and `mounted` refs, plus a `setRef` function ref for the element
+to measure. Pick an `initialWidth` close to your typical container to minimize the first-paint
+reflow, or gate on `mounted` if you'd rather not render until measured.
+
+## Avoiding layout flash
+
+Because the server renders at `initialWidth`, tiles briefly appear at that width before the client
+measures. To avoid any flash you can render the grid only once measured:
+
+```vue
+<script setup>
+import { useContainerWidth } from "@snapgridjs/vue";
+import Board from "./Board.vue";
+
+const { width, mounted, setRef } = useContainerWidth();
+</script>
+
+<template>
+  <div :ref="setRef">
+    <Board v-if="mounted" :width="width" />
+    <div v-else style="min-height: 240px" />
+  </div>
+</template>
+
+<!-- Board is your headless grid: a DragDropProvider wrapping useGridContainer. -->
+```
+
+## Nuxt
+
+Nuxt renders a `.vue` component on the server and hydrates it on the client — there's no per-file
+directive like React's `"use client"` to add. snapgrid's browser-only work — the width
+`ResizeObserver`, element refs, dnd-kit's sensors, the drag engine, and the tile's reflow animation —
+is either guarded or lives in post-flush watchers, which Vue skips during server rendering. The
+server render still emits **engine-computed geometry** (each tile's absolute `left`/`top` comes from
+the layout math, not from a measurement), so the client hydrates onto exactly the same boxes.
+
+```vue
+<script setup>
+import { DragDropProvider, useContainerWidth, useGridContainer } from "@snapgridjs/vue";
+// …
+</script>
+```
+
+If you ever import a module that touches browser globals at the top level, reach for `<ClientOnly>`
+or an `import.meta.client` guard — but snapgrid itself needs no such guard.
+
+<Callout type="info">
+  Dragging is purely client-side: there's no active drag during SSR, so a tile renders in its normal
+  in-grid position on the server and only [floats itself](/vue/docs/guides/headless#floating) once a drag
+  begins in the browser. Nothing to guard.
+</Callout>

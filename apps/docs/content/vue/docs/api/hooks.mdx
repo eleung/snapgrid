@@ -1,0 +1,301 @@
+---
+title: Composables
+description: useContainerWidth, useGridContainer, useGridItem, useGridResizeHandle, useGridPlaceholder, useResponsiveLayout, useGridController, resolveController.
+---
+
+import { Callout } from "nextra/components";
+
+# Composables
+
+snapgrid's primary API. Each returns Vue refs, style strings, and function refs to bind to your own
+elements. See [Headless usage](/vue/docs/guides/headless) for the full picture.
+
+<Callout type="info">
+  Headless grids render inside a dnd-kit [`DragDropProvider`](https://next.dndkit.com) that you
+  supply. `useGridContainer` is the grid host and returns the grid's `group`; the item-level
+  composables take that `group` to resolve their grid.
+</Callout>
+
+Call each one **once**, during component `setup`, and keep the handle it returns. Its fields are Vue
+refs — **destructure** the handle in `<script setup>` so the template auto-unwraps them (Vue only
+auto-unwraps refs that are top-level setup bindings; `handle.style` read in a template stays a ref
+object). In plain JS, read `.value`.
+
+Elements are bound with **function refs** — `:ref="setRef"`, never a template-ref object — and
+`style` is a ready-made CSS string, so bind it directly with `:style="style"` (don't spread it).
+`RefTarget` in the tables below is what Vue hands a function ref:
+`Element | ComponentPublicInstance | null | undefined`.
+
+<Callout type="warning">
+  Vue resolves `inject` from the **parent** chain, so every composable that resolves a grid
+  (`useGridContainer`, `useGridController`, `useGridItem`, `useGridPlaceholder`,
+  `useGridResizeHandle`, `resolveController`) must run in a **child component** of the
+  `<DragDropProvider>` — never in the component that renders the provider itself.
+</Callout>
+
+## useContainerWidth
+
+Measures a container's width with a `ResizeObserver` (SSR-safe). Replaces react-grid-layout's
+`WidthProvider`.
+
+```vue
+<script setup>
+import { useContainerWidth } from "@snapgridjs/vue";
+
+const { width, mounted, setRef } = useContainerWidth({ initialWidth: 1024 });
+</script>
+
+<template>
+  <div :ref="setRef">
+    <!-- pass width to the grid -->
+  </div>
+</template>
+```
+
+| | Type | Description |
+| --- | --- | --- |
+| `options.initialWidth` | `number` | Width before measurement. Default `1280`. |
+| → `width` | `Ref<number>` | Measured width (or `initialWidth` before mount). |
+| → `mounted` | `Ref<boolean>` | `true` once measured at least once. |
+| → `setRef` | `(el: RefTarget) => void` | Function ref for the element to measure. |
+
+## useGridContainer
+
+The grid **host**: takes a getter of the controlled layout + config, owns the grid's drag/resize
+session, registers the droppable surface, and returns a `setRef` + style for your container plus the
+grid's `group`. Options are passed as a **getter** (`() => ({ … })`) so the grid tracks your live
+reactive state. Call it inside a component rendered under a `<DragDropProvider>`.
+
+```vue
+<script setup>
+import { useGridContainer } from "@snapgridjs/vue";
+import Tile from "./Tile.vue";
+
+const props = defineProps({ layout: Array, width: Number, onLayoutChange: Function });
+
+const { setRef, style, group } = useGridContainer(() => ({
+  layout: props.layout,
+  width: props.width,
+  onLayoutChange: props.onLayoutChange,
+}));
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">
+    <Tile v-for="it in layout" :key="it.i" :id="it.i" :group="group" />
+  </div>
+</template>
+```
+
+### Options (`UseGridControllerOptions`)
+
+The controlled state plus the per-grid config. These are exactly `<GridLayout>`'s props **minus the
+`class` / `style` fallthrough attributes** (here you own the surface element, so you style it
+directly).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `layout` | `Layout` | — | **Required.** Controlled array of items. Never mutated. |
+| `width` | `number` | — | **Required.** Container width in px (from [`useContainerWidth`](#usecontainerwidth)). |
+| `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. The grid is controlled — apply it, or nothing moves. |
+| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/vue/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. Unset fields use defaults. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/vue/docs/guides/dragging): `handle` (CSS selector — headless prefers [`setHandleRef`](#usegriditem)), `cancel`, `threshold`, `bounded`, `snapToGrid`. |
+| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/vue/docs/guides/resizing): which handle axes are allowed. |
+| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/vue/docs/guides/external-drop): `enabled`, `defaultItem`, `accept`. |
+| `accept` | `(source) => boolean` | — | [dnd-kit interop](/vue/docs/guides/dnd-kit-interop): also accept a foreign sortable (e.g. a tray card) as a drop target. You drive the receive yourself in `onDragOver` with [`snapMove`](/vue/docs/guides/dnd-kit-interop#snapmove). |
+| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/vue/docs/guides/compaction). Swap at runtime. |
+| `isDraggable` | `boolean` | `true` | Grid-level drag toggle (overrides per-item when `false`). |
+| `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
+| `autoSize` | `boolean` | `true` | Grow the surface height to fit content. |
+| `id` | `string` | auto (`useId`) | Stable id for the droppable surface; surfaced back as `group`. |
+| `type` | `string` | `"grid"` | The droppable surface's dnd-kit `type`. Override to namespace grids for [interop](/vue/docs/guides/dnd-kit-interop) (branch `onDragOver` on it, or have a foreign draggable `accept` only this grid). Grids resolve by id, so any value still receives tiles + cross-grid drops. |
+| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/vue/docs/guides/events) `(layout, oldItem, newItem, placeholder, event, node)`. |
+| `onResizeStart` `onResize` `onResizeStop` | `GridEventCallback` | — | Resize lifecycle, same signature. |
+| `onDrop` | `(layout, item, event) => void` | — | Fired when an external draggable is dropped in — instead of `onLayoutChange`. |
+
+### Returns (`GridContainerResult`)
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `setRef` | `(el: RefTarget) => void` | Function ref for your surface element. |
+| `style` | `ComputedRef<string>` | Inline-style string: `position: relative` + width + auto-sized height. Bind it directly. |
+| `isDropTarget` | `ComputedRef<boolean>` | `true` while a compatible draggable is over the grid — handy for highlighting. |
+| `group` | `ComputedRef<string>` | This grid's id (the `id` option, or a generated one). Pass it to every item-level composable. |
+| `controller` | `GridController` | The live store (a plain object, not a ref), for advanced composition. |
+
+## useGridItem
+
+Wires a single tile: drag activation, positioning style, and drag state. Takes an options object,
+mirroring dnd-kit's `useSortable`: `id`, `group` (the value its `useGridContainer` returned), and an
+optional `type`. Both `id` and `group` are read **once** at setup and are expected to stay stable for
+the tile's lifetime (tiles are keyed by `i`, and a grid's id is stable).
+
+```vue
+<script setup>
+import { useGridItem } from "@snapgridjs/vue";
+
+const props = defineProps({ id: String, group: String });
+
+const { setRef, style, item } = useGridItem({ id: props.id, group: props.group });
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">{{ item?.i }}</div>
+</template>
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `id` | `string` | — | **Required.** Matches the layout item's `i`. |
+| `group` | `string` | — | **Required.** The owning grid's id (from its `useGridContainer`). |
+| `type` | `string` | `"grid-item"` | The dnd-kit sortable `type` the tile carries. Override to namespace tiles for [interop](/vue/docs/guides/dnd-kit-interop) — e.g. so a foreign sortable list `accept`s only one grid's tiles. The grid identifies its own tiles by their payload, not this string, so any value still drags and crosses grids. |
+
+| → | Type | Description |
+| --- | --- | --- |
+| `setRef` | `(el: RefTarget) => void` | Function ref for the tile element. |
+| `setHandleRef` | `(el: RefTarget) => void` | Optional drag handle — bind it to a child to restrict **pointer** dragging to it. The headless form of `dragConfig.handle`; keyboard pickup on the focused tile is unaffected. |
+| `style` | `ComputedRef<string>` | `position: absolute` + left/top + size. Reflow animates on the compositor (a transform FLIP), so the dnd-kit float reads the tile's true rect during ecosystem hand-offs. |
+| `isDragging` | `ComputedRef<boolean>` | True while this tile is the active drag source. |
+| `item` | `ComputedRef<LayoutItem \| undefined>` | The tile's current (possibly reflowed) entry. |
+
+## useGridResizeHandle
+
+Models a resize handle as its own draggable. Position and style it however you like; `group` is the
+grid's id.
+
+```vue
+<script setup>
+import { useGridResizeHandle } from "@snapgridjs/vue";
+
+const props = defineProps({ itemId: String, group: String });
+
+const { setRef, handleProps, isResizing } = useGridResizeHandle({
+  id: props.itemId,
+  handle: "se",
+  group: props.group,
+});
+</script>
+
+<template>
+  <span :ref="setRef" v-bind="handleProps" />
+</template>
+```
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `id` | `string` | **Required.** The layout item's `i` — the item this handle resizes. |
+| `handle` | `ResizeHandleAxis` | **Required.** Which edge/corner this handle drives. |
+| `group` | `string` | **Required.** The owning grid's id. |
+
+`handleProps` is a plain object (not a ref) carrying the marker attribute that excludes the handle
+from item-drag activation — `v-bind` it onto the element. `isResizing` is a `ComputedRef<boolean>`,
+true while this item is actively being resized.
+
+## useGridPlaceholder
+
+Returns a `ComputedRef<GridPlaceholderInfo | null>` — where the landing-cell marker should render,
+or `null` when idle. `group` is the grid's id. The result is a single ref (not a handle object), so
+read `.value` in JS; the template auto-unwraps it.
+
+```vue
+<script setup>
+import { useGridPlaceholder } from "@snapgridjs/vue";
+
+const props = defineProps({ group: String });
+
+const placeholder = useGridPlaceholder(props.group);
+</script>
+
+<template>
+  <div v-if="placeholder" :style="placeholder.style" />
+</template>
+```
+
+`GridPlaceholderInfo` is `{ item: LayoutItem; style: string }` — the layout entry the dragged item
+will land on, plus a positioning inline-style string for your element.
+
+## useResponsiveLayout
+
+The headless engine behind `ResponsiveGridLayout`. Resolves the active breakpoint, columns, and
+layout from the container width. Options are passed as a **getter** so it tracks your live
+width/layouts.
+
+```vue
+<script setup>
+import { ref } from "vue";
+import { useResponsiveLayout } from "@snapgridjs/vue";
+
+const props = defineProps({ width: Number });
+const layouts = ref({ lg: [/* … */] });
+
+const { breakpoint, cols, layout, onLayoutChange } = useResponsiveLayout(() => ({
+  width: props.width,
+  layouts: layouts.value,
+  onLayoutChange: (active, all) => (layouts.value = all),
+  onBreakpointChange: (bp, activeCols) => {},
+}));
+</script>
+```
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `width` | `number` | Current container width. |
+| `layouts` | `ResponsiveLayouts` | Per-breakpoint layout map. |
+| `breakpoints` | `Breakpoints` | Optional; defaults to `DEFAULT_BREAKPOINTS`. |
+| `cols` | `BreakpointCols` | Optional; defaults to `DEFAULT_BREAKPOINT_COLS`. |
+| `compactor` | `Compactor` | Used when generating a missing breakpoint's layout. |
+| `onLayoutChange` | `(layout, layouts) => void` | Active layout + updated map. |
+| `onBreakpointChange` | `(breakpoint, cols) => void` | On breakpoint change. |
+
+Returns the active `breakpoint` (`ComputedRef<string>`), its `cols` (`ComputedRef<number>`), the
+resolved `layout` (`ComputedRef<Layout>`), and a plain `onLayoutChange(layout)` function to pass to
+the grid (it updates the active breakpoint's entry).
+
+## useGridController
+
+Creates and owns a grid's `GridController` — the observable render bridge — **without** rendering a
+surface. The advanced seam underneath [`useGridContainer`](#usegridcontainer): same options getter
+(`UseGridControllerOptions`), but it returns the controller itself (a plain object, not a ref) and
+leaves the droppable surface, element ref, and container style to you. Most consumers want
+`useGridContainer` instead. Must be called during setup, in a child of a `<DragDropProvider>`.
+
+```vue
+<script setup>
+import { useGridController } from "@snapgridjs/vue";
+
+const props = defineProps({ layout: Array, width: Number });
+
+const controller = useGridController(() => ({ layout: props.layout, width: props.width }));
+</script>
+```
+
+## resolveController
+
+Resolves a grid's controller by its `group` (= the grid's id) from the registry, scoped to the
+ambient dnd-kit manager. The registry-based alternative to the provide/inject resolution that
+[`useGridItem`](#usegriditem) uses internally; reach for it for advanced composition. Throws a
+helpful error if the group is unresolved. Must be called during setup, inside a
+`<DragDropProvider>`.
+
+```vue
+<script setup>
+import { resolveController } from "@snapgridjs/vue";
+
+const props = defineProps({ group: String });
+
+const controller = resolveController(props.group);
+</script>
+```
+
+## No overlay composable (tiles float themselves)
+
+There's no `useGridDragOverlay` — and no overlay component either. While you drag with a pointer,
+dnd-kit lifts the active tile into the browser's top layer, so the tile you already rendered
+**floats itself** above everything and crosses between grids unclipped; on drop it settles into its
+new cell. Nothing extra to wire. Style the floating state through the tile's own `isDragging`. See
+[The dragged tile floats itself](/vue/docs/guides/headless#floating).
+
+If you need a *separate* floating element — a clone, a ghost, different markup — dnd-kit's
+[`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/vue`. It's a component,
+not a composable, because it owns and renders its own element, so there's nothing for a composable
+to return.

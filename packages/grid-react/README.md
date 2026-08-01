@@ -12,7 +12,7 @@ Draggable, resizable, responsive grid layouts for React — with pluggable packi
 [Examples](https://snapgrid.dev/react/examples) ·
 [API](https://snapgrid.dev/react/docs/api/overview)
 
-> Using Svelte? Reach for [`@snapgridjs/svelte`](https://www.npmjs.com/package/@snapgridjs/svelte) — the same grid, on the same framework-free core.
+> Using Svelte or Vue? Reach for [`@snapgridjs/svelte`](https://www.npmjs.com/package/@snapgridjs/svelte) or [`@snapgridjs/vue`](https://www.npmjs.com/package/@snapgridjs/vue) — the same grid, on the same framework-free core.
 
 ## Why snapgrid
 

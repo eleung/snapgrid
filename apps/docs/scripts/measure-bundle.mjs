@@ -77,6 +77,9 @@ try {
     plugins: [sveltePlugin],
     conditions: ["svelte", "browser", "import"],
   });
+  // Vue needs no compile plugin: @snapgridjs/vue ships compiled JS (its components are
+  // `defineComponent` render functions, not SFCs). Only the runtime is external.
+  const vue = await measure("@snapgridjs/vue", { external: ["vue"] });
 
   await writeFile(
     OUT,
@@ -85,10 +88,11 @@ try {
 // Minified + tree-shaken \`import { GridLayout }\`, brotli, framework runtime excluded.
 export const BUNDLE_SIZE = ${emit(react)};
 export const BUNDLE_SIZE_SVELTE = ${emit(svelte)};
+export const BUNDLE_SIZE_VUE = ${emit(vue)};
 `,
   );
   console.log(
-    `measured bundle → ${OUT}\n  react:  total ${react.total}kB = snapgrid ${react.snapgrid} + dnd-kit ${react.dndkit}\n  svelte: total ${svelte.total}kB = snapgrid ${svelte.snapgrid} + dnd-kit ${svelte.dndkit}  (brotli)`,
+    `measured bundle → ${OUT}\n  react:  total ${react.total}kB = snapgrid ${react.snapgrid} + dnd-kit ${react.dndkit}\n  svelte: total ${svelte.total}kB = snapgrid ${svelte.snapgrid} + dnd-kit ${svelte.dndkit}\n  vue:    total ${vue.total}kB = snapgrid ${vue.snapgrid} + dnd-kit ${vue.dndkit}  (brotli)`,
   );
 } catch (err) {
   console.warn(`measure-bundle: skipped (${err.message}); keeping committed bundle-size.ts`);

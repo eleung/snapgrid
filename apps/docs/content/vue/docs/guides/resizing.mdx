@@ -1,0 +1,98 @@
+---
+title: Resizing
+description: Which handles to show, rendering them in the headless layer, per-item min/max constraints, and the preventCollision gotcha.
+---
+
+import { Callout } from "nextra/components";
+import { ResizeDemo } from "@/components/demos-vue";
+
+# Resizing
+
+A grid item resizes from **handles** at its edges and corners. You declare *which* axes are resizable
+with `resizeConfig`, and clamp each item's size with `minW` / `maxW` / `minH` / `maxH`. `resizeConfig`
+is an option on `useGridContainer` (and, identically, a prop on the
+[`<GridLayout>`](/vue/docs/guides/component-layer) shell):
+
+```js
+const { setRef, style, group } = useGridContainer(() => ({
+  layout: props.layout,
+  width: props.width,
+  onLayoutChange: (next) => emit("layoutChange", next),
+  resizeConfig: { handles: ["se", "e", "s"] },
+}));
+```
+
+<Callout type="warning">
+  **In the headless layer you render the handles yourself.** `resizeConfig.handles` only declares
+  which axes are *allowed* — a bare `useGridItem` tile shows nothing to grab. Render a handle per axis
+  with [`useGridResizeHandle`](#rendering-handles-headless) (below). `<GridLayout>` renders them for
+  you — reach for it if you'd rather not.
+</Callout>
+
+<ResizeDemo />
+
+## `resizeConfig` options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `true` | Grid-level on/off for resizing. |
+| `handles` | `ResizeHandleAxis[]` | `["se"]` | Which handles each item may show. |
+
+The eight axes are `"n"`, `"e"`, `"s"`, `"w"`, `"ne"`, `"nw"`, `"se"`, `"sw"`. West and north handles
+keep the opposite edge anchored as you drag; east and south keep the top-left anchored and clamp to
+the grid's columns (and `maxRows`, if set).
+
+## Rendering handles (headless) [#rendering-handles-headless]
+
+`useGridResizeHandle({ id, handle, group })` models a handle as its own draggable. Bind its `setRef`
+and `v-bind` its `handleProps` onto an element you position and style — `handleProps` marks the
+element so a pointer-down resizes instead of starting an item drag:
+
+```vue
+<!-- Tile.vue -->
+<script setup>
+import { useGridItem, useGridResizeHandle } from "@snapgridjs/vue";
+
+const props = defineProps({ id: String, group: String });
+const { setRef, style } = useGridItem({ id: props.id, group: props.group });
+const { setRef: setResizeRef, handleProps } = useGridResizeHandle({
+  id: props.id,
+  handle: "se",
+  group: props.group,
+});
+</script>
+
+<template>
+  <div :ref="setRef" :style="style" class="tile">
+    {{ id }}
+    <!-- CSS places + styles `.resize-handle` at the corner -->
+    <span :ref="setResizeRef" v-bind="handleProps" class="resize-handle" />
+  </div>
+</template>
+```
+
+Render one handle per axis you configured. `useGridResizeHandle` also returns `isResizing` for
+styling. See [Headless usage](/vue/docs/guides/headless#usegridresizehandle) for the full picture.
+
+## Per-item constraints
+
+Add limits directly to the layout item; snapgrid enforces them as you resize:
+
+```js
+const layout = [
+  { i: "a", x: 0, y: 0, w: 4, h: 2, minW: 2, minH: 1 }, // never smaller than 2×1
+  { i: "b", x: 4, y: 0, w: 4, h: 2, maxW: 6, maxH: 3 }, // never larger than 6×3
+];
+```
+
+| Field | Description |
+| --- | --- |
+| `minW` / `maxW` | Min / max width in columns. `maxW` defaults to the column count. |
+| `minH` / `maxH` | Min / max height in rows. `maxH` defaults to unbounded. |
+| `resizeHandles` | Per-item handle set, overriding `resizeConfig.handles`. |
+| `isResizable` | Per-item on/off, overriding the grid default. `static` items don't resize unless they set `isResizable: true`. |
+
+<Callout type="info">
+  When the active compactor has `preventCollision` set, a resize that would overlap another tile is
+  rejected (the item keeps its previous size) rather than pushing neighbours.
+</Callout>

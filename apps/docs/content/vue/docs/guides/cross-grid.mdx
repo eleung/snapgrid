@@ -1,0 +1,135 @@
+---
+title: Cross-grid dragging
+description: Share one dnd-kit provider across grids to drag tiles between them.
+---
+
+import { Callout } from "nextra/components";
+import { CrossGridDemo } from "@/components/demos-vue";
+
+# Cross-grid dragging
+
+Put two or more grids on **one dnd-kit provider** and tiles can be dragged **between** them. The
+source grid loses the tile; the destination gains it. Each grid keeps its own controlled layout.
+`<SnapGridGroup>` is that shared provider — it's just dnd-kit's `DragDropProvider`, named for intent
+— so each grid hosts itself with `useGridContainer`, and a dragged tile floats itself across the
+seam (no overlay to wire).
+
+<Callout type="info">
+  Cross-grid is the managed, grid-to-grid case. To drag between a grid and a **non-grid** dnd-kit
+  sortable (a list, a kanban column), see [dnd-kit interop](/vue/docs/guides/dnd-kit-interop).
+</Callout>
+
+```vue
+<!-- Grid.vue — each grid hosts itself and exposes its own `group`; the shared
+     provider comes from the enclosing SnapGridGroup. -->
+<script setup>
+import { useGridContainer } from "@snapgridjs/vue";
+import Tile from "./Tile.vue";
+
+const props = defineProps({ layout: Array, width: Number, onLayoutChange: Function });
+
+// Composables return refs — destructure them so the template auto-unwraps each one.
+const { setRef, style, group } = useGridContainer(() => ({
+  layout: props.layout,
+  width: props.width,
+  onLayoutChange: props.onLayoutChange,
+  gridConfig: cfg,
+}));
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">
+    <Tile v-for="it in layout" :key="it.i" :id="it.i" :group="group" />
+  </div>
+</template>
+```
+
+```vue
+<!-- Tile.vue -->
+<script setup>
+import { useGridItem } from "@snapgridjs/vue";
+
+const props = defineProps({ id: String, group: String });
+const { setRef, style } = useGridItem({ id: props.id, group: props.group });
+</script>
+
+<template>
+  <div :ref="setRef" :style="style" class="tile">{{ id }}</div>
+</template>
+```
+
+```vue
+<!-- Board.vue — two grids under one SnapGridGroup exchange tiles. -->
+<script setup>
+import { ref } from "vue";
+import { SnapGridGroup } from "@snapgridjs/vue";
+import Grid from "./Grid.vue";
+
+const left = ref(/* … */);
+const right = ref(/* … */);
+const w = 480;
+</script>
+
+<template>
+  <SnapGridGroup>
+    <Grid :layout="left" :width="w" :on-layout-change="(next) => (left = next)" />
+    <Grid :layout="right" :width="w" :on-layout-change="(next) => (right = next)" />
+  </SnapGridGroup>
+</template>
+```
+
+<Callout type="warning">
+  Note the split into three components. `<SnapGridGroup>` renders the `DragDropProvider`, so each
+  `<Grid>` is a **child** of it — the only place `useGridContainer` can see the dnd-kit manager, since
+  Vue resolves `inject` from the parent chain. Calling it in `Board.vue` itself would silently
+  register no grid.
+</Callout>
+
+<CrossGridDemo />
+
+## How it works
+
+Cross-grid dragging is just two grids on **one dnd-kit `DragDropProvider`**. `<SnapGridGroup>`
+supplies that shared provider; a drag that starts in one grid is received by whichever grid
+dnd-kit's collision system resolves under the pointer. On drop:
+
+- the **source** grid removes the tile and fires its `onLayoutChange` with the tile gone;
+- the **destination** grid inserts the tile at the drop cell and fires its `onLayoutChange` with the
+  tile added.
+
+Both updates happen in the same gesture, each against its own layout state.
+
+<Callout type="warning">
+  **Item ids must be unique across every grid in a group.** They share one drag manager. If two
+  grids can hold an item with the same `i`, a cross-grid drop can't tell them apart.
+</Callout>
+
+<Callout type="info">
+  `<SnapGridGroup>` is exactly dnd-kit's `<DragDropProvider>` — use whichever you like; grids under
+  one provider exchange tiles either way. Prefer the turnkey shell? Swap each `<Grid>` for a
+  [`<GridLayout>`](/vue/docs/guides/component-layer) with an `item` scoped slot inside the same group;
+  it bundles the container and items for you.
+</Callout>
+
+<Callout type="info">
+  **No overlay to wire.** A dragged tile [floats itself](/vue/docs/guides/headless#floating) — it lifts
+  into the top layer and crosses the gap between grids unclipped, carrying its own content with it. So
+  the preview always shows the right tile, from whichever grid it came, with nothing extra to render.
+</Callout>
+
+## Callbacks
+
+The destination grid signals a received tile through `onLayoutChange` only. It does **not** fire
+`onDragStop`, because it never fired `onDragStart` (the source grid owns the drag's start/stop
+pair). Wire cross-grid persistence to `onLayoutChange` on both grids.
+
+## Dropping outside any grid
+
+If a tile is dropped outside every grid in the group, the move reverts. The source keeps it and no
+`onLayoutChange` fires.
+
+<Callout type="info">
+  Want a grid **inside a tile** of another rather than side-by-side siblings? See
+  [Nested grids](/vue/docs/guides/nesting) — they also cross levels by default, and you can give a
+  sub-grid its own provider to keep it self-contained.
+</Callout>

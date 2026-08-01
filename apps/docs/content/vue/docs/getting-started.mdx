@@ -1,0 +1,289 @@
+---
+title: Getting Started
+description: Install snapgrid and build your first draggable, repacking grid in Vue 3 with the headless composables — in about five minutes.
+---
+
+import { Callout, Steps, Tabs } from "nextra/components";
+import { BasicGridDemo } from "@/components/demos-vue";
+
+# Getting Started
+
+**snapgrid** is a draggable, resizable, repacking grid layout for Vue 3 — a
+[react-grid-layout](https://github.com/react-grid-layout/react-grid-layout) v2 alternative built on
+[dnd-kit](https://next.dndkit.com). It keeps the controlled `{ i, x, y, w, h }` model RGL users know,
+and adds things RGL can't do: dragging tiles **between** grids, nested grids, interop with the wider
+dnd-kit ecosystem (sortable lists, boards), keyboard accessibility, and pluggable packing — masonry,
+gravity, shelf, or your own compactor.
+
+It's **headless-first** — you wire composables to your own markup — with a turnkey `<GridLayout>` for
+when you just want a grid that works. Requires **Vue 3.5+**.
+
+<BasicGridDemo />
+
+<Callout type="info">
+  **Know dnd-kit? You already know most of this.** snapgrid *is* dnd-kit plus grid math — a grid
+  lives in dnd-kit's `<DragDropProvider>`, tiles are draggables, the surface is a droppable. If
+  you've touched `useDraggable` / `useSortable`, the headless API will feel familiar. New to
+  dnd-kit? A five-minute skim of [its overview](https://next.dndkit.com) is the single easiest win
+  before you read on.
+</Callout>
+
+## Install
+
+<Tabs items={["pnpm", "npm", "yarn", "bun"]}>
+<Tabs.Tab>
+
+```sh
+pnpm add @snapgridjs/vue @dnd-kit/vue @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+npm install @snapgridjs/vue @dnd-kit/vue @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+yarn add @snapgridjs/vue @dnd-kit/vue @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+bun add @snapgridjs/vue @dnd-kit/vue @dnd-kit/dom
+```
+
+</Tabs.Tab>
+</Tabs>
+
+`@dnd-kit/vue` and `@dnd-kit/dom` are peer dependencies — snapgrid uses your copy, so there's
+nothing to dedupe. See [Installation](/vue/docs/installation) for the full breakdown.
+
+## Your first grid
+
+<Steps>
+
+### Hold the layout in state
+
+snapgrid is **controlled**: you own the array, it never mutates it. Each item has an id (`i`), a
+position (`x`, `y`), and a size (`w`, `h`) in **grid units** — columns and rows, not pixels. Hold it
+in a `ref`.
+
+```vue
+<script setup>
+import { ref } from "vue";
+
+const layout = ref([
+  { i: "a", x: 0, y: 0, w: 4, h: 2 },
+  { i: "b", x: 4, y: 0, w: 4, h: 2 },
+  { i: "c", x: 8, y: 0, w: 4, h: 2 },
+]);
+</script>
+```
+
+### Measure the container width
+
+The grid turns columns into pixels using the container's width. `useContainerWidth` measures it with
+a `ResizeObserver`; bind its `setRef` **function ref** to the element whose width should drive the
+grid. Always **destructure** what a composable returns — Vue only auto-unwraps *top-level* setup
+bindings, so a kept-whole handle like `container.style` would reach the template as a ref object
+rather than a string.
+
+```vue
+<script setup>
+import { useContainerWidth } from "@snapgridjs/vue";
+
+// Composables return refs — destructure them so the template auto-unwraps each one.
+const { width, setRef } = useContainerWidth();
+</script>
+
+<template>
+  <div :ref="setRef">…</div>
+</template>
+```
+
+### Host the grid inside a dnd-kit provider
+
+Render inside dnd-kit's `<DragDropProvider>`, and let `useGridContainer` host the grid. Pass it a
+**getter** for its options; it returns a `setRef` function ref + `style` for your surface element and
+the grid's **`group`** — its id, which ties tiles to it.
+
+```vue
+<!-- Surface.vue -->
+<script setup>
+import { useGridContainer } from "@snapgridjs/vue";
+import Tile from "./Tile.vue";
+
+const props = defineProps({ layout: Array, width: Number });
+const emit = defineEmits(["layoutChange"]);
+
+const { setRef, style, group } = useGridContainer(() => ({
+  layout: props.layout,
+  width: props.width,
+  onLayoutChange: (next) => emit("layoutChange", next),
+}));
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">
+    <Tile v-for="it in layout" :key="it.i" :id="it.i" :group="group" />
+  </div>
+</template>
+```
+
+<Callout type="warning">
+  **`useGridContainer` must run *inside* the `<DragDropProvider>`.** Vue resolves `inject` from the
+  **parent** chain, so a component can't see a provider it renders itself — the grid host has to be a
+  child of it, like `Surface` above. Call it in the component that renders the provider and you'll
+  get `no grid found for group`. This is why the grid host lives in its own component.
+</Callout>
+
+### Render a tile with `useGridItem`
+
+Each tile calls `useGridItem({ id, group })` — plain values, not a getter — for its `setRef` function
+ref and positioning `style`, the way a dnd-kit sortable item declares its list. You bring the
+element, classes, and content.
+
+```vue
+<!-- Tile.vue -->
+<script setup>
+import { useGridItem } from "@snapgridjs/vue";
+
+const props = defineProps({ id: String, group: String });
+const { setRef, style } = useGridItem({ id: props.id, group: props.group });
+</script>
+
+<template>
+  <div :ref="setRef" :style="style" class="tile">{{ id }}</div>
+</template>
+```
+
+### Mark the landing spot
+
+`useGridPlaceholder(group)` tells you where the dragged tile will land (it's `null` when idle).
+Render a marker with its `style` inside the surface, alongside the tiles, so the target cell shows as
+you drag.
+
+```vue
+<script setup>
+import { useGridPlaceholder } from "@snapgridjs/vue";
+// inside Surface — after useGridContainer. `group` is a ref, and the composable
+// takes the plain id:
+const placeholder = useGridPlaceholder(group.value);
+</script>
+
+<template>
+  <!-- inside the container — after the tiles: -->
+  <div v-if="placeholder" class="placeholder" :style="placeholder.style"></div>
+</template>
+```
+
+### That's it — drag it
+
+There's nothing more to wire. While you drag with a pointer, the tile **floats itself** above
+everything — dnd-kit lifts it into the browser's top layer, so it can cross grids unclipped — and on
+drop it settles into its new cell. Keyboard drags step the tile cell-by-cell in place. Tiles drag,
+the rest compact upward, and every committed change flows back through `onLayoutChange`.
+
+</Steps>
+
+## Putting it together
+
+```vue filename="Board.vue"
+<script setup>
+import { ref } from "vue";
+import { DragDropProvider, useContainerWidth } from "@snapgridjs/vue";
+import Surface from "./Surface.vue";
+
+const { width, setRef } = useContainerWidth();
+const layout = ref([
+  { i: "a", x: 0, y: 0, w: 4, h: 2 },
+  { i: "b", x: 4, y: 0, w: 4, h: 2 },
+  { i: "c", x: 8, y: 0, w: 4, h: 2 },
+]);
+</script>
+
+<template>
+  <!-- DragDropProvider is the outermost element; Surface (which calls
+       useGridContainer) lives inside it. -->
+  <div :ref="setRef">
+    <DragDropProvider>
+      <Surface :layout="layout" :width="width" @layout-change="layout = $event" />
+    </DragDropProvider>
+  </div>
+</template>
+```
+
+```vue filename="Surface.vue"
+<script setup>
+import { useGridContainer, useGridPlaceholder } from "@snapgridjs/vue";
+import Tile from "./Tile.vue";
+
+const props = defineProps({ layout: Array, width: Number });
+const emit = defineEmits(["layoutChange"]);
+
+const { setRef, style, group } = useGridContainer(() => ({
+  layout: props.layout,
+  width: props.width,
+  onLayoutChange: (next) => emit("layoutChange", next),
+  gridConfig: { cols: 12, rowHeight: 80, margin: [12, 12] },
+}));
+const placeholder = useGridPlaceholder(group.value);
+</script>
+
+<template>
+  <div :ref="setRef" :style="style">
+    <Tile v-for="it in layout" :key="it.i" :id="it.i" :group="group" />
+    <div v-if="placeholder" class="placeholder" :style="placeholder.style"></div>
+  </div>
+</template>
+```
+
+```vue filename="Tile.vue"
+<script setup>
+import { useGridItem } from "@snapgridjs/vue";
+
+const props = defineProps({ id: String, group: String });
+const { setRef, style } = useGridItem({ id: props.id, group: props.group });
+</script>
+
+<template>
+  <div :ref="setRef" :style="style" class="tile">{{ id }}</div>
+</template>
+```
+
+<Callout type="default">
+  snapgrid ships **no CSS**. The tiles and the `.placeholder` marker are styled by your own classes —
+  see [Styling](/vue/docs/guides/styling) for the hooks it exposes. Want resize handles? Tiles are
+  drag-only until you render them — see [Resizing](/vue/docs/guides/resizing).
+</Callout>
+
+## Don't want to wire all that?
+
+<Callout type="info">
+  The turnkey [`<GridLayout>`](/vue/docs/guides/component-layer) bundles the provider, the host, the
+  tiles, and the placeholder. Pass it `layout` / `width` / `onLayoutChange` and an `item` scoped slot
+  — done. It's the gentlest on-ramp; drop to the composables for any grid that needs custom markup.
+  Same engine either way.
+</Callout>
+
+```vue
+<GridLayout :layout="layout" :width="width" :on-layout-change="(next) => (layout = next)">
+  <template #item="{ item }">
+    <div class="tile">{{ item.i }}</div>
+  </template>
+</GridLayout>
+```
+
+## Where to next
+
+- [Core Concepts](/vue/docs/concepts) — the mental model (controlled state, the dnd-kit DNA, the `group` key) plus a gotchas cheat-sheet.
+- [Headless usage](/vue/docs/guides/headless) — the composables in depth: resize handles, the placeholder, and how a dragged tile floats itself.
+- [Component layer](/vue/docs/guides/component-layer) — the turnkey `<GridLayout>` when you don't need custom markup.
+- [Dragging](/vue/docs/guides/dragging) · [Resizing](/vue/docs/guides/resizing) · [Compaction](/vue/docs/guides/compaction) · [Cross-grid](/vue/docs/guides/cross-grid) · [dnd-kit interop](/vue/docs/guides/dnd-kit-interop) · [Responsive](/vue/docs/guides/responsive).
+- [API Reference](/vue/docs/api/overview) — every composable, component, and type.

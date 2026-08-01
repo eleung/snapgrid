@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-description: Where snapgrid is headed — bindings for Vue, Solid and vanilla TypeScript on snapgrid's framework-agnostic core, on top of the shipped React and Svelte bindings.
+description: Where snapgrid is headed — bindings for Solid and vanilla TypeScript on snapgrid's framework-agnostic core, on top of the shipped React, Svelte and Vue bindings.
 ---
 
 import { Callout } from "nextra/components";
@@ -8,9 +8,9 @@ import { Callout } from "nextra/components";
 # Roadmap
 
 snapgrid sits on two framework-agnostic foundations: react-grid-layout's packing core and dnd-kit's
-DOM engine. Today it ships as `@snapgridjs/react` and `@snapgridjs/svelte`, and neither the layout
-core nor the drag engine contains any framework code — which is what makes the directions below
-possible.
+DOM engine. Today it ships as `@snapgridjs/react`, `@snapgridjs/svelte` and `@snapgridjs/vue`, and
+neither the layout core nor the drag engine contains any framework code — which is what makes the
+directions below possible.
 
 <Callout type="info">
   This is direction, not a dated commitment. To weigh in or help build any of it, open an issue or
@@ -21,11 +21,11 @@ possible.
 
 dnd-kit is framework-agnostic by design: a vanilla DOM engine with thin per-framework bindings.
 snapgrid is built the same way: `@snapgridjs/core` holds the layout math, compaction, and drag session
-with no framework code, and each binding is a small layer on top. Two ship today — **React**
-(`@snapgridjs/react`) and **Svelte** (`@snapgridjs/svelte`) — and the same core can drive more:
+with no framework code, and each binding is a small layer on top. Three ship today — **React**
+(`@snapgridjs/react`), **Svelte** (`@snapgridjs/svelte`) and **Vue** (`@snapgridjs/vue`) — and the
+same core can drive more:
 
 - **Vanilla TypeScript** (no framework at all).
-- **Vue**
 - **Solid**
 
 Each binding owns only the rendering glue — refs, reactivity, lifecycle — while the layout behaviour

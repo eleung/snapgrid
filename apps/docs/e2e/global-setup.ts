@@ -5,7 +5,7 @@
 // compiles to happen once, up front, so every test hits a warm page.
 async function globalSetup() {
   const base = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
-  const routes = ["/showcase/", "/react/examples/", "/svelte/examples/"];
+  const routes = ["/showcase/", "/react/examples/", "/svelte/examples/", "/vue/examples/"];
   await Promise.all(
     routes.map((r) =>
       fetch(base + r).catch(() => {

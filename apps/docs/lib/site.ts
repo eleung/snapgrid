@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 export const SITE = "https://snapgrid.dev";
 export const GITHUB = "https://github.com/eleung/snapgrid";
 export const DESCRIPTION =
-  "A react-grid-layout v2 alternative built on dnd-kit, for React and Svelte. Draggable, resizable grid layouts with cross-grid dragging and pluggable packing.";
+  "A react-grid-layout v2 alternative built on dnd-kit, for React, Svelte and Vue. Draggable, resizable grid layouts with cross-grid dragging and pluggable packing.";
 export const OG_IMAGE = "/og.png";
 export const OG_ALT = "snapgrid: draggable grid layouts that drag between grids";
 // Declared once so the OG/Twitter image (with alt) stays consistent across the
@@ -16,7 +16,7 @@ export const OG_IMAGES = [
 export const TWITTER_IMAGES = [{ url: OG_IMAGE, alt: OG_ALT }];
 // Keyword-rich homepage title (also the layout's `title.default`). Keeps the primary
 // "react-grid-layout alternative" keyword and names both shipped bindings.
-export const HOME_TITLE = "snapgrid — react-grid-layout alternative for React & Svelte";
+export const HOME_TITLE = "snapgrid — react-grid-layout alternative for React, Svelte & Vue";
 
 function withTrailingSlash(path: string): string {
   if (path === "/") return "/";

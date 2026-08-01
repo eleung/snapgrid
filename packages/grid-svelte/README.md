@@ -12,7 +12,7 @@ Draggable, resizable, responsive grid layouts for Svelte — with pluggable pack
 [Examples](https://snapgrid.dev/svelte/examples) ·
 [API](https://snapgrid.dev/svelte/docs/api/overview)
 
-> The Svelte binding of snapgrid. Same framework-free core + dnd-kit engine as [`@snapgridjs/react`](https://www.npmjs.com/package/@snapgridjs/react) — a grid behaves identically whichever framework renders it.
+> The Svelte binding of snapgrid. Same framework-free core + dnd-kit engine as [`@snapgridjs/react`](https://www.npmjs.com/package/@snapgridjs/react) and [`@snapgridjs/vue`](https://www.npmjs.com/package/@snapgridjs/vue) — a grid behaves identically whichever framework renders it.
 
 ## Why snapgrid
 

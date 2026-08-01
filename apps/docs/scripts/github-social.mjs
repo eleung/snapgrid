@@ -251,7 +251,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8">
           <div class="chips">
             <span class="chip"><span class="langdot"></span>${LANGUAGE}</span>
             <span class="chip"><span class="octi">${icon("law", 16)}</span>${LICENSE}</span>
-            <span class="chip accent">React · Svelte</span>
+            <span class="chip accent">React · Svelte · Vue</span>
             <span class="chip">~${SNAPGRID_KB} kB core</span>
             <span class="chip">Cross-grid</span>
             <span class="chip">Nested grids</span>

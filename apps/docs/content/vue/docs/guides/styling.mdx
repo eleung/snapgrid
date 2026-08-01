@@ -1,0 +1,175 @@
+---
+title: Styling
+description: The positioning styles and state the headless composables expose, the component-layer class names, and how to override them.
+---
+
+import { Callout } from "nextra/components";
+
+# Styling
+
+snapgrid ships **no CSS**. The headless composables hand you inline positioning styles plus drag/resize
+state; you bring every class name and the entire look. The [component layer](/vue/docs/guides/component-layer)
+adds a few stable class names and data attributes on top, so you have predictable hooks to target
+when you use `<GridLayout>`.
+
+## Styling headless tiles
+
+`useGridItem` returns the positioning `style` (a CSS string) and `isDragging`; nothing else is
+imposed. You choose the element, the class names, and which state to reflect in the DOM:
+
+```vue
+<!-- Tile.vue -->
+<script setup>
+import { useGridItem } from "@snapgridjs/vue";
+
+const props = defineProps({ id: String, group: String });
+// Destructure so the template auto-unwraps each ref.
+const { setRef, style, isDragging } = useGridItem({ id: props.id, group: props.group });
+</script>
+
+<template>
+  <div :ref="setRef" :style="style" class="tile" :data-dragging="isDragging || undefined">
+    {{ id }}
+  </div>
+</template>
+```
+
+```css
+.tile {
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+/* The tile floats itself, so [data-dragging] styles the element you're dragging
+   around — give it a "lifted" cue. (Don't touch left/top/transform; the composable owns
+   positioning and reflow motion.) */
+.tile[data-dragging] {
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
+}
+```
+
+`useGridContainer` exposes `isDropTarget`, true while a compatible draggable is over the grid.
+Reflect it as a `data-drop-target` attribute on your surface so you can highlight the drop zone:
+
+```vue
+<div :ref="setRef" :style="style" :data-drop-target="isDropTarget || undefined">
+```
+
+```css
+.my-surface[data-drop-target] {
+  outline: 2px dashed var(--accent);
+}
+```
+
+## Positioning styles are inline
+
+The `style` from `useGridItem` positions the tile with **`position: absolute` + `left` / `top`** (sized
+with `width` / `height`). `useGridContainer`'s `style` sets `position: relative` + the surface size.
+Both are ready-made CSS strings — apply them as-is and **don't override** these properties.
+
+You don't add a reflow transition yourself — the composable animates a tile sliding to its new cell on the
+compositor (a transform FLIP) during a drag and on out-of-drag layout changes. (Tiles rest on left/top
+rather than a `transform` so dnd-kit's float reads each tile's true rect when one is handed off to a
+sortable list — see [dnd-kit interop](/vue/docs/guides/dnd-kit-interop).) Add your own visual properties
+alongside; just leave `left` / `top` / `transform` / `transition` to the composable.
+
+## Component-layer class names
+
+When you use the turnkey [`<GridLayout>`](/vue/docs/guides/component-layer), it (and `<GridItem>` /
+`<GridPlaceholder>`) applies these stable hooks for you — the headless composables apply **none** of them:
+
+| Element | Class | Notes |
+| --- | --- | --- |
+| Surface | `.snapgrid` | `class` prop is appended. |
+| Item | `.snapgrid-item` | `data-grid-id`, `data-dragging` attributes. |
+| Resize handle | `.snapgrid-resize-handle`, `.snapgrid-resize-handle--{axis}` | One per configured handle. |
+| Placeholder | `.snapgrid-placeholder` | Landing-cell marker. |
+
+```css
+.snapgrid-item {
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+.snapgrid-item[data-dragging] {
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
+}
+.snapgrid-placeholder {
+  background: rgb(99 102 241 / 0.15);
+  border: 1px dashed rgb(99 102 241 / 0.6);
+  border-radius: 8px;
+}
+```
+
+- `data-grid-id`: the item's `i`, handy for selectors and tests.
+- `data-dragging`: present on the active tile while dragging.
+- `data-drop-target`: present on the container while a compatible draggable is over it. The component
+  layer sets it for you from `useGridContainer`'s `isDropTarget`; on a headless surface, read that
+  ref and set the attribute yourself (as shown above).
+
+## Custom placeholder
+
+Render your own placeholder with the headless composable's returned `style` — `useGridPlaceholder`
+returns a `ComputedRef` that is `null` when idle and `{ item, style }` during a drag (`group` is the
+grid's id from `useGridContainer`):
+
+```vue
+<script setup>
+import { useGridPlaceholder } from "@snapgridjs/vue";
+
+const props = defineProps({ group: String });
+// A top-level setup binding, so the template auto-unwraps it.
+const placeholder = useGridPlaceholder(props.group);
+</script>
+
+<template>
+  <div v-if="placeholder" class="my-ghost" :style="placeholder.style"></div>
+</template>
+```
+
+<Callout type="info">
+  The convenience `<GridPlaceholder :group="group">` ships a subtle default look you can override with
+  `class` or `style`. For anything more, call `useGridPlaceholder(group)` directly.
+</Callout>
+
+## Styling the floating tile
+
+While you drag with a pointer, the tile [floats itself](/vue/docs/guides/headless#floating) in the
+browser's top layer — there's **no separate overlay element**. So `[data-dragging]` styles the tile
+you're dragging *around*, not a ghost left behind in the grid. Use it for a **lift cue** — a deeper
+shadow, a ring, a touch of brightness:
+
+```css
+.tile[data-dragging] {
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
+}
+```
+
+Two properties are off-limits on the floating tile:
+
+- **`transform` / `translate` / `scale`** — the composable's reflow FLIP and dnd-kit's float both drive
+  `transform`, so a `transform: scale(...)` in `[data-dragging]` is overridden mid-drag. To scale or
+  rotate the float, use a dnd-kit [modifier](https://next.dndkit.com) instead.
+- **`cursor`** — the floating tile is `pointer-events: none` while dragging, so set the grab cursor on
+  the tile (or its `setHandleRef` element) at rest / `:active`, not via `[data-dragging]`.
+
+For the "where it'll land" affordance, render the [landing-cell placeholder](#custom-placeholder) —
+that marker tracks the *target* cell as you drag. (dnd-kit separately drops an invisible
+`[data-dnd-placeholder]` clone at the drag *origin* to hold space; it's `visibility: hidden`, and
+since tiles are absolutely positioned there's nothing there for you to style.)
+
+For a *separate* floating preview — a clone, a ghost, or different markup — use dnd-kit's raw
+`<DragOverlay>` (re-exported from `@snapgridjs/vue`) and pin it out of flow yourself:
+
+<Callout type="warning">
+  **The raw `<DragOverlay>` needs a fixed base.** It's a plain `<div data-dnd-overlay>` that only gets
+  `position: fixed` from a stylesheet dnd-kit injects *while dragging*. In the frame around drop,
+  before that applies, an overlay rendered inside (or next to) your grid can reflow as a full-width
+  block at the bottom of the grid — a one-frame flash. Pin it in CSS so it can't:
+
+  ```css
+  [data-dnd-overlay] { position: fixed; top: 0; left: 0; pointer-events: none; }
+  ```
+
+  dnd-kit's own `!important` rules still drive the live position during a real drag.
+</Callout>
