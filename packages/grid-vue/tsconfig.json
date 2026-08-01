@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    // Components are authored as `defineComponent` + `h()` render functions (no SFCs),
+    // so the repo-wide `react-jsx` transform must not apply to this package's sources.
+    "jsx": "preserve",
+    // Typecheck against the live core + engine source (mirrors the React package),
+    // so cross-package type errors surface without a prior build.
+    "paths": {
+      "@snapgridjs/core": ["../grid-core/src/index.ts"],
+      "@snapgridjs/dnd": ["../grid-dnd/src/index.ts"]
+    }
+  },
+  "include": ["src", "tsdown.config.ts", "vitest.setup.ts"]
+}

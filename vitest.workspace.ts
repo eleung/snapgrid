@@ -72,6 +72,40 @@ export default defineWorkspace([
     },
   },
   {
+    // Vue binding: composables/components, jsdom environment. Runs against the live
+    // core + engine source (like the React project). @dnd-kit/vue ships compiled JS and
+    // the binding authors components as `defineComponent` render functions, so no SFC
+    // compiler or dependency inlining is needed.
+    resolve: {
+      alias: { "@snapgridjs/core": coreSrc, "@snapgridjs/dnd": dndSrc },
+    },
+    test: {
+      name: "vue",
+      root: "./packages/grid-vue",
+      environment: "jsdom",
+      include: ["src/**/*.test.ts"],
+      // ssr.test.ts belongs to the `vue-ssr` project below (no DOM).
+      exclude: ["**/node_modules/**", "**/dist/**", "src/__tests__/ssr.test.ts"],
+      setupFiles: ["./vitest.setup.ts"],
+    },
+  },
+  {
+    // Server rendering must be exercised with NO DOM at all: under jsdom, `document` and
+    // `window` exist, so a "doesn't touch the DOM on the server" assertion is
+    // unenforceable and a real Nuxt SSR regression would still pass. No setup file —
+    // that one pulls in @testing-library/vue and a ResizeObserver stub, both of which
+    // would defeat the point.
+    resolve: {
+      alias: { "@snapgridjs/core": coreSrc, "@snapgridjs/dnd": dndSrc },
+    },
+    test: {
+      name: "vue-ssr",
+      root: "./packages/grid-vue",
+      environment: "node",
+      include: ["src/__tests__/ssr.test.ts"],
+    },
+  },
+  {
     // Docs app: data-level guards for the showcase (layout validity, registry).
     test: {
       name: "docs",
