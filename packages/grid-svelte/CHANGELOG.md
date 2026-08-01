@@ -1,5 +1,12 @@
 # @snapgridjs/svelte
 
+## 0.10.0
+
+### Patch Changes
+
+- @snapgridjs/core@0.10.0
+- @snapgridjs/dnd@0.10.0
+
 ## 0.9.1
 
 ### Patch Changes
