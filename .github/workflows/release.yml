@@ -69,9 +69,13 @@ jobs:
       #
       # GITHUB_TOKEN here is the PAT (CHANGESETS_TOKEN) so the Version Packages
       # PR is opened by the PAT identity and its CI runs — see the checkout note.
+      # Pinned to v1 on purpose: changesets/action v2 requires Changesets CLI v3
+      # and this repo is still on @changesets/cli v2 (it also renamed the inputs
+      # below to publish-script/version-script). Dependabot is told to skip this
+      # major in .github/dependabot.yml — bump both together, or not at all.
       - name: Create Release PR or publish
         id: changesets
-        uses: changesets/action@v2
+        uses: changesets/action@v1
         with:
           publish: pnpm release
           version: pnpm version-packages
