@@ -19,3 +19,10 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    ignore:
+      # changesets/action majors are coupled to the Changesets CLI major:
+      # action v2 requires CLI v3 and hard-fails against CLI v2, and it renames
+      # the publish/version inputs. Bumping it alone breaks every release run.
+      # Lift this ignore in the same change that moves @changesets/cli to v3.
+      - dependency-name: changesets/action
+        update-types: ["version-update:semver-major"]
