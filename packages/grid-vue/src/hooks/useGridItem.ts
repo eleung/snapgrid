@@ -276,11 +276,15 @@ export function useGridItem(opts: UseGridItemOptions): GridItemHandle {
   // Tiles rest on left/top (see the doc above); position animates via the FLIP, so the
   // CSS transition is SIZE-only — and "none" while dragging (FLIP owns motion) or
   // just-dropped (it snaps).
+  // `touch-action: pan-y` leaves vertical swipes to the browser so the page still
+  // scrolls from a touch on a tile; a touch drag arms by holding first (see
+  // buildItemSensors), and once armed dnd-kit's non-passive touchmove listener
+  // prevents the scroll itself. `none` here would make every swipe on a tile inert.
   const style = computed(() => {
     const p = pos.value;
-    if (!p) return "position: absolute; touch-action: none;";
+    if (!p) return "position: absolute; touch-action: pan-y;";
     const transition = justDropped.value || dragging.value ? "none" : TILE_TRANSITION;
-    return `position: absolute; left: ${p.left}px; top: ${p.top}px; width: ${p.width}px; height: ${p.height}px; transition: ${transition}; touch-action: none;`;
+    return `position: absolute; left: ${p.left}px; top: ${p.top}px; width: ${p.width}px; height: ${p.height}px; transition: ${transition}; touch-action: pan-y;`;
   });
 
   return {

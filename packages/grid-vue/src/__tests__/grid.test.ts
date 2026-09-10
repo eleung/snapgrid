@@ -7,6 +7,7 @@ import {
 } from "@snapgridjs/core";
 import { render } from "@testing-library/vue";
 import { describe, expect, it } from "vitest";
+import { handleStyle } from "../handleStyle.js";
 import { Grid, Headless, Nested, Siblings } from "./fixtures.js";
 
 const GRID_CONFIG: Partial<GridConfig> = {
@@ -170,5 +171,17 @@ describe("headless composables", () => {
     const a = expectedBox(0, 0, 2, 1, 400);
     expect(tile?.style.left).toBe(`${a.left}px`);
     expect(tile?.style.width).toBe(`${a.width}px`);
+  });
+
+  it("leaves a vertical swipe on a tile and on a handle to the browser to scroll", () => {
+    const { container } = render(Headless, {
+      props: { layout: [{ i: "a", x: 0, y: 0, w: 1, h: 1 }], width: 400 },
+    });
+    // `touch-action: none` would make every swipe that starts on a tile — or a handle —
+    // inert; the touch hold (see buildItemSensors) is what tells a scroll from a drag.
+    expect(
+      container.querySelector<HTMLElement>('.headless-tile[data-grid-id="a"]')?.dataset.tileStyle,
+    ).toContain("touch-action: pan-y");
+    expect(handleStyle("se")).toContain("touch-action: pan-y");
   });
 });

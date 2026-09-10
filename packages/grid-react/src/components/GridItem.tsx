@@ -34,7 +34,8 @@ function handleStyle(handle: ResizeHandleAxis): CSSProperties {
     width: SIDE,
     height: SIDE,
     cursor: HANDLE_CURSOR[handle],
-    touchAction: "none",
+    // Vertical swipes scroll (see useGridItem's tile style); the handle arms by holding.
+    touchAction: "pan-y",
     zIndex: 4,
   };
   if (handle.includes("n")) s.top = -SIDE / 2;

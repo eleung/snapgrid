@@ -57,7 +57,7 @@ The controlled state plus the per-grid config. These are exactly `<GridLayout>`'
 | `width` | `number` | — | **Required.** Container width in px (from [`useContainerWidth`](#usecontainerwidth)). |
 | `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. The grid is controlled — apply it, or nothing moves. |
 | `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/react/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. Unset fields use defaults. |
-| `dragConfig` | `DragConfig` | — | [Drag behaviour](/react/docs/guides/dragging): `handle` (CSS selector — headless prefers [`handleRef`](#usegriditem)), `cancel`, `threshold`, `bounded`, `snapToGrid`. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/react/docs/guides/dragging): `handle` (CSS selector — headless prefers [`handleRef`](#usegriditem)), `cancel`, `threshold`, `touchHold`, `bounded`, `snapToGrid`. |
 | `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/react/docs/guides/resizing): which handle axes are allowed. |
 | `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/react/docs/guides/external-drop): `enabled`, `defaultItem`, `accept`. |
 | `accept` | `(source) => boolean` | — | [dnd-kit interop](/react/docs/guides/dnd-kit-interop): also accept a foreign sortable (e.g. a tray card) as a drop target. You drive the receive yourself in `onDragOver` with [`snapMove`](/react/docs/guides/dnd-kit-interop#snapmove). |

@@ -7,4 +7,12 @@
   const tile = createGridItem({ id, group });
 </script>
 
-<div class="headless-tile" data-grid-id={id} {@attach tile.attach} style={tile.style}>{id}</div>
+<!-- data-tile-style re-states the style string: jsdom drops `touch-action` (which its
+     CSSStyleDeclaration does not implement) when it parses the style attribute. -->
+<div
+  class="headless-tile"
+  data-grid-id={id}
+  data-tile-style={tile.style}
+  {@attach tile.attach}
+  style={tile.style}
+>{id}</div>

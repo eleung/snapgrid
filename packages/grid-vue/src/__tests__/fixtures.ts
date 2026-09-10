@@ -58,6 +58,9 @@ const Tile = defineComponent({
         {
           class: "headless-tile",
           "data-grid-id": props.id,
+          // Re-states the style string: jsdom drops `touch-action` (which its
+          // CSSStyleDeclaration does not implement) when it parses the style attribute.
+          "data-tile-style": tile.style.value,
           ref: tile.setRef,
           style: tile.style.value,
         },

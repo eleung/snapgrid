@@ -73,4 +73,12 @@ describe("headless API (useGridContainer + hooks, custom markup)", () => {
     // bottom = 2 rows -> 20 + 200 + 10 = 230
     expect(board.style.height).toBe("230px");
   });
+
+  it("leaves a vertical swipe on a tile to the browser to scroll", () => {
+    const { container } = renderBoard();
+    const a = container.querySelector<HTMLElement>('[data-tile="a"]');
+    // `touch-action: none` would make every swipe that starts on a tile inert; the
+    // touch hold (see buildItemSensors) is what tells a scroll from a drag.
+    expect(a?.style.touchAction).toBe("pan-y");
+  });
 });
