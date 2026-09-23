@@ -20,7 +20,8 @@ export function handleStyle(handle: ResizeHandleAxis): string {
     `width: ${SIDE}px`,
     `height: ${SIDE}px`,
     `cursor: ${HANDLE_CURSOR[handle]}`,
-    "touch-action: none",
+    // Vertical swipes scroll (see createGridItem's tile style); the handle arms by holding.
+    "touch-action: pan-y",
     "z-index: 4",
   ];
   if (handle.includes("n")) parts.push(`top: ${-SIDE / 2}px`);

@@ -50,4 +50,12 @@ describe("resize handles", () => {
     const handle = container.querySelector('[data-grid-id="a"] .snapgrid-resize-handle--se');
     expect(handle?.hasAttribute("data-snapgrid-resize-handle")).toBe(true);
   });
+
+  it("leaves a vertical swipe on a handle to the browser to scroll", () => {
+    const { container } = renderGrid();
+    const handle = container.querySelector<HTMLElement>(
+      '[data-grid-id="a"] .snapgrid-resize-handle--se',
+    );
+    expect(handle?.style.touchAction).toBe("pan-y");
+  });
 });

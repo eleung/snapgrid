@@ -57,8 +57,9 @@ interface DragConfig {
   bounded?: boolean;    // default false — keep within the container
   handle?: string;      // CSS selector for a drag handle — headless: prefer useGridItem's setHandleRef
   cancel?: string;      // CSS selector for regions that cancel a drag
-  threshold?: number;   // default 3 — px before a drag starts
+  threshold?: number;   // default 3 — px before a drag starts (mouse/pen)
   snapToGrid?: boolean; // default false — snap the dragged tile itself
+  touchHold?: number;   // default 250 — ms a touch is held before a drag arms
 }
 ```
 

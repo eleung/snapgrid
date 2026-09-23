@@ -78,7 +78,7 @@ The controlled state plus the per-grid config. These are exactly `<GridLayout>`'
 | `width` | `number` | — | **Required.** Container width in px (from [`createContainerWidth`](#createcontainerwidth)). |
 | `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. The grid is controlled — apply it, or nothing moves. |
 | `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/svelte/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. Unset fields use defaults. |
-| `dragConfig` | `DragConfig` | — | [Drag behaviour](/svelte/docs/guides/dragging): `handle` (CSS selector — headless prefers [`attachHandle`](#creategriditem)), `cancel`, `threshold`, `bounded`, `snapToGrid`. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/svelte/docs/guides/dragging): `handle` (CSS selector — headless prefers [`attachHandle`](#creategriditem)), `cancel`, `threshold`, `touchHold`, `bounded`, `snapToGrid`. |
 | `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/svelte/docs/guides/resizing): which handle axes are allowed. |
 | `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/svelte/docs/guides/external-drop): `enabled`, `defaultItem`, `accept`. |
 | `accept` | `(source) => boolean` | — | [dnd-kit interop](/svelte/docs/guides/dnd-kit-interop): also accept a foreign sortable (e.g. a tray card) as a drop target. You drive the receive yourself in `onDragOver` with [`snapMove`](/svelte/docs/guides/dnd-kit-interop#snapmove). |
