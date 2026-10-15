@@ -20,7 +20,9 @@ export function handleStyle(handle: ResizeHandleAxis): string {
     `width: ${SIDE}px`,
     `height: ${SIDE}px`,
     `cursor: ${HANDLE_CURSOR[handle]}`,
-    // Vertical swipes scroll (see useGridItem's tile style); the handle arms by holding.
+    // Vertical swipes scroll (see useGridItem's tile style); the handle arms by
+    // holding. touchHold doesn't govern resizing, so this stays pan-y even when tiles go
+    // back to `none` for `touchHold: 0`.
     "touch-action: pan-y",
     "z-index: 4",
   ];

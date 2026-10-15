@@ -26,7 +26,8 @@ export interface DragConfig {
    * an item drag arms. A finger that moves first is a scroll, not a drag, so a grid
    * inside a scrolling page stays scrollable on mobile. Touch-only: `threshold` still
    * governs the mouse and the pen. `0` disables the hold, so touch then arms on
-   * `threshold` pixels of movement like any other pointer.
+   * `threshold` pixels of movement like any other pointer, and tiles keep
+   * `touch-action: none` (a page scroll and the drag would otherwise run at once).
    *
    * Resize handles are unaffected — dnd-kit's own touch delay always applies there.
    * @default 250

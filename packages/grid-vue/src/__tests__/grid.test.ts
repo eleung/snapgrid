@@ -184,4 +184,19 @@ describe("headless composables", () => {
     ).toContain("touch-action: pan-y");
     expect(handleStyle("se")).toContain("touch-action: pan-y");
   });
+
+  it("keeps touch-action: none on a tile when the touch hold is off", () => {
+    const { container } = render(Headless, {
+      props: {
+        layout: [{ i: "a", x: 0, y: 0, w: 1, h: 1 }],
+        width: 400,
+        dragConfig: { touchHold: 0 },
+      },
+    });
+    // Touch now arms on `threshold` movement like the mouse, so the tile keeps owning
+    // the gesture — `pan-y` would scroll the page and drag the tile at the same time.
+    expect(
+      container.querySelector<HTMLElement>('.headless-tile[data-grid-id="a"]')?.dataset.tileStyle,
+    ).toContain("touch-action: none");
+  });
 });

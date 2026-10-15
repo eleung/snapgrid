@@ -35,6 +35,8 @@ function handleStyle(handle: ResizeHandleAxis): CSSProperties {
     height: SIDE,
     cursor: HANDLE_CURSOR[handle],
     // Vertical swipes scroll (see useGridItem's tile style); the handle arms by holding.
+    // touchHold doesn't govern resizing, so this stays pan-y even when tiles go back to
+    // `none` for `touchHold: 0`.
     touchAction: "pan-y",
     zIndex: 4,
   };

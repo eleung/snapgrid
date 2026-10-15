@@ -31,7 +31,7 @@ const container = createGridContainer(() => ({
 | `threshold` | `number` | `3` | Pixels the pointer must travel before a drag begins, so clicks aren't drags. Mouse and pen only — see [Touch](#touch). |
 | `bounded` | `boolean` | `false` | Keep the dragged item within the grid container bounds. |
 | `snapToGrid` | `boolean` | `false` | Snap the dragged tile itself to cells while dragging (see below). |
-| `touchHold` | `number` | `250` | Milliseconds a **touch** must be held, nearly still, before a drag arms. `0` disables the hold, so touch arms on `threshold` pixels like the mouse. |
+| `touchHold` | `number` | `250` | Milliseconds a **touch** must be held, nearly still, before a drag arms. `0` disables the hold, so touch arms on `threshold` pixels like the mouse and tiles keep `touch-action: none`. |
 
 ## Touch [#touch]
 
@@ -46,6 +46,9 @@ grid inside a scrolling page stays scrollable on mobile:
 
 `threshold` still governs the mouse and the pen, so desktop dragging is unchanged, and
 [resize handles](/svelte/docs/guides/resizing) keep dnd-kit's own touch hold.
+
+`touchHold: 0` turns the hold off: touch drags on `threshold` pixels like the mouse, and tiles keep
+`touch-action: none` so a swipe that starts on one drags the tile instead of scrolling the page.
 
 <Callout type="info">
   A hold that ends where it started still fires a click on the tile. If the whole tile is a link or a

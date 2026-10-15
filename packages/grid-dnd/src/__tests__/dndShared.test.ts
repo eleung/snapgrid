@@ -5,6 +5,7 @@ import {
   RESIZE_HANDLE_ATTR,
   TOUCH_HOLD_TOLERANCE,
   buildActivationConstraints,
+  itemTouchAction,
   shouldPreventItemDrag,
 } from "../dndShared.js";
 import type { DragConfig } from "../types.js";
@@ -170,5 +171,20 @@ describe("buildActivationConstraints", () => {
     const { controller, armed } = gesture("touch", 0, { touchHold: 0 });
     controller.onEvent(pointer("pointerdown"));
     expect(armed()).toBe(1);
+  });
+});
+
+describe("itemTouchAction", () => {
+  it("hands vertical swipes to the browser while a touch has to be held", () => {
+    expect(itemTouchAction(undefined)).toBe("pan-y");
+    expect(itemTouchAction({})).toBe("pan-y");
+    expect(itemTouchAction({ touchHold: 600 })).toBe("pan-y");
+  });
+
+  it("keeps touch-action: none when the hold is off", () => {
+    // Touch then arms on `threshold` movement like the mouse (see
+    // buildActivationConstraints), so the tile must keep owning the gesture: `pan-y`
+    // would scroll AND drag at once.
+    expect(itemTouchAction({ touchHold: 0 })).toBe("none");
   });
 });

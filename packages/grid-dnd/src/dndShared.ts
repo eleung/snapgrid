@@ -40,6 +40,22 @@ export function shouldPreventItemDrag(
   return false;
 }
 
+// The hold a drag config asks for, resolved: dnd-kit's own touch default unless
+// `touchHold` overrides it. `<= 0` is "no hold".
+function touchHoldFor(cfg: DragConfig | undefined): number {
+  return cfg?.touchHold ?? DEFAULT_TOUCH_HOLD;
+}
+
+/**
+ * `touch-action` for a tile, from the drag config. While a touch has to be held, the
+ * browser keeps vertical swipes (`pan-y`) so the page still scrolls from a tile. With
+ * the hold off, touch arms on `threshold` movement like the mouse — and then the tile
+ * must keep `none`: `pan-y` would let the page scroll and the drag run at the same time.
+ */
+export function itemTouchAction(cfg: DragConfig | undefined): "pan-y" | "none" {
+  return touchHoldFor(cfg) > 0 ? "pan-y" : "none";
+}
+
 /**
  * How a pointer arms an item drag: a touch holds first (a finger that travels is
  * scrolling — the tile's `touch-action: pan-y` already gave that gesture to the
@@ -52,7 +68,7 @@ export function buildActivationConstraints(
   cfg: DragConfig | undefined,
 ): ActivationConstraints<PointerEvent> | undefined {
   if (pointerType === "touch") {
-    const hold = cfg?.touchHold ?? DEFAULT_TOUCH_HOLD;
+    const hold = touchHoldFor(cfg);
     // `touchHold: 0` deliberately falls through to the distance threshold below.
     if (hold > 0) {
       return [

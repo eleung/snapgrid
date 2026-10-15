@@ -2,6 +2,7 @@ import { type Draggable, Feedback } from "@dnd-kit/dom";
 import { isKeyboardEvent } from "@dnd-kit/dom/utilities";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { type LayoutItem, calcGridItemPosition } from "@snapgridjs/core";
+import { itemTouchAction } from "@snapgridjs/dnd";
 import {
   type CSSProperties,
   useCallback,
@@ -235,10 +236,12 @@ export function useGridItem({
   // Tiles rest on left/top (see the hook doc above); position animates via the FLIP
   // above, so the transition is SIZE-only (TILE_TRANSITION) — and "none" while dragging
   // (FLIP owns motion) or just-dropped (it snaps). The active tile (⊂ dragging) hits "none".
-  // `touch-action: pan-y` leaves vertical swipes to the browser so the page still
-  // scrolls from a touch on a tile; a touch drag arms by holding first (see
-  // buildItemSensors), and once armed dnd-kit's non-passive touchmove listener
-  // prevents the scroll itself. `none` here would make every swipe on a tile inert.
+  // `touch-action` comes from the drag config (see itemTouchAction): with a touch hold,
+  // vertical swipes stay with the browser so the page still scrolls from a tile — a touch
+  // drag arms by holding first (see buildItemSensors), and once armed dnd-kit's non-passive
+  // touchmove listener prevents the scroll itself. With the hold off, the tile keeps `none`
+  // (a swipe there would otherwise scroll and drag at once).
+  const touchAction = itemTouchAction(config.dragConfig);
   const style: CSSProperties = pos
     ? {
         position: "absolute",
@@ -247,9 +250,9 @@ export function useGridItem({
         width: pos.width,
         height: pos.height,
         transition: justDropped || dragging ? "none" : TILE_TRANSITION,
-        touchAction: "pan-y",
+        touchAction,
       }
-    : { position: "absolute", touchAction: "pan-y" };
+    : { position: "absolute", touchAction };
 
   return { ref: setRef, handleRef, style, isDragging, item };
 }

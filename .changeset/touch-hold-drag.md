@@ -18,4 +18,6 @@ fixed:
   from any touch on them regardless of the sensors. Both are `touch-action: pan-y` now.
 
 New `dragConfig.touchHold` (ms, default `250`) tunes the hold — set it to `0` for the previous
-behaviour, where touch drags on movement like the mouse.
+behaviour, where touch drags on movement like the mouse and tiles keep `touch-action: none` (a swipe
+on a tile then drags it instead of scrolling, since the page scroll and the drag would otherwise run
+at once).

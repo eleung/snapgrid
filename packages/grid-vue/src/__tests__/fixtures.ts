@@ -1,5 +1,6 @@
 import { DragDropProvider, useDragDropManager } from "@dnd-kit/vue";
 import type { GridConfig, Layout, LayoutItem, ResponsiveLayouts } from "@snapgridjs/core";
+import type { DragConfig } from "@snapgridjs/dnd";
 import { type PropType, defineComponent, h } from "vue";
 import {
   GridLayout,
@@ -71,11 +72,16 @@ const Tile = defineComponent({
 
 /** A headless surface built from `useGridContainer`. Must live under the provider. */
 const HeadlessContainer = defineComponent({
-  props: { layout: layoutProp, width: { type: Number, required: true } },
+  props: {
+    layout: layoutProp,
+    width: { type: Number, required: true },
+    dragConfig: Object as PropType<DragConfig>,
+  },
   setup(props) {
     const container = useGridContainer(() => ({
       layout: props.layout,
       width: props.width,
+      dragConfig: props.dragConfig,
       gridConfig: SMALL_GRID,
     }));
     return () =>
@@ -93,11 +99,20 @@ const HeadlessContainer = defineComponent({
 });
 
 export const Headless = defineComponent({
-  props: { layout: layoutProp, width: { type: Number, default: 400 } },
+  props: {
+    layout: layoutProp,
+    width: { type: Number, default: 400 },
+    dragConfig: Object as PropType<DragConfig>,
+  },
   setup(props) {
     return () =>
       h(DragDropProvider, null, {
-        default: () => h(HeadlessContainer, { layout: props.layout, width: props.width }),
+        default: () =>
+          h(HeadlessContainer, {
+            layout: props.layout,
+            width: props.width,
+            dragConfig: props.dragConfig,
+          }),
       });
   },
 });
