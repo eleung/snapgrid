@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.11.0] - 2026-10-20
+
+Grids inside a scrolling page scroll on mobile again: a swipe that lands on a tile scrolls the page,
+and a touch drag starts once the finger is held still for a moment.
+
+### Changed
+
+- **Touch drags start on a hold.** A touch now has to be held for 250 ms (dnd-kit's own touch
+  default) before an item drag begins; previously it started after 3 px of movement, like the mouse.
+  Mouse and pen dragging is unchanged. Set `dragConfig.touchHold: 0` to restore the old touch
+  behaviour.
+
+### Added
+
+- **`dragConfig.touchHold`** — milliseconds a touch must be held, within a few pixels, before an item
+  drag begins (default `250`; `0` turns the hold off). Touch-only — `threshold` still governs the
+  mouse and the pen. Contributed by [@hanneslinder](https://github.com/hanneslinder) in
+  [#72](https://github.com/eleung/snapgrid/pull/72).
+
+### Fixed
+
+- **Scrolling on mobile.** Every touch on a tile was captured by the drag sensor, so a grid inside a
+  scrollable page couldn't be swiped. Item sensors had replaced dnd-kit's touch delay with a flat
+  distance threshold, and tiles and resize handles set `touch-action: none`. Tiles and handles now
+  use `touch-action: pan-y` (tiles keep `none` when `touchHold` is `0`). Reported in
+  [#68](https://github.com/eleung/snapgrid/issues/68).
+- **Docs navbar on phones.** The brand and framework switcher now fit narrow screens instead of
+  overflowing past the left edge.
+
 ## [0.10.0] - 2026-08-01
 
 Vue support. `@snapgridjs/vue` brings the same headless-first, dnd-kit-native grid to Vue 3, on the
@@ -246,6 +275,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.11.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.11.0
 [0.10.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.10.0
 [0.9.1]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.9.1
 [0.9.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.9.0
