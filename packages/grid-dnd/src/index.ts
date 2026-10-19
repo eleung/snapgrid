@@ -52,4 +52,9 @@ export {
 } from "./dnd/collision.js";
 export { SnapToGrid } from "./dnd/snapToGrid.js";
 export { domElement } from "./dnd/entity.js";
-export { NO_FEEDBACK, RESIZE_HANDLE_ATTR, buildItemSensors } from "./dndShared.js";
+export {
+  NO_FEEDBACK,
+  RESIZE_HANDLE_ATTR,
+  buildItemSensors,
+  itemTouchAction,
+} from "./dndShared.js";

@@ -1,5 +1,6 @@
 import { DragDropProvider } from "@dnd-kit/react";
 import { type Layout, calcGridItemPosition, toPositionParams } from "@snapgridjs/core";
+import type { DragConfig } from "@snapgridjs/dnd";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useGridContainer } from "../hooks/useGridContainer.js";
@@ -29,8 +30,13 @@ function Tile({ id, group }: { id: string; group: string }) {
 
 // useGridContainer is the grid host (creates the controller); items resolve it
 // by the returned `group`. The consumer supplies the DragDropProvider.
-function Board() {
-  const { containerProps, group } = useGridContainer({ layout, width: 1210, gridConfig });
+function Board({ dragConfig }: { dragConfig?: DragConfig }) {
+  const { containerProps, group } = useGridContainer({
+    layout,
+    width: 1210,
+    gridConfig,
+    dragConfig,
+  });
   return (
     <section {...containerProps} className="my-board" data-testid="board">
       {layout.map((it) => (
@@ -41,10 +47,10 @@ function Board() {
 }
 
 describe("headless API (useGridContainer + hooks, custom markup)", () => {
-  function renderBoard() {
+  function renderBoard(dragConfig?: DragConfig) {
     return render(
       <DragDropProvider>
-        <Board />
+        <Board dragConfig={dragConfig} />
       </DragDropProvider>,
     );
   }
@@ -72,5 +78,21 @@ describe("headless API (useGridContainer + hooks, custom markup)", () => {
     expect(board.style.position).toBe("relative");
     // bottom = 2 rows -> 20 + 200 + 10 = 230
     expect(board.style.height).toBe("230px");
+  });
+
+  it("leaves a vertical swipe on a tile to the browser to scroll", () => {
+    const { container } = renderBoard();
+    const a = container.querySelector<HTMLElement>('[data-tile="a"]');
+    // `touch-action: none` would make every swipe that starts on a tile inert; the
+    // touch hold (see buildItemSensors) is what tells a scroll from a drag.
+    expect(a?.style.touchAction).toBe("pan-y");
+  });
+
+  it("keeps touch-action: none on a tile when the touch hold is off", () => {
+    const { container } = renderBoard({ touchHold: 0 });
+    const a = container.querySelector<HTMLElement>('[data-tile="a"]');
+    // Touch now arms on `threshold` movement like the mouse, so the tile keeps owning
+    // the gesture — `pan-y` would scroll the page and drag the tile at the same time.
+    expect(a?.style.touchAction).toBe("none");
   });
 });

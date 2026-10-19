@@ -1,3 +1,4 @@
+import type { ActivationConstraints } from "@dnd-kit/abstract";
 import {
   Feedback,
   KeyboardSensor,
@@ -9,6 +10,13 @@ import type { DragConfig } from "./types.js";
 
 /** Marker attribute placed on resize-handle elements. */
 export const RESIZE_HANDLE_ATTR = "data-snapgrid-resize-handle";
+
+// Touch hold (ms) before an item drag arms when `dragConfig.touchHold` is unset —
+// dnd-kit's own touch default, which a flat `threshold` would otherwise replace.
+export const DEFAULT_TOUCH_HOLD = 250;
+
+// Pixels a finger may drift before a hold counts as a scroll rather than a drag.
+export const TOUCH_HOLD_TOLERANCE = 5;
 
 // Resize handles are draggables too, but resizing isn't a move — there's no tile
 // to float — so they suppress dnd-kit's visual feedback entirely.
@@ -32,6 +40,50 @@ export function shouldPreventItemDrag(
   return false;
 }
 
+// The hold a drag config asks for, resolved: dnd-kit's own touch default unless
+// `touchHold` overrides it. `<= 0` is "no hold".
+function touchHoldFor(cfg: DragConfig | undefined): number {
+  return cfg?.touchHold ?? DEFAULT_TOUCH_HOLD;
+}
+
+/**
+ * `touch-action` for a tile, from the drag config. While a touch has to be held, the
+ * browser keeps vertical swipes (`pan-y`) so the page still scrolls from a tile. With
+ * the hold off, touch arms on `threshold` movement like the mouse — and then the tile
+ * must keep `none`: `pan-y` would let the page scroll and the drag run at the same time.
+ */
+export function itemTouchAction(cfg: DragConfig | undefined): "pan-y" | "none" {
+  return touchHoldFor(cfg) > 0 ? "pan-y" : "none";
+}
+
+/**
+ * How a pointer arms an item drag: a touch holds first (a finger that travels is
+ * scrolling — the tile's `touch-action: pan-y` already gave that gesture to the
+ * browser), every other pointer uses the distance threshold. Pure, exported for
+ * testing. `undefined` is "no constraint" — dnd-kit activates on pointer-down.
+ */
+export function buildActivationConstraints(
+  pointerType: string,
+  threshold: number,
+  cfg: DragConfig | undefined,
+): ActivationConstraints<PointerEvent> | undefined {
+  if (pointerType === "touch") {
+    const hold = touchHoldFor(cfg);
+    // `touchHold: 0` deliberately falls through to the distance threshold below.
+    if (hold > 0) {
+      return [
+        new PointerActivationConstraints.Delay({
+          value: hold,
+          tolerance: TOUCH_HOLD_TOLERANCE,
+        }),
+      ];
+    }
+  }
+  return threshold > 0
+    ? [new PointerActivationConstraints.Distance({ value: threshold })]
+    : undefined;
+}
+
 /**
  * Sensors for item (move) draggables, built from the drag config: a distance
  * activation threshold (so clicks don't start drags) plus handle/cancel/resize
@@ -43,10 +95,8 @@ export function buildItemSensors(
 ): Sensors {
   return [
     PointerSensor.configure({
-      activationConstraints: () =>
-        threshold > 0
-          ? [new PointerActivationConstraints.Distance({ value: threshold })]
-          : undefined,
+      activationConstraints: (event: PointerEvent) =>
+        buildActivationConstraints(event.pointerType, threshold, getDragConfig()),
       preventActivation: (event: PointerEvent) =>
         shouldPreventItemDrag(event.target, getDragConfig()),
     }),
