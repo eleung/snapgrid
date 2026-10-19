@@ -9,16 +9,16 @@ export const BUNDLE_SIZE = {
   compression: "brotli",
 } as const;
 export const BUNDLE_SIZE_SVELTE = {
-  total: 38,
+  total: 39,
   snapgrid: 9,
-  dndkit: 29,
+  dndkit: 30,
   unit: "kB",
   compression: "brotli",
 } as const;
 export const BUNDLE_SIZE_VUE = {
-  total: 39,
+  total: 40,
   snapgrid: 10,
-  dndkit: 29,
+  dndkit: 30,
   unit: "kB",
   compression: "brotli",
 } as const;

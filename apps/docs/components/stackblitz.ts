@@ -14,10 +14,10 @@ const DEP_VERSIONS: Record<string, string> = {
   "@snapgridjs/react": "latest",
   "@snapgridjs/extras": "latest",
   "@snapgridjs/core": "latest",
-  "@dnd-kit/react": "^0.4.0",
-  "@dnd-kit/dom": "^0.4.0",
-  "@dnd-kit/abstract": "^0.4.0",
-  "@dnd-kit/helpers": "^0.4.0",
+  "@dnd-kit/react": "^0.5.1",
+  "@dnd-kit/dom": "^0.5.1",
+  "@dnd-kit/abstract": "^0.5.1",
+  "@dnd-kit/helpers": "^0.5.1",
 };
 
 const DEV_DEPENDENCIES = {
