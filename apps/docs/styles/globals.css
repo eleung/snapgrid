@@ -127,8 +127,38 @@ article a {
   gap: 1rem;
   margin-inline-start: 0.85rem;
 }
-@media (max-width: 768px) {
+/* The Docs/Examples links only fit once the bar is wide enough for them; below
+   ~900px they push the logo node past the navbar's left edge (Nextra lays the
+   bar out justify-end, so overflow escapes leftward and eats the logo). */
+@media (max-width: 899px) {
   .dg-navnav {
+    display: none;
+  }
+}
+/* Phone/tablet navbar: brand + framework switcher still have to share the bar
+   with the repo link and hamburger, so tighten the spacing, drop the version
+   pill, and compact the switcher. Below 480px the wordmark goes too, leaving
+   the mark + switcher (the widest phone content that fits at 320px). */
+@media (max-width: 768px) {
+  .nextra-navbar > div:not(.nextra-navbar-blur) {
+    gap: 0.5rem;
+  }
+  .dg-logo {
+    gap: 0.4rem;
+  }
+  .dg-logo__ver {
+    display: none;
+  }
+  .dg-fw {
+    margin-left: 0.4rem;
+  }
+  .dg-fw__opt {
+    padding: 0.2rem 0.42rem;
+    font-size: 0.68rem;
+  }
+}
+@media (max-width: 480px) {
+  .dg-logo__word {
     display: none;
   }
 }
