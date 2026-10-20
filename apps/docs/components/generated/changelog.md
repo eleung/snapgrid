@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.12.0] - 2026-10-20
+
+snapgrid now runs on dnd-kit 0.5. There are no snapgrid API changes; upgrade your `@dnd-kit/*`
+packages alongside snapgrid.
+
+### Changed
+
+- **Requires dnd-kit 0.5.** The `@dnd-kit/*` peer dependencies of `@snapgridjs/dnd`, `react`, `svelte`
+  and `vue` move from `^0.4.0` to `^0.5.0`. Upgrade `@dnd-kit/*` together with snapgrid; projects
+  that must stay on dnd-kit 0.4 can stay on snapgrid 0.11.x, which this release adds nothing over.
+  dnd-kit 0.5 brings keyboard shortcuts that respect keyboard layouts, smoother drag starts, and
+  less style recalculation at the start and end of drags on large pages.
+- The docs' StackBlitz sandboxes install dnd-kit 0.5.
+
 ## [0.11.0] - 2026-10-20
 
 Grids inside a scrolling page scroll on mobile again: a swipe that lands on a tile scrolls the page,
@@ -275,6 +289,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.12.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.12.0
 [0.11.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.11.0
 [0.10.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.10.0
 [0.9.1]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.9.1
