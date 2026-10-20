@@ -59,7 +59,7 @@
     "@snapgridjs/dnd": "workspace:*"
   },
   "peerDependencies": {
-    "vue": "^3.5.0",
+    "vue": "^3.5.44",
     "@dnd-kit/dom": "^0.5.0",
     "@dnd-kit/vue": "^0.5.0"
   },
@@ -69,6 +69,6 @@
     "@dnd-kit/dom": "^0.5.1",
     "@dnd-kit/state": "^0.5.1",
     "@dnd-kit/vue": "^0.5.1",
-    "vue": "^3.5.0"
+    "vue": "^3.5.44"
   }
 }
