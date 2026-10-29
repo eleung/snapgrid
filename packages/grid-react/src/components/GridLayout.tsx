@@ -58,8 +58,11 @@ function GridSurface({ className, style, children, ...opts }: GridLayoutProps) {
  * markup/styling, use the hooks directly.
  *
  * Supplies the dnd-kit `DragDropProvider` for the turnkey case so consumers
- * don't manage one. Nest multiple `GridLayout`s and they share one provider
- * (the seam for cross-grid drags); a consumer's own provider is also honored.
+ * don't manage one. Nest multiple `GridLayout`s (or wrap siblings in a
+ * `SnapGridGroup`) and they share one provider — the seam for cross-grid drags.
+ * Only a snapgrid-supplied provider is detected: inside a plain
+ * `DragDropProvider` of your own it still mints a nested one, so to share your
+ * own provider, compose the headless hooks instead.
  */
 export function GridLayout(props: GridLayoutProps): React.JSX.Element {
   const inProvider = useContext(InProvider);

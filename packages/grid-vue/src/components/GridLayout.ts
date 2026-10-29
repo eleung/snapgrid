@@ -6,10 +6,12 @@ import { GridSurface } from "./GridSurface.js";
 
 /**
  * Drop-in grid: a controlled, react-grid-layout v2-compatible layout backed by dnd-kit.
- * Supplies the dnd-kit `<DragDropProvider>` for the turnkey case (unless one already
- * exists above — nested grids and `<SnapGridGroup>` siblings share it, the cross-grid
- * seam). The surface itself lives in a child component so it sets up *inside* the
- * provider (else the manager isn't injectable).
+ * Supplies the dnd-kit `<DragDropProvider>` for the turnkey case, unless a snapgrid one
+ * is already above — nested grids and `<SnapGridGroup>` siblings share it, the
+ * cross-grid seam. A plain `<DragDropProvider>` of your own isn't detected (a nested one
+ * is still minted inside it); to share your own provider, compose the headless layer.
+ * The surface itself lives in a child component so it sets up *inside* the provider
+ * (else the manager isn't injectable).
  *
  * Item content comes from the `item` scoped slot: `<template #item="{ item }">`.
  */

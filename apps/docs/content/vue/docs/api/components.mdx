@@ -21,8 +21,8 @@ render at either layer. If you need a *separate* floating preview, dnd-kit's
 
 The turnkey controlled grid. Each item's content comes from the `item` **scoped slot** (Vue has no
 keyed-children analog), rendered once per layout entry and keyed by the item's `i`. It supplies its
-own `DragDropProvider` unless one already encloses it; nest several (or wrap them in
-[`SnapGridGroup`](#snapgridgroup)) and they share one.
+own `DragDropProvider`; nest several (or wrap them in [`SnapGridGroup`](#snapgridgroup)) and they
+share one.
 
 ```vue
 <script setup>
@@ -150,8 +150,8 @@ control.
 
 Shares one dnd-kit `DragDropProvider` across several sibling grids so tiles can be dragged between
 them. Takes only a default slot — a thin wrapper over `DragDropProvider` (nesting `GridLayout`s
-already shares a provider, so this is just explicit), and it honors an enclosing provider of your
-own. See [Cross-grid dragging](/vue/docs/guides/cross-grid).
+already shares a provider, so this is just explicit). See
+[Cross-grid dragging](/vue/docs/guides/cross-grid).
 
 <Callout type="warning">
   Item ids must be unique across all grids that share a provider.
