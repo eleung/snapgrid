@@ -102,7 +102,7 @@ function Tile(props: { id: string; group: string }) {
 </GridLayout>
 ```
 
-The child receives an accessor for the item's **committed** layout entry. Inside a tile, `useGridItem().item()` gives the live (reflowed) entry during a drag.
+The child receives an accessor for the item's **committed** layout entry, and runs once per tile. For the live (reflowed) entry during a drag, build headless tiles with `useGridItem` — its `item()` accessor tracks the preview.
 
 → Full walkthrough in [**Getting Started**](https://snapgrid.dev/solid/docs/getting-started).
 

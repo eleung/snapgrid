@@ -38,11 +38,11 @@ const Logo = () => (
 // Bump `storageKey` whenever the banner message changes, so it re-shows to readers who
 // dismissed the previous one.
 const banner = (
-  <Banner storageKey="svelte-release">
+  <Banner storageKey="solid-release">
     <span>
-      New — snapgrid now ships for <strong>Svelte 5</strong>: the same dnd-kit-native,
-      headless-first grid — drag, resize, repack, and drag between grids.{" "}
-      <Link href="/svelte/examples">See it in Svelte →</Link>
+      New — snapgrid now ships for <strong>SolidJS</strong>: the same dnd-kit-native, headless-first
+      grid — drag, resize, repack, and drag between grids.{" "}
+      <Link href="/solid/examples">See it in Solid →</Link>
     </span>
   </Banner>
 );

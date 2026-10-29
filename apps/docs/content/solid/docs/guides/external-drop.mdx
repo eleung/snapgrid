@@ -1,0 +1,156 @@
+---
+title: External drop
+description: Accept arbitrary dnd-kit draggables — a palette, a sidebar — dropped into a grid.
+---
+
+import { Callout } from "nextra/components";
+import { ExternalDropDemo } from "@/components/demos-solid";
+
+# External drop
+
+A grid can accept **non-grid** dnd-kit draggables — a widget palette, a sidebar of blocks — and
+turn a drop into a new layout item. Enable it with `dropConfig` and handle the result with
+`onDrop`.
+
+<ExternalDropDemo />
+
+## Set it up
+
+The grid and the external draggable must share one dnd-kit provider, so wrap both in a
+`<SnapGridGroup>` (dnd-kit's `DragDropProvider`). The grid hosts itself with `useGridContainer`,
+opting in via `dropConfig`. The draggable is a plain `useDraggable` — import it from
+`@snapgridjs/solid` so it resolves the same dnd-kit instance — carrying a `snapGridDrop` payload that
+describes the item to create.
+
+```tsx
+// PaletteItem.tsx
+import { Feedback, useDraggable } from "@snapgridjs/solid";
+
+// Module-scope, so the plugin array keeps a stable identity.
+const CLONE = [Feedback.configure({ feedback: "clone" })];
+
+export function PaletteItem(props: { id: string; w: number; h: number }) {
+  const draggable = useDraggable({
+    id: props.id,
+    data: { snapGridDrop: { w: props.w, h: props.h } },
+    plugins: CLONE,
+  });
+  return (
+    <button type="button" ref={draggable.ref}>
+      {props.w}×{props.h}
+    </button>
+  );
+}
+```
+
+```tsx
+// DropGrid.tsx
+import { type Layout, useGridContainer } from "@snapgridjs/solid";
+import { For } from "solid-js";
+import { Tile } from "./Tile";
+
+export function DropGrid(props: {
+  layout: Layout;
+  width: number;
+  onLayoutChange: (layout: Layout) => void;
+}) {
+  const grid = useGridContainer(() => ({
+    layout: props.layout,
+    width: props.width,
+    onLayoutChange: props.onLayoutChange,
+    onDrop: (next) => props.onLayoutChange(next),
+    dropConfig: { enabled: true, defaultItem: { w: 2, h: 2 } },
+  }));
+  return (
+    <div ref={grid.ref} style={grid.style()}>
+      <For each={props.layout.map((it) => it.i)}>
+        {(id) => <Tile id={id} group={grid.group()} />}
+      </For>
+    </div>
+  );
+}
+```
+
+```tsx
+// Tile.tsx
+import { useGridItem } from "@snapgridjs/solid";
+
+export function Tile(props: { id: string; group: string }) {
+  const tile = useGridItem({ id: props.id, group: props.group });
+  return (
+    <div ref={tile.ref} style={tile.style()} class="tile">
+      {props.id}
+    </div>
+  );
+}
+```
+
+```tsx
+// Board.tsx
+import { type Layout, SnapGridGroup } from "@snapgridjs/solid";
+import { createSignal } from "solid-js";
+import { DropGrid } from "./DropGrid";
+import { PaletteItem } from "./PaletteItem";
+
+export function Board() {
+  const [layout, setLayout] = createSignal<Layout>([]);
+  return (
+    <SnapGridGroup>
+      <PaletteItem id="pal-wide" w={4} h={1} />
+      <DropGrid layout={layout()} width={600} onLayoutChange={setLayout} />
+    </SnapGridGroup>
+  );
+}
+```
+
+## The drag preview
+
+Each draggable is its **own** floating preview — there's no shared overlay to wire up:
+
+- A **grid tile** being relocated (within or across grids) [floats itself](/solid/docs/guides/headless#floating).
+- A **palette item** floats a **clone** of itself — that's the `CLONE` plugin
+  (`Feedback.configure({ feedback: "clone" })`) on its `useDraggable` above.
+
+Why a clone? dnd-kit's *default* feedback floats the element itself — right for a grid tile, but it
+would yank the palette item out of its tray. `"clone"` leaves the original in place and floats a copy
+instead. The copy is just your palette markup; it becomes a grid tile only once `onDrop` fires.
+
+## The `snapGridDrop` payload
+
+The external draggable carries `data.snapGridDrop` to control the inserted item:
+
+```ts
+interface GridDropData {
+  i?: string; // id for the new item; a unique one is generated if omitted
+  w?: number; // width in columns
+  h?: number; // height in rows
+}
+```
+
+If `w`/`h` are omitted, `dropConfig.defaultItem` is used (and finally `1×1`, matching
+react-grid-layout's default).
+
+## `dropConfig` options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `false` | Accept external draggables. |
+| `defaultItem` | `{ w, h }` | `{ w: 1, h: 1 }` | Size for a dropped item when the source omits `snapGridDrop`. |
+| `accept` | `(source) => boolean` | accept any non-grid draggable | Restrict which sources are accepted. |
+
+## `onDrop`, not `onLayoutChange`
+
+An external drop fires **`onDrop(layout, item, event)`** — the next layout, the synthesized item,
+and the source event — rather than `onLayoutChange`. That lets you add the item to both your layout
+state and any side data keyed by id (titles, content, etc.) in one place.
+
+<Callout type="info">
+  Synthesized ids are prefixed with the grid's id, so two drop-enabled grids in a group never mint
+  the same id.
+</Callout>
+
+## Beyond one-way drops
+
+External drop is a **one-way** drop of a plain dnd-kit `Draggable` into a grid. For **two-way**
+movement with a `useSortable` list or board — cards in, tiles back out, both reordering live — see
+[dnd-kit interop](/solid/docs/guides/dnd-kit-interop).

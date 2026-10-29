@@ -1,0 +1,289 @@
+---
+title: Hooks
+description: useContainerWidth, useGridContainer, useGridItem, useGridResizeHandle, useGridPlaceholder, useResponsiveLayout, useGridController, resolveController.
+---
+
+import { Callout } from "nextra/components";
+
+# Hooks
+
+snapgrid's primary API. Each returns Solid accessors and ref callbacks to bind to your own elements.
+See [Headless usage](/solid/docs/guides/headless) for the full picture.
+
+<Callout type="info">
+  Headless grids render inside a dnd-kit [`DragDropProvider`](https://next.dndkit.com) that you
+  supply. `useGridContainer` is the grid host and returns the grid's `group`; the item-level hooks
+  take that `group` to resolve their grid.
+</Callout>
+
+Call each hook **once**, in the component body (which Solid runs once per instance), and keep the
+handle it returns. Its reactive fields are **accessors** (`Accessor<T>` from `solid-js`) — call them
+(`tile.style()`, `tile.isDragging()`) inside JSX or an effect so Solid tracks them. Destructuring the
+handle is fine (the accessors are just functions); destructuring your **props** is not — read
+`props.layout` inside the options getter so the grid keeps tracking it.
+
+Elements are bound with **ref callbacks** — `ref={grid.ref}` — and `style` is an accessor for a
+`JSX.CSSProperties` object, so pass `style={tile.style()}` (or spread it into your own object to add
+properties).
+
+<Callout type="warning">
+  Solid resolves context from the **owner chain**, so every hook that resolves a grid
+  (`useGridContainer`, `useGridController`, `useGridItem`, `useGridPlaceholder`,
+  `useGridResizeHandle`, `resolveController`) must run in a component rendered **inside** the
+  `<DragDropProvider>` — never in the component that renders the provider itself. Solid has no
+  imperative `provide`, so tiles resolve their grid by `group` from a registry scoped to that
+  provider's manager.
+</Callout>
+
+## useContainerWidth
+
+Measures a container's width with a `ResizeObserver` (SSR-safe: measurement only runs in an effect,
+so server render uses `initialWidth`). Replaces react-grid-layout's `WidthProvider`.
+
+```tsx
+import { useContainerWidth } from "@snapgridjs/solid";
+
+function Board() {
+  const { width, mounted, ref } = useContainerWidth({ initialWidth: 1024 });
+  return <div ref={ref}>{/* pass width() to the grid */}</div>;
+}
+```
+
+| | Type | Description |
+| --- | --- | --- |
+| `options.initialWidth` | `number` | Width before measurement. Default `1280`. |
+| → `width` | `Accessor<number>` | Measured width (or `initialWidth` before mount). |
+| → `mounted` | `Accessor<boolean>` | `true` once measured at least once. |
+| → `ref` | `(el: HTMLElement) => void` | Ref callback for the element to measure. |
+
+## useGridContainer
+
+The grid **host**: takes a getter of the controlled layout + config, owns the grid's drag/resize
+session, registers the droppable surface, and returns a `ref` + style for your container plus the
+grid's `group`. Options are passed as a **getter** (`() => ({ … })`) so the grid tracks your live
+reactive state. Call it inside a component rendered under a `<DragDropProvider>`.
+
+```tsx
+import { type Layout, useGridContainer } from "@snapgridjs/solid";
+import { For } from "solid-js";
+
+function Surface(props: { layout: Layout; width: number; onLayoutChange: (l: Layout) => void }) {
+  const grid = useGridContainer(() => ({
+    layout: props.layout,
+    width: props.width,
+    onLayoutChange: props.onLayoutChange,
+  }));
+
+  return (
+    <div ref={grid.ref} style={grid.style()}>
+      {/* Iterate ids, not entries: <For> keys by identity, and a commit replaces entries. */}
+      <For each={props.layout.map((it) => it.i)}>
+        {(id) => <Tile id={id} group={grid.group()} />}
+      </For>
+    </div>
+  );
+}
+```
+
+### Options (`UseGridControllerOptions`)
+
+The controlled state plus the per-grid config. These are exactly `<GridLayout>`'s props **minus
+`class`, `style` and the other div attributes** (here you own the surface element, so you style it
+directly).
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `layout` | `Layout` | — | **Required.** Controlled array of items. Never mutated. |
+| `width` | `number` | — | **Required.** Container width in px (from [`useContainerWidth`](#usecontainerwidth)). |
+| `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. The grid is controlled — apply it, or nothing moves. |
+| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/solid/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. Unset fields use defaults. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/solid/docs/guides/dragging): `handle` (CSS selector — headless prefers [`handleRef`](#usegriditem)), `cancel`, `threshold`, `touchHold`, `bounded`, `snapToGrid`. |
+| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/solid/docs/guides/resizing): which handle axes are allowed. |
+| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/solid/docs/guides/external-drop): `enabled`, `defaultItem`, `accept`. |
+| `accept` | `(source: DragSourceInfo) => boolean` | — | [dnd-kit interop](/solid/docs/guides/dnd-kit-interop): also accept a foreign sortable (e.g. a tray card) as a drop target. You drive the receive yourself in `onDragOver` with [`snapMove`](/solid/docs/guides/dnd-kit-interop#snapmove). |
+| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/solid/docs/guides/compaction). Swap at runtime. |
+| `isDraggable` | `boolean` | `true` | Grid-level drag toggle (overrides per-item when `false`). |
+| `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
+| `autoSize` | `boolean` | `true` | Grow the surface height to fit content. |
+| `id` | `string` | auto (`createUniqueId`) | Stable id for the droppable surface; surfaced back as `group`. |
+| `type` | `string` | `"grid"` | The droppable surface's dnd-kit `type`. Override to namespace grids for [interop](/solid/docs/guides/dnd-kit-interop) (branch `onDragOver` on it, or have a foreign draggable `accept` only this grid). Grids resolve by id, so any value still receives tiles + cross-grid drops. |
+| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/solid/docs/guides/events) `(layout, oldItem, newItem, placeholder, event, node)`. |
+| `onResizeStart` `onResize` `onResizeStop` | `GridEventCallback` | — | Resize lifecycle, same signature. |
+| `onDrop` | `(layout: Layout, item: LayoutItem, event: Event \| null) => void` | — | Fired when an external draggable is dropped in — instead of `onLayoutChange`. |
+
+### Returns (`GridContainerResult`)
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `ref` | `(el: HTMLElement) => void` | Ref callback for your surface element. |
+| `style` | `Accessor<JSX.CSSProperties>` | Style object: `position: relative` + width + auto-sized height. Pass `style={grid.style()}`. |
+| `isDropTarget` | `Accessor<boolean>` | `true` while a compatible draggable is over the grid — handy for highlighting. |
+| `group` | `Accessor<string>` | This grid's id (the `id` option, or a generated one). Pass `group()` to every item-level hook. |
+| `controller` | `GridController` | The live store (a plain object, not an accessor), for advanced composition. |
+
+## useGridItem
+
+Wires a single tile: drag activation, positioning style, and drag state. Takes an options object,
+mirroring dnd-kit's `useSortable`: `id`, `group` (the value its `useGridContainer` returned), and an
+optional `type`. Both `id` and `group` are read **once** at setup and are expected to stay stable for
+the tile's lifetime (tiles are keyed by `i`, and a grid's id is stable) — pass plain strings, not
+accessors.
+
+```tsx
+import { useGridItem } from "@snapgridjs/solid";
+
+function Tile(props: { id: string; group: string }) {
+  const tile = useGridItem({ id: props.id, group: props.group });
+  return (
+    <div ref={tile.ref} style={tile.style()} data-dragging={tile.isDragging() || undefined}>
+      {tile.item()?.i}
+    </div>
+  );
+}
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `id` | `string` | — | **Required.** Matches the layout item's `i`. |
+| `group` | `string` | — | **Required.** The owning grid's id (from its `useGridContainer`). |
+| `type` | `string` | `"grid-item"` | The dnd-kit sortable `type` the tile carries. Override to namespace tiles for [interop](/solid/docs/guides/dnd-kit-interop) — e.g. so a foreign sortable list `accept`s only one grid's tiles. The grid identifies its own tiles by their payload, not this string, so any value still drags and crosses grids. |
+
+| → | Type | Description |
+| --- | --- | --- |
+| `ref` | `(el: HTMLElement) => void` | Ref callback for the tile element. |
+| `handleRef` | `(el: HTMLElement) => void` | Optional drag handle — bind it to a child to restrict **pointer** dragging to it. The headless form of `dragConfig.handle`; keyboard pickup on the focused tile is unaffected. |
+| `style` | `Accessor<JSX.CSSProperties>` | `position: absolute` + left/top + size. Reflow animates on the compositor (a transform FLIP), so the dnd-kit float reads the tile's true rect during ecosystem hand-offs. |
+| `isDragging` | `Accessor<boolean>` | True while this tile is the active drag source. |
+| `item` | `Accessor<LayoutItem \| undefined>` | The tile's current (possibly reflowed) entry. |
+
+## useGridResizeHandle
+
+Models a resize handle as its own draggable. Position and style it however you like; `group` is the
+grid's id.
+
+```tsx
+import { useGridResizeHandle } from "@snapgridjs/solid";
+
+function ResizeHandle(props: { itemId: string; group: string }) {
+  const handle = useGridResizeHandle({ id: props.itemId, handle: "se", group: props.group });
+  return <span ref={handle.ref} {...handle.handleProps} class="resize-handle" />;
+}
+```
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `id` | `string` | **Required.** The layout item's `i` — the item this handle resizes. |
+| `handle` | `ResizeHandleAxis` | **Required.** Which edge/corner this handle drives. |
+| `group` | `string` | **Required.** The owning grid's id. |
+
+| → | Type | Description |
+| --- | --- | --- |
+| `ref` | `(el: HTMLElement) => void` | Ref callback for the handle element. |
+| `handleProps` | `object` | A plain object (not an accessor) carrying the marker attribute that excludes the handle from item-drag activation — spread it onto the element. |
+| `isResizing` | `Accessor<boolean>` | True while this item is actively being resized. |
+
+## useGridPlaceholder
+
+Returns an `Accessor<GridPlaceholderInfo | null>` — where the landing-cell marker should render, or
+`null` when idle. `group` is the grid's id. The result is a single accessor (not a handle object), so
+pair it with `<Show>`.
+
+```tsx
+import { useGridPlaceholder } from "@snapgridjs/solid";
+import { Show } from "solid-js";
+
+function Placeholder(props: { group: string }) {
+  const placeholder = useGridPlaceholder(props.group);
+  return (
+    <Show when={placeholder()}>
+      {(current) => <div style={{ ...current().style, background: "rgba(99,102,241,0.2)" }} />}
+    </Show>
+  );
+}
+```
+
+`GridPlaceholderInfo` is `{ item: LayoutItem; style: JSX.CSSProperties }` — the layout entry the
+dragged item will land on, plus a positioning style object (size + transform) for your element.
+
+## useResponsiveLayout
+
+The headless engine behind `ResponsiveGridLayout`. Resolves the active breakpoint, columns, and
+layout from the container width. Options are passed as a **getter** so it tracks your live
+width/layouts.
+
+```tsx
+import { type ResponsiveLayouts, useResponsiveLayout } from "@snapgridjs/solid";
+import { createSignal } from "solid-js";
+
+function ResponsiveBoard(props: { width: number }) {
+  const [layouts, setLayouts] = createSignal<ResponsiveLayouts>({ lg: [/* … */] });
+
+  const responsive = useResponsiveLayout(() => ({
+    width: props.width,
+    layouts: layouts(),
+    onLayoutChange: (active, all) => setLayouts(all),
+    onBreakpointChange: (bp, activeCols) => {},
+  }));
+
+  // Feed responsive.layout(), responsive.cols() and responsive.onLayoutChange to a grid.
+}
+```
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `width` | `number` | Current container width. |
+| `layouts` | `ResponsiveLayouts` | Per-breakpoint layout map. |
+| `breakpoints` | `Breakpoints` | Optional; defaults to `DEFAULT_BREAKPOINTS`. |
+| `cols` | `BreakpointCols` | Optional; defaults to `DEFAULT_BREAKPOINT_COLS`. |
+| `compactor` | `Compactor` | Used when generating a missing breakpoint's layout. |
+| `onLayoutChange` | `(layout, layouts) => void` | Active layout + updated map. |
+| `onBreakpointChange` | `(breakpoint, cols) => void` | On breakpoint change (not on mount). |
+
+Returns the active `breakpoint` (`Accessor<string>`), its `cols` (`Accessor<number>`), the resolved
+`layout` (`Accessor<Layout>`), and a plain `onLayoutChange(layout)` function to pass to the grid (it
+updates the active breakpoint's entry).
+
+## useGridController
+
+Creates and owns a grid's `GridController` — the observable render bridge — **without** rendering a
+surface. The advanced seam underneath [`useGridContainer`](#usegridcontainer): same options getter
+(`UseGridControllerOptions`), but it returns the controller itself (a plain object, not an accessor)
+and leaves the droppable surface, element ref, and container style to you. Most consumers want
+`useGridContainer` instead. Must be called in a component rendered inside a `<DragDropProvider>`.
+
+```tsx
+import { type Layout, useGridController } from "@snapgridjs/solid";
+
+function Host(props: { layout: Layout; width: number }) {
+  const controller = useGridController(() => ({ layout: props.layout, width: props.width }));
+  // …
+}
+```
+
+## resolveController
+
+Resolves a grid's controller by its `group` (= the grid's id) from the registry, scoped to the
+ambient dnd-kit manager. [`useGridItem`](#usegriditem) and the other item-level hooks resolve
+through the same registry; reach for it directly for advanced composition. Throws a helpful error if
+the group is unresolved. Must be called in a component rendered inside a `<DragDropProvider>`.
+
+```tsx
+import { resolveController } from "@snapgridjs/solid";
+
+function Inspector(props: { group: string }) {
+  const controller = resolveController(props.group);
+  // …
+}
+```
+
+## No overlay hook (tiles float themselves)
+
+There's no `useGridDragOverlay` — and no overlay component either. While you drag with a pointer,
+dnd-kit lifts the active tile into the browser's top layer, so the tile you already rendered
+**floats itself** above everything and crosses between grids unclipped; on drop it settles into its
+new cell. Nothing extra to wire. Style the floating state through the tile's own `isDragging`. See
+[The dragged tile floats itself](/solid/docs/guides/headless#floating).
+
+If you need a *separate* floating element — a clone, a ghost, different markup — dnd-kit's
+[`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/solid`. It's a component,
+not a hook, because it owns and renders its own element, so there's nothing for a hook to return.

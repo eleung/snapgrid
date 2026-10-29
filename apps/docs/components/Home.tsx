@@ -17,12 +17,19 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { HeroGrid } from "./demos";
+import { SolidHeroDemo } from "./demos-solid";
 import { SvelteHeroDemo } from "./demos-svelte";
 import { VueHeroDemo } from "./demos-vue";
 // Build-time generated (see scripts/measure-bundle.mjs + highlight-snippets.mjs).
-import { BUNDLE_SIZE, BUNDLE_SIZE_SVELTE, BUNDLE_SIZE_VUE } from "./generated/bundle-size";
+import {
+  BUNDLE_SIZE,
+  BUNDLE_SIZE_SOLID,
+  BUNDLE_SIZE_SVELTE,
+  BUNDLE_SIZE_VUE,
+} from "./generated/bundle-size";
 import {
   HERO_HEADLESS_HTML,
+  HERO_HEADLESS_HTML_SOLID,
   HERO_HEADLESS_HTML_SVELTE,
   HERO_HEADLESS_HTML_VUE,
   RGL_DIFF_HTML,
@@ -35,6 +42,7 @@ const BUNDLE: Record<Framework, BundleSize> = {
   react: BUNDLE_SIZE,
   svelte: BUNDLE_SIZE_SVELTE,
   vue: BUNDLE_SIZE_VUE,
+  solid: BUNDLE_SIZE_SOLID,
 };
 
 // The install command per framework binding. All share @dnd-kit/dom (the DOM engine);
@@ -43,6 +51,7 @@ const INSTALL: Record<Framework, string> = {
   react: "pnpm add @snapgridjs/react @dnd-kit/react @dnd-kit/dom",
   svelte: "pnpm add @snapgridjs/svelte @dnd-kit/svelte @dnd-kit/dom",
   vue: "pnpm add @snapgridjs/vue @dnd-kit/vue @dnd-kit/dom",
+  solid: "pnpm add @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom",
 };
 
 // The "30-second example" source per framework (pre-highlighted at build time).
@@ -50,6 +59,7 @@ const HERO_CODE: Record<Framework, string> = {
   react: HERO_HEADLESS_HTML,
   svelte: HERO_HEADLESS_HTML_SVELTE,
   vue: HERO_HEADLESS_HTML_VUE,
+  solid: HERO_HEADLESS_HTML_SOLID,
 };
 
 // The hero grid demo per framework — React renders inline, the others mount as islands.
@@ -57,6 +67,7 @@ const HERO_DEMO: Record<Framework, () => React.ReactElement> = {
   react: HeroGrid,
   svelte: SvelteHeroDemo,
   vue: VueHeroDemo,
+  solid: SolidHeroDemo,
 };
 
 /** The hero install command — click anywhere on it to copy — with a size breakdown. */
@@ -212,8 +223,7 @@ export function Home() {
       <Link className="dg-roadmap-teaser" href="/roadmap">
         <span className="dg-roadmap-teaser__tag">Roadmap</span>
         <span className="dg-roadmap-teaser__text">
-          Next: <strong>Solid &amp; vanilla-TS</strong> bindings on snapgrid&apos;s
-          framework-agnostic core.
+          Next: a <strong>vanilla-TS</strong> binding on snapgrid&apos;s framework-agnostic core.
         </span>
         <span className="dg-roadmap-teaser__more">See the roadmap →</span>
       </Link>
@@ -226,7 +236,9 @@ export function Home() {
                 ? "a dnd-kit grid · react-grid-layout alternative"
                 : framework === "vue"
                   ? "a dnd-kit grid layout for Vue 3"
-                  : "a dnd-kit grid layout for Svelte 5"}
+                  : framework === "solid"
+                    ? "a dnd-kit grid layout for SolidJS"
+                    : "a dnd-kit grid layout for Svelte 5"}
             </p>
             <h1 className="dg-hero__title">Grids that drag, resize, and repack.</h1>
             <p className="dg-hero__sub">
@@ -281,7 +293,7 @@ export function Home() {
       </div>
 
       {/* react-grid-layout is a React library, so the migration comparison only makes
-          sense for React — a Svelte or Vue user has nothing to migrate from. */}
+          sense for React — a Svelte, Vue or Solid user has nothing to migrate from. */}
       {isReact ? (
         <section className="dg-compare">
           <h2>Coming from react-grid-layout?</h2>

@@ -15,6 +15,7 @@ export default {
   react: { title: "React", type: "page" },
   svelte: { title: "Svelte", type: "page" },
   vue: { title: "Vue", type: "page" },
+  solid: { title: "Solid", type: "page" },
   showcase: { title: "Showcase", type: "page" },
   roadmap: { title: "Roadmap", type: "page" },
   changelog: { title: "Changelog", type: "page" },

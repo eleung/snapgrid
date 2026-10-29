@@ -1,0 +1,151 @@
+---
+title: Components
+description: GridLayout, ResponsiveGridLayout, GridItem, GridPlaceholder, SnapGridGroup.
+---
+
+import { Callout } from "nextra/components";
+
+# Components
+
+The component layer — a thin shell in the react-grid-layout style over the
+[hooks](/solid/docs/api/hooks). `<GridLayout>` bundles the dnd-kit `DragDropProvider`, the container,
+the items, and the placeholder, so you never touch dnd-kit directly. For full control of the markup,
+or to compose with other dnd-kit draggables, use the hooks. See the
+[Component layer guide](/solid/docs/guides/component-layer) for usage; this page is the prop reference.
+
+A dragged tile [floats itself](/solid/docs/guides/headless#floating), so there's no overlay component to
+render at either layer. If you need a *separate* floating preview, dnd-kit's
+[`DragOverlay`](https://next.dndkit.com) is re-exported from `@snapgridjs/solid`.
+
+## GridLayout
+
+The turnkey controlled grid. Each item's content comes from a **render-prop child**
+(`GridItemRenderer`), called once per layout entry; tiles are keyed by the item's `i`. It supplies its
+own `DragDropProvider` (and runs the surface in a child component, so it's safe to use in the very
+component that renders it); nest several (or wrap them in [`SnapGridGroup`](#snapgridgroup)) and they
+share one.
+
+```tsx
+import { GridLayout, type Layout } from "@snapgridjs/solid";
+import { createSignal } from "solid-js";
+
+function Board() {
+  const [layout, setLayout] = createSignal<Layout>([
+    { i: "a", x: 0, y: 0, w: 2, h: 2 },
+    { i: "b", x: 2, y: 0, w: 2, h: 2 },
+  ]);
+
+  return (
+    <GridLayout
+      layout={layout()}
+      width={1024}
+      onLayoutChange={setLayout}
+      gridConfig={{ cols: 12, rowHeight: 60, margin: [12, 12] }}
+      resizeConfig={{ handles: ["se", "e", "s"] }}
+    >
+      {(item) => <div>{item().i}</div>}
+    </GridLayout>
+  );
+}
+```
+
+<Callout type="info">
+  The child receives an **accessor** for the item's **committed** layout entry — the one you passed
+  in `layout`, not the reflowed preview. It's called once per tile, so read `item()` inside JSX to
+  stay reactive. A tile's live (reflowed) entry during a drag comes from
+  [`useGridItem().item`](/solid/docs/api/hooks#usegriditem).
+</Callout>
+
+### Props (`GridLayoutProps`)
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `layout` | `Layout` | — | **Required.** Controlled array of items. Never mutated. |
+| `width` | `number` | — | **Required.** Container width in px (from `useContainerWidth`). |
+| `onLayoutChange` | `(layout: Layout) => void` | — | Called with the next layout when an interaction commits. |
+| `gridConfig` | `Partial<GridConfig>` | see [GridConfig](/solid/docs/api/types#gridconfig) | Columns, row height, margins, padding, maxRows. |
+| `dragConfig` | `DragConfig` | — | [Drag behaviour](/solid/docs/guides/dragging). |
+| `resizeConfig` | `ResizeConfig` | `{ handles: ["se"] }` | [Resize behaviour](/solid/docs/guides/resizing). |
+| `dropConfig` | `DropConfig` | `{ enabled: false }` | [Accept external draggables](/solid/docs/guides/external-drop). |
+| `accept` | `(source: DragSourceInfo) => boolean` | — | [dnd-kit interop](/solid/docs/guides/dnd-kit-interop): also accept a foreign sortable as a drop target. |
+| `compactor` | `Compactor` | `verticalCompactor` | [Packing algorithm](/solid/docs/guides/compaction). |
+| `isDraggable` | `boolean` | `true` | Grid-level drag toggle. |
+| `isResizable` | `boolean` | `true` | Grid-level resize toggle. |
+| `autoSize` | `boolean` | `true` | Grow the container height to fit content. |
+| `id` | `string` | auto (`createUniqueId`) | Stable id for the droppable surface; surfaced back as the tiles' `group`. |
+| `type` | `string` | `"grid"` | The droppable surface's dnd-kit `type`. |
+| `onDragStart` `onDrag` `onDragStop` | `GridEventCallback` | — | [Drag lifecycle](/solid/docs/guides/events). |
+| `onResizeStart` `onResize` `onResizeStop` | `GridEventCallback` | — | Resize lifecycle. |
+| `onDrop` | `(layout, item, event) => void` | — | Fired when an external draggable is dropped in. |
+| `children` | `GridItemRenderer` | — | Renders each item's content: `(item: Accessor<LayoutItem>) => JSX.Element`. |
+| `class` | `string` | — | Appended to `snapgrid`. |
+| `style` | `JSX.CSSProperties` | — | Merged over (and able to override) the surface's positioning style. |
+
+Other div attributes pass through to the surface element. The native HTML5 drag events are not
+among them: `onDragStart` / `onDrag` / `onDrop` are the grid's own callbacks above.
+
+## ResponsiveGridLayout
+
+Switches columns and layout by breakpoint as `width` changes. See
+[Responsive layouts](/solid/docs/guides/responsive).
+
+### Props (`ResponsiveGridLayoutProps`)
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `width` | `number` | — | **Required.** Container width in px. |
+| `layouts` | `ResponsiveLayouts` | — | **Required.** Per-breakpoint layout map. |
+| `onLayoutChange` | `(layout, layouts) => void` | — | Active layout **and** the updated map. |
+| `onBreakpointChange` | `(breakpoint, cols) => void` | — | Fired when the active breakpoint changes. |
+| `breakpoints` | `Breakpoints` | `DEFAULT_BREAKPOINTS` | Breakpoint → min width (px). |
+| `cols` | `BreakpointCols` | `DEFAULT_BREAKPOINT_COLS` | Breakpoint → column count. |
+| `rowHeight` | `number` | `150` | Row height in px. |
+| `margin` | `[number, number]` | `[10, 10]` | Gap between items. |
+| `containerPadding` | `[number, number] \| null` | `null` | Surface padding; falls back to `margin`. |
+| `compactor` `dragConfig` `resizeConfig` `isDraggable` `isResizable` `autoSize` `children` `class` `style` | | | As on `GridLayout`. |
+
+Item content comes from the same render-prop child as `GridLayout`, and other div attributes pass
+through to the surface. This component deliberately doesn't expose the grid `id` (or `type`): those
+attributes are dropped rather than forwarded, so two responsive grids in one `SnapGridGroup` can't
+collide on a registry key.
+
+## GridItem
+
+A positioned tile with stable classes (`snapgrid-item`, `data-grid-id`, `data-dragging`) and the
+item's configured resize handles. Solid's fine-grained reactivity updates only the tiles whose state
+changed, so there's nothing to memoize. Use it inside your own surface, or let `GridLayout` create
+them. `id` and `group` are read once at setup (tiles are keyed by `i`).
+
+| Prop (`GridItemProps`) | Type | Description |
+| --- | --- | --- |
+| `id` | `string` | **Required.** Matches the layout item's `i`. |
+| `group` | `string` | **Required.** The owning grid's id (from its `useGridContainer`). |
+| `children` | `JSX.Element` | Tile content. |
+| `class` | `string` | Appended to `snapgrid-item`. |
+| `style` | `JSX.CSSProperties` | Merged over (and able to override) the positioning style. |
+
+Other div attributes pass through to the tile element.
+
+## GridPlaceholder
+
+Renders the landing-cell marker, or nothing when idle. Takes the grid's `group`. Customize with
+`class` / `style`, or use [`useGridPlaceholder`](/solid/docs/api/hooks#usegridplaceholder) for full
+control.
+
+| Prop (`GridPlaceholderProps`) | Type | Description |
+| --- | --- | --- |
+| `group` | `string` | **Required.** The owning grid's id. |
+| `class` | `string` | Appended to `snapgrid-placeholder`. |
+| `style` | `JSX.CSSProperties` | Merged over (and able to override) the default look. |
+
+Other div attributes pass through to the placeholder element. It takes no children.
+
+## SnapGridGroup
+
+Shares one dnd-kit `DragDropProvider` across several sibling grids so tiles can be dragged between
+them. Takes only `children` — a thin wrapper over `DragDropProvider` (nesting `GridLayout`s already
+shares a provider, so this is just explicit). See [Cross-grid dragging](/solid/docs/guides/cross-grid).
+
+<Callout type="warning">
+  Item ids must be unique across all grids that share a provider.
+</Callout>
