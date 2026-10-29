@@ -22,3 +22,10 @@ export const BUNDLE_SIZE_VUE = {
   unit: "kB",
   compression: "brotli",
 } as const;
+export const BUNDLE_SIZE_SOLID = {
+  total: 39,
+  snapgrid: 9,
+  dndkit: 30,
+  unit: "kB",
+  compression: "brotli",
+} as const;

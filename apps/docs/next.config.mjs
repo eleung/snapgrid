@@ -50,6 +50,9 @@ export default withNextra({
     // ESM/interop path as the rest of the workspace packages.
     "@snapgridjs/vue",
     "@dnd-kit/vue",
+    // Solid bindings ship compiled, JSX-free JS; transpiled for the same interop path.
+    "@snapgridjs/solid",
+    "@dnd-kit/solid",
   ],
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
   webpack: (config, { dev, webpack }) => {
@@ -128,6 +131,29 @@ export default withNextra({
         __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "false",
       }),
     );
+
+    // Solid islands: the docs render Solid demos (mounted client-side via <SolidDemo>) so
+    // each binding's examples run natively. They're `.tsx` like the React demos, but Solid
+    // JSX compiles to real DOM operations, not React elements — so babel-preset-solid
+    // handles everything under components/solid/. `enforce: "pre"` runs it BEFORE Next's
+    // own SWC loader, which then only sees plain JS (no JSX left to misread as React).
+    // Scoped by directory, so no React file ever reaches it.
+    config.module.rules.push({
+      test: /\.[jt]sx?$/,
+      include: path.join(here, "components/solid"),
+      enforce: "pre",
+      use: {
+        loader: "babel-loader",
+        options: {
+          babelrc: false,
+          configFile: false,
+          presets: [
+            ["babel-preset-solid", { generate: "dom" }],
+            ["@babel/preset-typescript", { onlyRemoveTypeImports: true }],
+          ],
+        },
+      },
+    });
     return config;
   },
 });

@@ -38,6 +38,7 @@ const FRAMEWORK_LABELS: Record<string, string> = {
   react: "React",
   svelte: "Svelte",
   vue: "Vue",
+  solid: "Solid",
 };
 function frameworkOf(mdxPath: string[]): string | null {
   const seg = mdxPath[0] ?? "";

@@ -116,7 +116,8 @@ article a {
    and replaced by this switcher. */
 .nextra-navbar a[href^="/react/"]:not(.dg-navlink),
 .nextra-navbar a[href^="/svelte/"]:not(.dg-navlink),
-.nextra-navbar a[href^="/vue/"]:not(.dg-navlink) {
+.nextra-navbar a[href^="/vue/"]:not(.dg-navlink),
+.nextra-navbar a[href^="/solid/"]:not(.dg-navlink) {
   display: none;
 }
 /* Framework-aware Docs + Examples links (FrameworkNav): they live in the logo node,
