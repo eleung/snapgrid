@@ -98,10 +98,11 @@ Both updates happen in the same gesture, each against its own layout state.
 </Callout>
 
 <Callout type="info">
-  `<SnapGridGroup>` is exactly dnd-kit's `<DragDropProvider>` — use whichever you like; grids under
-  one provider exchange tiles either way. Prefer the turnkey shell? Swap each `<Grid>` for a
-  [`<GridLayout>`](/svelte/docs/guides/component-layer) with an `item` snippet inside the same group;
-  it bundles the container and items for you.
+  `<SnapGridGroup>` is exactly dnd-kit's `<DragDropProvider>` for headless grids like these — use
+  whichever you like; grids under one provider exchange tiles either way. Prefer the turnkey shell?
+  Swap each `<Grid>` for a [`<GridLayout>`](/svelte/docs/guides/component-layer) with an `item` snippet
+  inside a `<SnapGridGroup>` — it bundles the container and items for you. A turnkey grid only
+  joins a provider snapgrid supplied: under a plain `<DragDropProvider>`, each mints its own.
 </Callout>
 
 <Callout type="info">

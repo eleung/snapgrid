@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { GridLayout, SnapGridGroup } from "../components/GridLayout.js";
 
 // GridLayout supplies the dnd-kit DragDropProvider for the turnkey case; nested
-// GridLayouts (or a SnapGridGroup) share one. A consumer's own provider is
-// honored — GridLayout only self-mints when no provider is above it.
+// GridLayouts (or a SnapGridGroup) share one. GridLayout self-mints unless a
+// snapgrid-supplied provider (a parent GridLayout / SnapGridGroup) is above it.
 
 const gridConfig = {
   cols: 12,
