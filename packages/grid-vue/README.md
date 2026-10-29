@@ -12,7 +12,7 @@ Draggable, resizable, responsive grid layouts for Vue — with pluggable packing
 [Examples](https://snapgrid.dev/vue/examples) ·
 [API](https://snapgrid.dev/vue/docs/api/overview)
 
-> The Vue binding of snapgrid. Same framework-free core + dnd-kit engine as [`@snapgridjs/react`](https://www.npmjs.com/package/@snapgridjs/react) and [`@snapgridjs/svelte`](https://www.npmjs.com/package/@snapgridjs/svelte) — a grid behaves identically whichever framework renders it.
+> The Vue binding of snapgrid. Same framework-free core + dnd-kit engine as [`@snapgridjs/react`](https://www.npmjs.com/package/@snapgridjs/react), [`@snapgridjs/svelte`](https://www.npmjs.com/package/@snapgridjs/svelte) and [`@snapgridjs/solid`](https://www.npmjs.com/package/@snapgridjs/solid) — a grid behaves identically whichever framework renders it.
 
 ## Why snapgrid
 
