@@ -1,5 +1,12 @@
 # @snapgridjs/react
 
+## 0.13.0
+
+### Patch Changes
+
+- @snapgridjs/core@0.13.0
+- @snapgridjs/dnd@0.13.0
+
 ## 0.12.0
 
 ### Minor Changes
