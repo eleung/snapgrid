@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) from 1.0 onward.
 
+## [0.13.0] - 2026-10-29
+
+SolidJS support. `@snapgridjs/solid` brings the same headless-first, dnd-kit-native grid to Solid, on
+the shared framework-free core — a grid behaves identically whichever framework renders it.
+
+### Added
+
+- **`@snapgridjs/solid`** — a SolidJS binding for snapgrid, mirroring the React, Svelte and Vue
+  bindings on the shared `@snapgridjs/core` + `@snapgridjs/dnd` engine. Headless hooks
+  (`useGridContainer`, `useGridItem`, `useGridPlaceholder`, `useGridResizeHandle`,
+  `useContainerWidth`, `useResponsiveLayout`, `useGridController`, `resolveController`) and drop-in
+  components (`GridLayout`, `GridItem`, `GridPlaceholder`, `ResponsiveGridLayout`, `SnapGridGroup`)
+  deliver the same controlled drag, resize, compaction, cross-grid, nesting, keyboard accessibility
+  and dnd-kit interop as the other bindings — built on `@dnd-kit/solid`, with hooks returning
+  accessors and elements bound through ref callbacks. Components ship as plain JS (no Solid compiler
+  needed to consume them), so one build serves the DOM and SSR (verified with no DOM present).
+  Requires Solid 1.8. See the [Solid docs](https://snapgrid.dev/solid/docs/getting-started).
+
+### Changed
+
+- Documentation now covers four bindings — guides and examples live under `/react/…`, `/svelte/…`,
+  `/vue/…` and `/solid/…`, selectable from the framework switcher — and the package READMEs document
+  the Solid binding alongside the others.
+
 ## [0.12.0] - 2026-10-20
 
 snapgrid now runs on dnd-kit 0.5. There are no snapgrid API changes; upgrade your `@dnd-kit/*`
@@ -289,6 +313,7 @@ Initial public release.
 - Documentation site (`apps/docs`) with guides, API reference, and live examples — including a
   nested-grids guide and a real-world showcase dashboard.
 
+[0.13.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.13.0
 [0.12.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.12.0
 [0.11.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.11.0
 [0.10.0]: https://github.com/eleung/snapgrid/releases/tag/%40snapgridjs/react%400.10.0
