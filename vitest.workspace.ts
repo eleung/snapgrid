@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { svelteTesting } from "@testing-library/svelte/vite";
+import solid from "vite-plugin-solid";
 import { defineWorkspace } from "vitest/config";
 
 const coreSrc = fileURLToPath(new URL("./packages/grid-core/src/index.ts", import.meta.url));
@@ -101,6 +102,44 @@ export default defineWorkspace([
     test: {
       name: "vue-ssr",
       root: "./packages/grid-vue",
+      environment: "node",
+      include: ["src/__tests__/ssr.test.ts"],
+    },
+  },
+  {
+    // Solid binding: hooks/components, jsdom environment. Runs against the live core +
+    // engine source (like the React project). The package itself has no JSX; the plugin
+    // compiles the JSX test fixtures.
+    plugins: [solid()],
+    resolve: {
+      alias: { "@snapgridjs/core": coreSrc, "@snapgridjs/dnd": dndSrc },
+      // solid-js resolves to its no-op SERVER build under Node's default conditions.
+      conditions: ["development", "browser"],
+    },
+    test: {
+      name: "solid",
+      root: "./packages/grid-solid",
+      environment: "jsdom",
+      include: ["src/**/*.test.{ts,tsx}"],
+      // ssr.test.ts belongs to the `solid-ssr` project below (no DOM).
+      exclude: ["**/node_modules/**", "**/dist/**", "src/__tests__/ssr.test.ts"],
+      setupFiles: ["./vitest.setup.ts"],
+      // Inline everything that imports solid-js so it all goes through the browser
+      // conditions above: an externalized dependency is loaded by Node, gets the server
+      // build, and becomes a second, inert copy of Solid's reactive runtime.
+      server: { deps: { inline: [/solid-js/, /@dnd-kit\/solid/, /@solidjs\/testing-library/] } },
+    },
+  },
+  {
+    // Server rendering with NO DOM at all (see vue-ssr). No Solid plugin and no browser
+    // conditions: solid-js and @dnd-kit/solid resolve to their server builds, as they do
+    // under SolidStart. The SSR fixture is written without JSX for the same reason.
+    resolve: {
+      alias: { "@snapgridjs/core": coreSrc, "@snapgridjs/dnd": dndSrc },
+    },
+    test: {
+      name: "solid-ssr",
+      root: "./packages/grid-solid",
       environment: "node",
       include: ["src/__tests__/ssr.test.ts"],
     },
