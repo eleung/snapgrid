@@ -1,0 +1,104 @@
+---
+title: Installation
+description: Packages, peer dependencies, the single-import convenience, and framework notes for installing snapgrid in SolidJS.
+---
+
+import { Callout, Tabs } from "nextra/components";
+
+# Installation
+
+## Packages
+
+snapgrid is a small monorepo. Most apps install only `@snapgridjs/solid`.
+
+| Package | What it is | When you need it |
+| --- | --- | --- |
+| `@snapgridjs/solid` | SolidJS components + hooks. Pulls in `@snapgridjs/dnd` + `@snapgridjs/core`. | **Always** — the main entry point. |
+| `@snapgridjs/core` | Framework-agnostic layout math (move/resize/compaction, geometry, drag-session). | Comes in automatically. Depend on it directly only to drive layout without dnd-kit or Solid. |
+| `@snapgridjs/dnd` | Framework-agnostic dnd-kit engine (the drag/resize/cross-grid brain). Pulls in `@snapgridjs/core`. | Comes in automatically. Depend on it directly only to build a binding for another framework. |
+| `@snapgridjs/extras` | Optional packers: `masonry`, `gravity`, `shelf`, `wrap`, and the fast `O(n log n)` compactors. | Only if you use those packing styles. |
+
+## Install
+
+<Tabs items={["pnpm", "npm", "yarn", "bun"]}>
+<Tabs.Tab>
+
+```sh
+pnpm add @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+npm install @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+yarn add @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+bun add @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom
+```
+
+</Tabs.Tab>
+</Tabs>
+
+## Peer dependencies
+
+snapgrid drives the interaction through dnd-kit, declared as **peer dependencies** so you control the
+version and there's only ever one copy:
+
+- `@dnd-kit/solid` — the SolidJS bindings (`DragDropProvider`, `useDraggable`, `DragOverlay`).
+- `@dnd-kit/dom` — the DOM sensors and feedback plugins.
+- `solid-js` **1.8 or newer**.
+
+<Callout type="info">
+  Because dnd-kit is a peer dependency, snapgrid doesn't bundle its own copy — it composes the one
+  you install. Your grid and any other dnd-kit draggables in your app share a single
+  `DragDropProvider` context, which is exactly what makes cross-grid and external drops work.
+</Callout>
+
+## One import source (optional)
+
+`@snapgridjs/solid` re-exports the dnd-kit primitives you'll commonly need for a grid —
+`DragDropProvider`, `DragOverlay`, `useDraggable`, `useDroppable`, `Feedback`, `PointerSensor`,
+`KeyboardSensor` — so you can import everything from one place:
+
+```tsx
+// Either of these works; the re-export just saves an import line.
+import { DragDropProvider, useDraggable } from "@snapgridjs/solid";
+import { DragDropProvider, useDraggable } from "@dnd-kit/solid";
+```
+
+<Callout type="default">
+  Importing the dnd-kit pieces from `@snapgridjs/solid` guarantees they resolve the *same* dnd-kit
+  instance as the grid — a second copy of `@dnd-kit/solid` is a separate provider context, and its
+  drags never reach the grid.
+</Callout>
+
+## No stylesheet to import
+
+snapgrid ships **zero CSS**. Hooks return positioning styles as inline style objects plus a few
+stable class names and data attributes for you to target. There is no
+`import "@snapgridjs/solid/styles.css"` step. See [Styling](/solid/docs/guides/styling) for what's
+exposed.
+
+## Framework notes
+
+- **Vite** — nothing special beyond your usual `vite-plugin-solid` setup; it just works. The package
+  ships plain `createComponent` calls (no JSX), so it needs no Solid compiler of its own, and one
+  build serves both the DOM and SSR.
+- **SolidStart (SSR)** — fully supported. `useContainerWidth` is SSR-safe: it renders at an initial
+  width on the server, then measures on the client in an effect once its `ref` element is in the DOM
+  (the `ResizeObserver` only exists in the browser). The reflow FLIP and the drag sensors are client-only too, so a grid renders
+  on the server and comes fully alive after hydration. See
+  [Server-side rendering](/solid/docs/guides/ssr).
+- **TypeScript** — snapgrid is written in TypeScript and ships its own types. No `@types/*` needed.

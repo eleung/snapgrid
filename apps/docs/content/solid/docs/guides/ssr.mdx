@@ -1,0 +1,80 @@
+---
+title: Server-side rendering
+description: Using snapgrid with SolidStart and other SSR/SSG setups.
+---
+
+import { Callout } from "nextra/components";
+
+# Server-side rendering
+
+snapgrid works under SSR and static generation — SolidStart's server rendering and prerendering
+included. A couple of notes keep it smooth.
+
+## Width measurement is SSR-safe
+
+`useContainerWidth` measures with a `ResizeObserver`, which only exists in the browser. The hook is
+SSR-safe by design:
+
+- it reports `initialWidth` (default `1280`) on the server **and** until the element has been measured
+  on the client, so the markup matches and there's no hydration mismatch;
+- it then measures the real width from an effect after mount and updates.
+
+```tsx
+const { width, mounted, ref } = useContainerWidth({ initialWidth: 1024 });
+```
+
+The handle exposes `width` and `mounted` accessors, plus a `ref` callback for the element to measure.
+Pick an `initialWidth` close to your typical container to minimize the first-paint reflow, or gate on
+`mounted()` if you'd rather not render until measured.
+
+## Avoiding layout flash
+
+Because the server renders at `initialWidth`, tiles briefly appear at that width before the client
+measures. To avoid any flash you can render the grid only once measured:
+
+```tsx
+import { useContainerWidth } from "@snapgridjs/solid";
+import { Show } from "solid-js";
+
+function Dashboard() {
+  const { width, mounted, ref } = useContainerWidth();
+  return (
+    <div ref={ref}>
+      <Show when={mounted()} fallback={<div style={{ "min-height": "240px" }} />}>
+        <Board width={width()} />
+      </Show>
+    </div>
+  );
+}
+// Board is your headless grid: a DragDropProvider wrapping useGridContainer.
+```
+
+## SolidStart
+
+SolidStart renders your components on the server and hydrates them on the client — there's no
+per-file directive like React's `"use client"` to add, and no Solid compiler step for the library
+itself: `@snapgridjs/solid` ships plain `createComponent` calls rather than JSX, so the one build runs
+against whichever `solid-js` build your bundler resolves — the DOM build in the browser, the server
+build during SSR.
+
+snapgrid's browser-only work — the width `ResizeObserver`, attaching the drag engine, dnd-kit's
+sensors, and the tile's reflow animation — lives in `createEffect` or in ref callbacks, neither of
+which runs on the server. The grid's config, by contrast, is published from a `createComputed`, which
+*does* run once during server rendering — so the server HTML carries **engine-computed geometry**: each
+tile's absolute `left`/`top` and the surface's auto-sized height come from the layout math, not from a
+measurement, and the client's first pass computes the same boxes the server sent.
+
+```tsx
+import { DragDropProvider, useContainerWidth, useGridContainer } from "@snapgridjs/solid";
+// …
+```
+
+If you ever import a module that touches browser globals at the top level, reach for SolidStart's
+`clientOnly(() => import("./Widget"))` or an `isServer` guard from `solid-js/web` — but snapgrid
+itself needs no such guard.
+
+<Callout type="info">
+  Dragging is purely client-side: there's no active drag during SSR, so a tile renders in its normal
+  in-grid position on the server and only [floats itself](/solid/docs/guides/headless#floating) once a drag
+  begins in the browser. Nothing to guard.
+</Callout>

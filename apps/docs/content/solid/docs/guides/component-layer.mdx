@@ -1,0 +1,177 @@
+---
+title: Component layer
+description: The turnkey <GridLayout> shell — a controlled component in the react-grid-layout style, over the same headless hooks, for when the hooks are more than you need.
+---
+
+import { Callout } from "nextra/components";
+import { ComponentLayerDemo } from "@/components/demos-solid";
+
+# Component layer
+
+snapgrid is [headless-first](/solid/docs/guides/headless), but you don't have to wire the hooks yourself.
+The **component layer** is a thin shell in the react-grid-layout style over those exact hooks: `<GridLayout>`
+bundles the dnd-kit `DragDropProvider`, the container, the items, and the placeholder, so you never
+touch dnd-kit directly.
+
+<Callout type="info">
+  **This is the escape hatch.** If the headless provider/host/tile wiring is more than you
+  want, reach for `<GridLayout>` — it mirrors react-grid-layout v2, so it's the gentlest on-ramp.
+  When one grid later needs custom markup, drop just that grid down to the [hooks](/solid/docs/guides/headless).
+  Same engine; the two layers mix freely.
+</Callout>
+
+## `<GridLayout>`
+
+A controlled grid. Each layout item's content comes from a **render-prop child** — a function that
+receives an *accessor* for the item's committed layout entry. snapgrid keys tiles by `i`, calls your
+function once per tile, positions the result, and renders the resize handles and placeholder for you.
+
+```tsx
+import { GridLayout, type Layout, useContainerWidth } from "@snapgridjs/solid";
+import { createSignal } from "solid-js";
+
+function Board() {
+  const { width, ref } = useContainerWidth();
+  const [layout, setLayout] = createSignal<Layout>([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 3 },
+  ]);
+
+  return (
+    <div ref={ref}>
+      <GridLayout
+        layout={layout()}
+        width={width()}
+        onLayoutChange={setLayout}
+        gridConfig={{ cols: 12, rowHeight: 60, margin: [12, 12] }}
+        resizeConfig={{ handles: ["se", "e", "s"] }}
+      >
+        {(item) => <div class="tile">{item().i}</div>}
+      </GridLayout>
+    </div>
+  );
+}
+```
+
+It supplies its own `DragDropProvider`; nest several (or wrap them in
+[`<SnapGridGroup>`](#cross-grid-with-components)) and they share one.
+
+<Callout type="info">
+  **Read `item()` inside JSX.** The render prop runs once per tile, *untracked* — so a tile's DOM and
+  state survive every commit. Reads inside JSX expressions (`{item().w}`, `<Show when={item().static}>`)
+  stay reactive; a top-level `item().static ? <A /> : <B />` is evaluated once. The accessor yields the
+  **committed** entry you passed in `layout`, not the reflowed drag preview (in a headless tile,
+  `useGridItem`'s `item()` is the live entry).
+</Callout>
+
+<Callout type="info">
+  `<GridLayout>` is also the way around Solid's owner-chain rule: it renders the provider *and* its
+  grid surface as a separate child component, so unlike a bare `useGridContainer` call it's safe to use
+  in the very component that hosts the grid. See [Architecture](/solid/docs/guides/architecture) for why.
+</Callout>
+
+<ComponentLayerDemo />
+
+## Config props map 1:1 to the hook options
+
+Every behaviour prop on `<GridLayout>` is the same option you'd pass to
+[`useGridContainer`](/solid/docs/guides/headless) — only the spelling differs (a JSX prop vs. an object
+key). So each feature guide applies to both layers:
+
+| Prop | What it does | Guide |
+| --- | --- | --- |
+| `gridConfig` | Columns, row height, margins, padding, maxRows. | [Concepts](/solid/docs/concepts) |
+| `dragConfig` | Handle, cancel, threshold, bounds, snap. | [Dragging](/solid/docs/guides/dragging) |
+| `resizeConfig` | Which handles to show. | [Resizing](/solid/docs/guides/resizing) |
+| `compactor` | Packing algorithm. | [Compaction](/solid/docs/guides/compaction) |
+| `dropConfig` / `onDrop` | Accept external draggables. | [External drop](/solid/docs/guides/external-drop) |
+| `isDraggable` / `isResizable` / `autoSize` | Grid-level toggles. | — |
+| `onDragStart` … `onResizeStop` | Lifecycle callbacks. | [Events](/solid/docs/guides/events) |
+
+See [Components → GridLayout](/solid/docs/api/components#gridlayout) for the complete prop table.
+
+## `<ResponsiveGridLayout>`
+
+The turnkey wrapper over [`useResponsiveLayout`](/solid/docs/guides/responsive). Give it a per-breakpoint `layouts`
+map instead of a single `layout`; it switches column count and layout as `width` crosses breakpoints.
+
+```tsx
+import { ResponsiveGridLayout, type ResponsiveLayouts, useContainerWidth } from "@snapgridjs/solid";
+import { createSignal } from "solid-js";
+
+const { width, ref } = useContainerWidth();
+const [layouts, setLayouts] = createSignal<ResponsiveLayouts>({ lg: [/* … */] });
+
+<div ref={ref}>
+  <ResponsiveGridLayout
+    width={width()}
+    layouts={layouts()}
+    onLayoutChange={(_active, all) => setLayouts(all)}
+  >
+    {(item) => <div class="tile">{item().i}</div>}
+  </ResponsiveGridLayout>
+</div>;
+```
+
+## Cross-grid with components
+
+Wrap sibling grids in [`<SnapGridGroup>`](/solid/docs/guides/cross-grid) — the shared provider — and tiles
+drag between them. (Nested `<GridLayout>`s share a provider automatically.)
+
+```tsx
+<SnapGridGroup>
+  <GridLayout layout={left()} width={width()} onLayoutChange={setLeft}>
+    {(item) => <div class="tile">{item().i}</div>}
+  </GridLayout>
+  <GridLayout layout={right()} width={width()} onLayoutChange={setRight}>
+    {(item) => <div class="tile">{item().i}</div>}
+  </GridLayout>
+</SnapGridGroup>;
+```
+
+<Callout type="warning">
+  Item ids must be unique across all grids that share a provider — they share one drag manager.
+</Callout>
+
+## Composing the pieces
+
+The layer isn't all-or-nothing. `<GridItem>` and `<GridPlaceholder>` are the same tiles `<GridLayout>`
+renders, exposed so you can drop them into a surface you host with `useGridContainer` — handy when you
+want the styled tile but control of the container:
+
+```tsx
+import { For } from "solid-js";
+import { GridItem, GridPlaceholder, type Layout, useGridContainer } from "@snapgridjs/solid";
+
+// Rendered inside a <DragDropProvider> or <SnapGridGroup>.
+function Surface(props: { layout: Layout; width: number; onLayoutChange: (l: Layout) => void }) {
+  const grid = useGridContainer(() => ({
+    layout: props.layout,
+    width: props.width,
+    onLayoutChange: props.onLayoutChange,
+  }));
+  return (
+    <div ref={grid.ref} style={grid.style()}>
+      <For each={props.layout.map((it) => it.i)}>
+        {(id) => (
+          <GridItem id={id} group={grid.group()}>
+            {id}
+          </GridItem>
+        )}
+      </For>
+      <GridPlaceholder group={grid.group()} />
+    </div>
+  );
+}
+```
+
+`<GridItem>` applies the stable `.snapgrid-item` class and `data-grid-id` / `data-dragging` attributes
+(see [Styling](/solid/docs/guides/styling)) and updates only its own slice, so a change elsewhere in
+the grid doesn't touch every tile. Like `useGridItem`, it reads `id` and `group` once at setup.
+
+<Callout type="info">
+  There's no drag overlay to manage at either layer — a dragged tile
+  [floats itself](/solid/docs/guides/headless#floating). See [Components](/solid/docs/api/components) for the full
+  prop tables and [Headless usage](/solid/docs/guides/headless) for the hooks.
+</Callout>

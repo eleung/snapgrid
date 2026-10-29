@@ -1,0 +1,277 @@
+---
+title: Getting Started
+description: Install snapgrid and build your first draggable, repacking grid in SolidJS with the headless hooks — in about five minutes.
+---
+
+import { Callout, Steps, Tabs } from "nextra/components";
+import { BasicGridDemo } from "@/components/demos-solid";
+
+# Getting Started
+
+**snapgrid** is a draggable, resizable, repacking grid layout for SolidJS — a
+[react-grid-layout](https://github.com/react-grid-layout/react-grid-layout) v2 alternative built on
+[dnd-kit](https://next.dndkit.com). It keeps the controlled `{ i, x, y, w, h }` model RGL users know,
+and adds things RGL can't do: dragging tiles **between** grids, nested grids, interop with the wider
+dnd-kit ecosystem (sortable lists, boards), keyboard accessibility, and pluggable packing — masonry,
+gravity, shelf, or your own compactor.
+
+It's **headless-first** — you wire hooks to your own markup — with a turnkey `<GridLayout>` for
+when you just want a grid that works. Requires **Solid 1.8+**.
+
+<BasicGridDemo />
+
+<Callout type="info">
+  **Know dnd-kit? You already know most of this.** snapgrid *is* dnd-kit plus grid math — a grid
+  lives in dnd-kit's `<DragDropProvider>`, tiles are draggables, the surface is a droppable. If
+  you've touched `useDraggable` / `useSortable`, the headless API will feel familiar. New to
+  dnd-kit? A five-minute skim of [its overview](https://next.dndkit.com) is the single easiest win
+  before you read on.
+</Callout>
+
+## Install
+
+<Tabs items={["pnpm", "npm", "yarn", "bun"]}>
+<Tabs.Tab>
+
+```sh
+pnpm add @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+npm install @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+yarn add @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom
+```
+
+</Tabs.Tab>
+<Tabs.Tab>
+
+```sh
+bun add @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom
+```
+
+</Tabs.Tab>
+</Tabs>
+
+`@dnd-kit/solid` and `@dnd-kit/dom` are peer dependencies — snapgrid uses your copy, so there's
+nothing to dedupe. See [Installation](/solid/docs/installation) for the full breakdown.
+
+## Your first grid
+
+<Steps>
+
+### Hold the layout in state
+
+snapgrid is **controlled**: you own the array, it never mutates it. Each item has an id (`i`), a
+position (`x`, `y`), and a size (`w`, `h`) in **grid units** — columns and rows, not pixels. Hold it
+in a signal.
+
+```tsx
+import { createSignal } from "solid-js";
+import type { Layout } from "@snapgridjs/solid";
+
+const [layout, setLayout] = createSignal<Layout>([
+  { i: "a", x: 0, y: 0, w: 4, h: 2 },
+  { i: "b", x: 4, y: 0, w: 4, h: 2 },
+  { i: "c", x: 8, y: 0, w: 4, h: 2 },
+]);
+```
+
+### Measure the container width
+
+The grid turns columns into pixels using the container's width. `useContainerWidth` measures it with
+a `ResizeObserver`; bind its `ref` callback to the element whose width should drive the grid. Like
+every hook here, it returns **accessors** — call `width()` to read the current value.
+
+```tsx
+import { useContainerWidth } from "@snapgridjs/solid";
+
+const { width, ref } = useContainerWidth();
+
+<div ref={ref}>…</div>;
+```
+
+### Host the grid inside a dnd-kit provider
+
+Render inside dnd-kit's `<DragDropProvider>`, and let `useGridContainer` host the grid. Pass it a
+**getter** for its options, so the grid tracks your live props; it returns a `ref` callback + a
+`style()` accessor for your surface element and the grid's **`group()`** — its id, which ties tiles
+to it.
+
+```tsx
+import { type Layout, useGridContainer } from "@snapgridjs/solid";
+import { For } from "solid-js";
+
+function Surface(props: { layout: Layout; width: number; onLayoutChange: (l: Layout) => void }) {
+  const grid = useGridContainer(() => ({
+    layout: props.layout,
+    width: props.width,
+    onLayoutChange: props.onLayoutChange,
+  }));
+  return (
+    <div ref={grid.ref} style={grid.style()}>
+      {/* Iterate ids, not entries: <For> keys by identity, and a commit replaces entries. */}
+      <For each={props.layout.map((it) => it.i)}>
+        {(id) => <Tile id={id} group={grid.group()} />}
+      </For>
+    </div>
+  );
+}
+```
+
+<Callout type="warning">
+  **`useGridContainer` must run *inside* the `<DragDropProvider>`.** Solid resolves context from the
+  **owner** chain, so a component can't see a provider it renders itself — the grid host has to be a
+  component rendered inside it, like `Surface` above. Call it in the component that renders the
+  provider and you'll get `no grid found for group`. This is why the grid host lives in its own
+  component.
+</Callout>
+
+### Render a tile with `useGridItem`
+
+Each tile calls `useGridItem({ id, group })` — plain values, not a getter — for its `ref` callback
+and positioning `style()`, the way a dnd-kit sortable item declares its list. You bring the element,
+classes, and content.
+
+```tsx
+import { useGridItem } from "@snapgridjs/solid";
+
+function Tile(props: { id: string; group: string }) {
+  const tile = useGridItem({ id: props.id, group: props.group });
+  return (
+    <div ref={tile.ref} style={tile.style()} class="tile">
+      {props.id}
+    </div>
+  );
+}
+```
+
+### Mark the landing spot
+
+`useGridPlaceholder(group)` returns an accessor for where the dragged tile will land (it's `null` when
+idle). Render a marker with its `style` inside the surface, alongside the tiles, so the target cell
+shows as you drag.
+
+```tsx
+import { useGridPlaceholder } from "@snapgridjs/solid";
+import { Show } from "solid-js";
+
+// inside Surface — after useGridContainer. The hook takes the plain id:
+const placeholder = useGridPlaceholder(grid.group());
+
+// inside the container — after the tiles:
+<Show when={placeholder()}>
+  {(p) => <div class="placeholder" style={p().style} />}
+</Show>;
+```
+
+### That's it — drag it
+
+There's nothing more to wire. While you drag with a pointer, the tile **floats itself** above
+everything — dnd-kit lifts it into the browser's top layer, so it can cross grids unclipped — and on
+drop it settles into its new cell. Keyboard drags step the tile cell-by-cell in place. Tiles drag,
+the rest compact upward, and every committed change flows back through `onLayoutChange`.
+
+</Steps>
+
+## Putting it together
+
+```tsx filename="Board.tsx"
+import {
+  DragDropProvider,
+  type Layout,
+  useContainerWidth,
+  useGridContainer,
+  useGridItem,
+  useGridPlaceholder,
+} from "@snapgridjs/solid";
+import { For, Show, createSignal } from "solid-js";
+
+export function Board() {
+  const { width, ref } = useContainerWidth();
+  const [layout, setLayout] = createSignal<Layout>([
+    { i: "a", x: 0, y: 0, w: 4, h: 2 },
+    { i: "b", x: 4, y: 0, w: 4, h: 2 },
+    { i: "c", x: 8, y: 0, w: 4, h: 2 },
+  ]);
+
+  // DragDropProvider is the outermost element; Surface (which calls
+  // useGridContainer) is rendered inside it.
+  return (
+    <div ref={ref}>
+      <DragDropProvider>
+        <Surface layout={layout()} width={width()} onLayoutChange={setLayout} />
+      </DragDropProvider>
+    </div>
+  );
+}
+
+function Surface(props: { layout: Layout; width: number; onLayoutChange: (l: Layout) => void }) {
+  const grid = useGridContainer(() => ({
+    layout: props.layout,
+    width: props.width,
+    onLayoutChange: props.onLayoutChange,
+    gridConfig: { cols: 12, rowHeight: 80, margin: [12, 12] },
+  }));
+  const placeholder = useGridPlaceholder(grid.group());
+  return (
+    <div ref={grid.ref} style={grid.style()}>
+      <For each={props.layout.map((it) => it.i)}>
+        {(id) => <Tile id={id} group={grid.group()} />}
+      </For>
+      <Show when={placeholder()}>
+        {(p) => <div class="placeholder" style={p().style} />}
+      </Show>
+    </div>
+  );
+}
+
+function Tile(props: { id: string; group: string }) {
+  const tile = useGridItem({ id: props.id, group: props.group });
+  return (
+    <div ref={tile.ref} style={tile.style()} class="tile">
+      {props.id}
+    </div>
+  );
+}
+```
+
+<Callout type="default">
+  snapgrid ships **no CSS**. The tiles and the `.placeholder` marker are styled by your own classes —
+  see [Styling](/solid/docs/guides/styling) for the hooks it exposes. Want resize handles? Tiles are
+  drag-only until you render them — see [Resizing](/solid/docs/guides/resizing).
+</Callout>
+
+## Don't want to wire all that?
+
+<Callout type="info">
+  The turnkey [`<GridLayout>`](/solid/docs/guides/component-layer) bundles the provider, the host, the
+  tiles, and the placeholder. Pass it `layout` / `width` / `onLayoutChange` and a render-prop child —
+  done. It's the gentlest on-ramp; drop to the hooks for any grid that needs custom markup. Same
+  engine either way.
+</Callout>
+
+```tsx
+<GridLayout layout={layout()} width={width()} onLayoutChange={setLayout}>
+  {(item) => <div class="tile">{item().i}</div>}
+</GridLayout>
+```
+
+The child is called once per tile with an **accessor** for that tile's committed layout entry — call
+`item()` to read it.
+
+## Where to next
+
+- [Core Concepts](/solid/docs/concepts) — the mental model (controlled state, the dnd-kit DNA, the `group` key) plus a gotchas cheat-sheet.
+- [Headless usage](/solid/docs/guides/headless) — the hooks in depth: resize handles, the placeholder, and how a dragged tile floats itself.
+- [Component layer](/solid/docs/guides/component-layer) — the turnkey `<GridLayout>` when you don't need custom markup.
+- [Dragging](/solid/docs/guides/dragging) · [Resizing](/solid/docs/guides/resizing) · [Compaction](/solid/docs/guides/compaction) · [Cross-grid](/solid/docs/guides/cross-grid) · [dnd-kit interop](/solid/docs/guides/dnd-kit-interop) · [Responsive](/solid/docs/guides/responsive).
+- [API Reference](/solid/docs/api/overview) — every hook, component, and type.

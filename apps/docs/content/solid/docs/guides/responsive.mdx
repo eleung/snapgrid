@@ -1,0 +1,133 @@
+---
+title: Responsive layouts
+description: Per-breakpoint layouts with the useResponsiveLayout hook (and the turnkey ResponsiveGridLayout component).
+---
+
+import { Callout } from "nextra/components";
+import { ResponsiveDemo } from "@/components/demos-solid";
+
+# Responsive layouts
+
+A responsive grid switches **column count and layout** as the container width crosses breakpoints.
+The headless engine is `useResponsiveLayout`: give it a map of per-breakpoint layouts and the
+measured `width`, and it resolves the active breakpoint's `cols` and `layout` plus an
+`onLayoutChange` that writes back to the right breakpoint. Feed those into `useGridContainer`.
+
+```tsx
+import {
+  DragDropProvider,
+  type Layout,
+  type ResponsiveLayouts,
+  useContainerWidth,
+  useGridContainer,
+  useGridItem,
+  useResponsiveLayout,
+} from "@snapgridjs/solid";
+import { For, createSignal } from "solid-js";
+
+function ResponsiveBoard() {
+  const { width, ref } = useContainerWidth();
+  const [layouts, setLayouts] = createSignal<ResponsiveLayouts>({
+    lg: [
+      { i: "a", x: 0, y: 0, w: 4, h: 2 },
+      { i: "b", x: 4, y: 0, w: 4, h: 2 },
+      { i: "c", x: 8, y: 0, w: 4, h: 2 },
+    ],
+  });
+
+  // Resolve the active breakpoint's column count + layout from the width. Options are
+  // passed as a getter so the result tracks the live width and layouts.
+  const responsive = useResponsiveLayout(() => ({
+    width: width(),
+    layouts: layouts(),
+    onLayoutChange: (_active, all) => setLayouts(all),
+    onBreakpointChange: (bp, cols) => console.log("now at", bp, cols),
+  }));
+
+  return (
+    <div ref={ref}>
+      <DragDropProvider>
+        <Grid
+          layout={responsive.layout()}
+          width={width()}
+          cols={responsive.cols()}
+          onLayoutChange={responsive.onLayoutChange}
+        />
+      </DragDropProvider>
+    </div>
+  );
+}
+
+function Grid(props: {
+  layout: Layout;
+  width: number;
+  cols: number;
+  onLayoutChange: (layout: Layout) => void;
+}) {
+  // The column count tracks the active breakpoint, so the grid reflows with it.
+  const grid = useGridContainer(() => ({
+    layout: props.layout,
+    width: props.width,
+    gridConfig: { cols: props.cols },
+    onLayoutChange: props.onLayoutChange,
+  }));
+  return (
+    <div ref={grid.ref} style={grid.style()}>
+      <For each={props.layout.map((it) => it.i)}>
+        {(id) => <Tile id={id} group={grid.group()} />}
+      </For>
+    </div>
+  );
+}
+```
+
+Missing breakpoints are generated from the nearest provided one.
+
+<ResponsiveDemo />
+
+## Breakpoints & columns
+
+Defaults mirror react-grid-layout:
+
+| Breakpoint | Min width (px) | Columns |
+| --- | --- | --- |
+| `lg` | 1200 | 12 |
+| `md` | 996 | 10 |
+| `sm` | 768 | 6 |
+| `xs` | 480 | 4 |
+| `xxs` | 0 | 2 |
+
+Override either with the `breakpoints` and `cols` options (exported as `DEFAULT_BREAKPOINTS` and
+`DEFAULT_BREAKPOINT_COLS` if you want to extend them):
+
+```tsx
+const responsive = useResponsiveLayout(() => ({
+  width: width(),
+  layouts: layouts(),
+  breakpoints: { lg: 1280, md: 900, sm: 0 },
+  cols: { lg: 16, md: 8, sm: 4 },
+  onLayoutChange: (_active, all) => setLayouts(all),
+}));
+```
+
+## `onLayoutChange` gives you both
+
+The hook's `onLayoutChange` option is `(activeLayout, allLayouts)`: the layout for the current
+breakpoint **and** the full updated map. Store the map so edits at one breakpoint don't clobber the
+others:
+
+```tsx
+onLayoutChange: (_active, all) => setLayouts(all),
+```
+
+The `onLayoutChange` the hook *returns* (which you pass to `useGridContainer`) takes care of routing
+each committed change into the active breakpoint's entry before calling your option above. Unlike
+`layout`, `cols` and `breakpoint`, it's a plain function, not an accessor — pass it straight
+through without calling it.
+
+<Callout type="info">
+  Prefer the turnkey component? [`<ResponsiveGridLayout>`](/solid/docs/guides/component-layer#responsivegridlayout) is
+  the component that wraps this hook — pass it `layouts`, `width`, and a render-prop child and it
+  handles the provider and the grid. See
+  [Components](/solid/docs/api/components#responsivegridlayout) for its full prop table.
+</Callout>
