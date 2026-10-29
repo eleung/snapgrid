@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    // Package components are plain `createComponent` calls (no JSX), so the build needs no
+    // Solid JSX transform. Test fixtures use JSX, compiled by vite-plugin-solid; the
+    // repo-wide `react-jsx` transform must not apply here.
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    // Typecheck against the live core + engine source (mirrors the React package),
+    // so cross-package type errors surface without a prior build.
+    "paths": {
+      "@snapgridjs/core": ["../grid-core/src/index.ts"],
+      "@snapgridjs/dnd": ["../grid-dnd/src/index.ts"]
+    }
+  },
+  "include": ["src", "tsdown.config.ts", "vitest.setup.ts"]
+}

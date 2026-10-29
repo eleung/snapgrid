@@ -9,7 +9,8 @@
       "@snapgridjs/react",
       "@snapgridjs/extras",
       "@snapgridjs/svelte",
-      "@snapgridjs/vue"
+      "@snapgridjs/vue",
+      "@snapgridjs/solid"
     ]
   ],
   "linked": [],

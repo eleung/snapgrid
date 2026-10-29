@@ -3,7 +3,7 @@
 Maintainer runbook for cutting a snapgrid release. Contributors don't need this —
 see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-snapgrid publishes six packages from this monorepo, versioned with
+snapgrid publishes seven packages from this monorepo, versioned with
 [Changesets](https://github.com/changesets/changesets):
 
 - `@snapgridjs/core`
@@ -11,10 +11,11 @@ snapgrid publishes six packages from this monorepo, versioned with
 - `@snapgridjs/react`
 - `@snapgridjs/svelte`
 - `@snapgridjs/vue`
+- `@snapgridjs/solid`
 - `@snapgridjs/extras`
 
-These six are kept in **lockstep** — they always share one version (changesets `fixed` in
-`.changeset/config.json`), dnd-kit-style. Any release bumps all six to the same number, even ones
+These seven are kept in **lockstep** — they always share one version (changesets `fixed` in
+`.changeset/config.json`), dnd-kit-style. Any release bumps all seven to the same number, even ones
 without changes, so "snapgrid X.Y.Z" means one matched set. (`@snapgridjs/docs` is private and never
 published — it's in the changesets `ignore` list.)
 
@@ -102,7 +103,7 @@ Local publishes do **not** carry the provenance badge — only CI (OIDC) does �
 A brand-new package can't be released by CI until it exists, because the OIDC trusted publisher is
 configured **per package** and npm enforces 2FA on writes (which CI can't satisfy interactively).
 This is what made the v0.1.0 launch a manual first publish — and `@snapgridjs/svelte` its own when it
-joined the set in the 0.8.x line, and `@snapgridjs/vue` its own when it joined. To add one:
+joined the set in the 0.8.x line, `@snapgridjs/vue` its own when it joined, and `@snapgridjs/solid` its own. To add one:
 
 1. **Bootstrap locally** — `npm login`, then
    `pnpm --filter <new-pkg> publish --access public --no-git-checks` (enter the OTP). This creates
