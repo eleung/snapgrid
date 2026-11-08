@@ -64,10 +64,10 @@
     "@dnd-kit/vue": "^0.5.0"
   },
   "devDependencies": {
-    "@dnd-kit/abstract": "^0.5.1",
-    "@dnd-kit/collision": "^0.5.1",
+    "@dnd-kit/abstract": "^0.5.3",
+    "@dnd-kit/collision": "^0.5.3",
     "@dnd-kit/dom": "^0.5.1",
-    "@dnd-kit/state": "^0.5.1",
+    "@dnd-kit/state": "^0.5.3",
     "@dnd-kit/vue": "^0.5.1",
     "vue": "^3.5.0"
   }
