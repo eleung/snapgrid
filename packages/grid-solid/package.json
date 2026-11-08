@@ -66,9 +66,9 @@
   "devDependencies": {
     "@dnd-kit/abstract": "^0.5.1",
     "@dnd-kit/collision": "^0.5.1",
-    "@dnd-kit/dom": "^0.5.1",
-    "@dnd-kit/solid": "^0.5.1",
+    "@dnd-kit/dom": "^0.5.3",
+    "@dnd-kit/solid": "^0.5.3",
     "@dnd-kit/state": "^0.5.1",
-    "solid-js": "^1.9.0"
+    "solid-js": "^1.9.18"
   }
 }
