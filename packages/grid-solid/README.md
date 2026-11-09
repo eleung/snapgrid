@@ -32,7 +32,7 @@ Draggable, resizable, responsive grid layouts for Solid — with pluggable packi
 pnpm add @snapgridjs/solid @dnd-kit/solid @dnd-kit/dom
 ```
 
-Requires **Solid 1.8+** (`solid-js@^1.8`, a peer dependency). `@snapgridjs/extras` (masonry/gravity/shelf packers) is optional.
+Requires **Solid 1.x** (`solid-js@^1.8`, a peer dependency); Solid 2.0 isn't supported yet. `@snapgridjs/extras` (masonry/gravity/shelf packers) is optional.
 
 ## Quick start
 
