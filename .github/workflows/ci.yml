@@ -43,7 +43,7 @@ jobs:
         run: pnpm size
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright 1.60 can't install chromium on ubuntu-latest (26.04)
     steps:
       - uses: actions/checkout@v7
 
