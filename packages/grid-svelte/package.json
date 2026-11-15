@@ -58,9 +58,9 @@
   "devDependencies": {
     "@dnd-kit/abstract": "^0.5.1",
     "@dnd-kit/collision": "^0.5.1",
-    "@dnd-kit/dom": "^0.5.1",
+    "@dnd-kit/dom": "^0.5.3",
     "@dnd-kit/state": "^0.5.1",
-    "@dnd-kit/svelte": "^0.5.1",
+    "@dnd-kit/svelte": "^0.5.3",
     "@sveltejs/package": "^2.3.7",
     "@sveltejs/vite-plugin-svelte": "^4.0.4",
     "svelte": "^5.29.0",
