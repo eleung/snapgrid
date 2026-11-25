@@ -22,7 +22,7 @@ importers:
         specifier: ^2.31.0
         version: 2.31.0(@types/node@22.19.19)
       '@playwright/test':
-        specifier: 1.65.1
+        specifier: ^1.65.1
         version: 1.65.1
       '@size-limit/file':
         specifier: ^12.1.0
